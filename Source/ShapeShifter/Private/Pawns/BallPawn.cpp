@@ -138,20 +138,26 @@ void ABallPawn::Move(const FInputActionValue& Value)
 {
 	const FVector2D MoveAxisValue = Value.Get<FVector2D>();
 
+	const FRotator YawControlRotation = FRotator(0, GetControlRotation().Yaw, 0);
+
 	// Forward and backward movement
 	if (MoveAxisValue.Y != 0)
 	{
-		const FVector ForwardCameraDirection = CameraComponent->GetForwardVector();
-		MeshComponent->AddForce(MoveAxisValue.Y * MovementSpeed * ForwardCameraDirection);
+		// Get ForwardControlDirection (Y FRotator axis). X - FVector axis
+		const FVector ForwardControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::X);
 
-		UE_LOG(LogTemp, Display, TEXT("ForwardCameraDirection: %s"), *ForwardCameraDirection.ToString())
+		// Add force to MeshComponent with MoveAxisVale.Y multiplied with MovementSpeed and direction to move
+		MeshComponent->AddForce(MoveAxisValue.Y * MovementSpeed * ForwardControlDirection);
 	}
 
 	// Left and right movement
 	if (MoveAxisValue.X != 0)
 	{
-		const FVector RightCameraDirection = CameraComponent->GetRightVector();
-		MeshComponent->AddForce(MoveAxisValue.X * MovementSpeed * RightCameraDirection);
+		// Get RightControlDirection (X FRotator axis). Y - FVector axis
+		const FVector RightControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::Y);
+
+		// Add force to MeshComponent with MoveAxisVale.X multiplied with MovementSpeed and direction to move
+		MeshComponent->AddForce(MoveAxisValue.X * MovementSpeed * RightControlDirection);
 	}
 }
 

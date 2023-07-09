@@ -27,11 +27,19 @@ public:
 
 	void SetForm(const EBallPawnForm NewForm);
 
+	// Change form to the next one. Usually called from ChangeFormAction input
+	void ChangeForm();
+
+	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
+	void CreateClone();
+
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
@@ -60,6 +68,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* ChangeFormAction;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* CreateCloneAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
@@ -69,9 +80,6 @@ protected:
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
-
-	// Change form to the next one
-	void ChangeForm();
 
 private:
 	void SetupComponents();
@@ -100,4 +108,20 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Physics")
 	TMap<EBallPawnForm, float> FormMasses;
+
+	TWeakObjectPtr<ABallPawn> Clone;
+
+	FTimerHandle CreateCloneTimer;
+
+	// A delay before Clone will be created
+	UPROPERTY(EditAnywhere, Category = "Clone")
+	float CreateCloneRate = 3;
+
+	FTransform CloneSpawnTransform;
+
+	// If true than Clone will be destroyed when changing Form
+	UPROPERTY(EditAnywhere, Category = "Clone")
+	bool bDestroyCloneOnChangeForm = true;
+
+	void SpawnClone();
 };

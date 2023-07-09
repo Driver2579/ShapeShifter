@@ -21,9 +21,10 @@ void ABallPawn::SetupComponents()
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sphere"));
 	RootComponent = MeshComponent;
 
-	MeshComponent->SetRelativeLocation(FVector::ZeroVector);
-
 	MeshComponent->SetSimulatePhysics(true);
+
+	// Enable Hit Events
+	MeshComponent->SetNotifyRigidBodyCollision(true);
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 	SpringArmComponent->SetupAttachment(MeshComponent);
@@ -52,20 +53,27 @@ void ABallPawn::BeginPlay()
 	LimitViewPitch(DefaultMinViewPitch, DefaultMaxViewPitch);
 }
 
+void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+}
+
 void ABallPawn::LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const
 {
 	const APlayerController* PlayerController = GetController<APlayerController>();
 
 	if (!IsValid(PlayerController))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LimitViewPitch: PlayerController is invalid!"));
+		return;
 	}
 
 	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
 
 	if (!IsValid(PlayerCameraManager))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LimitViewPitch: PlayerCameraManager is invalid!"));
+		return;
 	}
 
 	PlayerCameraManager->ViewPitchMin = MinViewPitch;
@@ -79,8 +87,6 @@ void ABallPawn::InitDefaultMappingContext() const
 
 	if (!IsValid(PlayerController))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::InitDefaultMappingContext: PlayerController is invalid!"));
-
 		return;
 	}
 
@@ -158,6 +164,15 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: ChangeFormAction is invalid!"));
+	}
+
+	if (IsValid(CreateCloneAction))
+	{
+		EnhancedInputComponent->BindAction(CreateCloneAction, ETriggerEvent::Triggered, this, &ABallPawn::CreateClone);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: CreateCloneAction is invalid!"));
 	}
 }
 
@@ -248,6 +263,19 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
+	// Destroy clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true
+	if (CurrentForm != NewForm && bDestroyCloneOnChangeForm)
+	{
+		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
+		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+		// Destroy Clone if it was created
+		if (Clone.IsValid())
+		{
+			Clone->Destroy();
+		}
+	}
+
 	CurrentForm = NewForm;
 
 	/*
@@ -314,5 +342,39 @@ void ABallPawn::ChangeForm()
 		SetForm(EBallPawnForm::Rubber);
 
 		break;
+	}
+}
+
+void ABallPawn::CreateClone()
+{
+	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+	// Remember current Actor Transform where clone will be spawned
+	CloneSpawnTransform = GetActorTransform();
+
+	// Call SpawnClone in CreateCloneRate seconds
+	GetWorldTimerManager().SetTimer(CreateCloneTimer, this, &ABallPawn::SpawnClone, CreateCloneRate);
+}
+
+void ABallPawn::SpawnClone()
+{
+	// Destroy old Clone if it was created before
+	if (Clone.IsValid())
+	{
+		Clone->Destroy();
+	}
+
+	// Create SpawnParameters
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	// Spawn Clone
+	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
+
+	// Set same Form to NewClone as ours but check if Clone is valid just in case
+	if (Clone.IsValid())
+	{
+		Clone->SetForm(CurrentForm);
 	}
 }

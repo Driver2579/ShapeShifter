@@ -84,10 +84,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float JumpImpulse = 500;
 
-	UPROPERTY(EditAnywhere, Category = "Camera")
+	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMax = 0))
 	float DefaultMinViewPitch = -80;
 
-	UPROPERTY(EditAnywhere, Category = "Camera")
+	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMin = 0))
 	float DefaultMaxViewPitch = 30;
 
 	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;

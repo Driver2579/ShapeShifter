@@ -120,7 +120,7 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: MoveAction is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: LookAction is invalid!"));
 	}
 
 	if (IsValid(JumpAction))
@@ -129,7 +129,7 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: MoveAction is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: JumpAction is invalid!"));
 	}
 }
 
@@ -138,6 +138,7 @@ void ABallPawn::Move(const FInputActionValue& Value)
 {
 	const FVector2D MoveAxisValue = Value.Get<FVector2D>();
 
+	// Get Yaw of ControlRotation and store it in FRotator with 0 Pitch and Roll
 	const FRotator YawControlRotation = FRotator(0, GetControlRotation().Yaw, 0);
 
 	// Forward and backward movement

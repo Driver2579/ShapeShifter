@@ -6,11 +6,22 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 ABallPawn::ABallPawn()
 {
+	SetupComponents();
+
+	FormMasses.Add(EBallPawnForm::Rubber, 1);
+	FormMasses.Add(EBallPawnForm::Metal, 2);
+}
+
+void ABallPawn::SetupComponents()
+{
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sphere"));
 	RootComponent = MeshComponent;
+
+	MeshComponent->SetRelativeLocation(FVector::ZeroVector);
 
 	MeshComponent->SetSimulatePhysics(true);
 
@@ -21,6 +32,14 @@ ABallPawn::ABallPawn()
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
+}
+
+void ABallPawn::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	// Call SetForm in OnConstruction to preview CurrentForm and make it work after BeginPlay
+	SetForm(CurrentForm);
 }
 
 void ABallPawn::BeginPlay()
@@ -131,6 +150,15 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: JumpAction is invalid!"));
 	}
+
+	if (IsValid(ChangeFormAction))
+	{
+		EnhancedInputComponent->BindAction(ChangeFormAction, ETriggerEvent::Triggered, this, &ABallPawn::ChangeForm);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: ChangeFormAction is invalid!"));
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -215,5 +243,76 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 	if (IsZVelocityClear())
 	{
 		bCanJump = true;
+	}
+}
+
+void ABallPawn::SetForm(const EBallPawnForm NewForm)
+{
+	CurrentForm = NewForm;
+
+	/*
+	 * Find Material associated with NewForm in FormMaterials.
+	 * We call FindRef instead of Find to avoid pointer to pointer
+	 */
+	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
+
+	// Set FormMaterial as MeshComponent Material if it's valid
+	if (IsValid(FormMaterial))
+	{
+		MeshComponent->SetMaterial(0, FormMaterial);
+	}
+	// Send Warning log in another case
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Material associated with NewForm in FormMaterials"));
+	}
+
+	/*
+	 * Find PhysicalMaterial associated with NewForm in FormPhysicalMaterials.
+	 * We call FindRef instead of Find to avoid pointer to pointer
+	 */
+	UPhysicalMaterial* FormPhysicalMaterial = FormPhysicalMaterials.FindRef(NewForm);
+
+	// Set FormPhysicalMaterial as MeshComponent PhysicalMaterial if it's valid
+	if (IsValid(FormPhysicalMaterial))
+	{
+		MeshComponent->SetPhysMaterialOverride(FormPhysicalMaterial);
+	}
+	// Send Warning log in another case
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find PhysicalMaterial associated with NewForm in FormPhysicalMaterials"));
+	}
+
+	// Find Mass associated with NewForm in FormMasses
+	const float* FormMass = FormMasses.Find(NewForm);
+
+	// Set FormMass as MeshComponent Mass if it's valid
+	if (FormMass)
+	{
+		MeshComponent->SetMassOverrideInKg(NAME_None, *FormMass);
+	}
+	// Send Warning log in another case
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Mass associated with NewForm in FormMasses"));
+	}
+}
+
+void ABallPawn::ChangeForm()
+{
+	switch (CurrentForm)
+	{
+	// Set Metal form if CurrentForm is Rubber
+	case EBallPawnForm::Rubber:
+		SetForm(EBallPawnForm::Metal);
+
+		break;
+
+	// Set Rubber form if CurrentForm is Metal
+	case EBallPawnForm::Metal:
+		SetForm(EBallPawnForm::Rubber);
+
+		break;
 	}
 }

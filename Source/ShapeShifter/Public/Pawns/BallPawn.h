@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Common/Enums/BallPawnForm.h"
 #include "GameFramework/Pawn.h"
 #include "BallPawn.generated.h"
 
@@ -24,7 +25,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	void SetForm(const EBallPawnForm NewForm);
+
 protected:
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -51,6 +56,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* JumpAction;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* ChangeFormAction;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -62,18 +70,34 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+	// Change form to the next one
+	void ChangeForm();
+
 private:
-	UPROPERTY(EditAnywhere, Category = "Movement")
+	void SetupComponents();
+
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float MovementSpeed = 150;
 
 	bool bCanJump = true;
 
-	UPROPERTY(EditAnywhere, Category = "Movement")
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float JumpImpulse = 500;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float DefaultMinViewPitch = -80;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float DefaultMaxViewPitch = 10;
+	float DefaultMaxViewPitch = 30;
+
+	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
+
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	TMap<EBallPawnForm, UMaterial*> FormMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Physical Materials")
+	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Physics")
+	TMap<EBallPawnForm, float> FormMasses;
 };

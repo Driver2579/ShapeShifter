@@ -13,8 +13,11 @@ public class ShapeShifter : ModuleRules
 		// Enhanced input
 		PublicDependencyModuleNames.AddRange(new string[] { "EnhancedInput" });
 		
-		// Physical Material
+		// Physical Materials
 		PublicDependencyModuleNames.AddRange(new string[] { "PhysicsCore" });
+		
+		// Niagara
+		PublicDependencyModuleNames.AddRange(new string[] { "Niagara" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

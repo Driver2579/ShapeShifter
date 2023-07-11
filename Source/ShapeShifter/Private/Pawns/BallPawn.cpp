@@ -43,6 +43,11 @@ void ABallPawn::OnConstruction(const FTransform& Transform)
 	SetForm(CurrentForm);
 }
 
+UStaticMeshComponent* ABallPawn::GetMesh() const
+{
+	return MeshComponent;
+}
+
 void ABallPawn::BeginPlay()
 {
 	Super::BeginPlay();

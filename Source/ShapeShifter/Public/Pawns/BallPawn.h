@@ -19,6 +19,8 @@ class SHAPESHIFTER_API ABallPawn : public APawn
 public:
 	ABallPawn();
 
+	UStaticMeshComponent* GetMesh() const;
+
 	// Limits PlayerCameraManager ViewPitch
 	void LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const;
 

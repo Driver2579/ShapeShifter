@@ -370,7 +370,8 @@ void ABallPawn::SpawnClone()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	// Spawn Clone
-	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
+	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform.GetLocation(),
+		CloneSpawnTransform.Rotator(), SpawnParameters);
 
 	// Set same Form to NewClone as ours but check if Clone is valid just in case
 	if (Clone.IsValid())

@@ -27,6 +27,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	bool IsFalling() const;
+
 	void SetForm(const EBallPawnForm NewForm);
 
 	// Change form to the next one. Usually called from ChangeFormAction input
@@ -78,6 +80,8 @@ protected:
 
 	void Jump(const FInputActionValue& Value);
 
+	// TODO: Remove this function
+	UFUNCTION(meta = (DeprecatedFunction))
 	bool IsZVelocityClear(const float Tolerance = 0.1) const;
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,

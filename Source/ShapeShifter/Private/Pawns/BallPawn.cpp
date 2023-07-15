@@ -230,13 +230,13 @@ void ABallPawn::Look(const FInputActionValue& Value)
 
 void ABallPawn::Jump(const FInputActionValue& Value)
 {
-	// Check if Z velocity is clear
-	if (!IsZVelocityClear())
+	// Disable jumping if we're falling
+	if (IsFalling())
 	{
 		bCanJump = false;
 	}
 
-	// Check if we can jump
+	// Return if we can't jump
 	if (!bCanJump)
 	{
 		return;
@@ -254,13 +254,44 @@ bool ABallPawn::IsZVelocityClear(const float Tolerance) const
 	return GetVelocity().Z >= -Tolerance && GetVelocity().Z <= Tolerance;
 }
 
+bool ABallPawn::IsFalling() const
+{
+	// Get Mesh bounds
+	FVector MeshCenter = MeshComponent->Bounds.Origin;
+	float MeshRadius = MeshComponent->Bounds.SphereRadius;
+
+	const float MaxDistanceToGround = 3;
+
+	// Calculate MeshBottomPoint
+	FVector MeshBottomPoint = MeshCenter - FVector(0, 0, MeshRadius);
+
+	// Calculate TraceEnd with MaxDistanceToGround
+	FVector TraceEnd = MeshBottomPoint - FVector(0, 0, MaxDistanceToGround);
+
+	// Create out HitResult
+	FHitResult HitResult;
+
+	// Ignore this Actor in LineTrace
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	// LineTrace from MeshComponent to ground to check if we're touching ground and return false if we do
+	return !GetWorld()->LineTraceSingleByChannel(HitResult, MeshCenter, TraceEnd,
+		ECC_GameTraceChannel1, Params);
+}
+
 void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 	FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
-	// Enable Jump if we landed
-	if (IsZVelocityClear())
+	// Enable jumping if we're not falling
+	/**
+	 * TODO: Надо поменять проверку NormalImpulse.Z на что-то другое, так как NormalImpule.Z дает разные результаты
+	 * TODO: в зависимости от физического материала (Rubber или Metal), из-за чего BallPawn может, либо прыгнуть
+	 * TODO: слишком рано, либо не прыгнуть вовсе
+	 */
+	if (!IsFalling() && NormalImpulse.Z < 10)
 	{
 		bCanJump = true;
 	}

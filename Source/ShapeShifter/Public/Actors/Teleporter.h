@@ -44,7 +44,7 @@ protected:
 
 private:
 	UPROPERTY(EditInstanceOnly)
-	TWeakObjectPtr<ATeleporter> OtherTeleporter;
+	ATeleporter* OtherTeleporter;
 
 	TArray<class ABallPawn*> JustTeleportedBallPawns;
 

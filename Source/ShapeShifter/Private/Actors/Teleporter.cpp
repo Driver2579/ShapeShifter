@@ -68,7 +68,7 @@ void ATeleporter::OnTeleportTriggerEndOverlap(UPrimitiveComponent* OverlappedCom
 
 bool ATeleporter::IsOtherTeleporterValid() const
 {
-	if (!OtherTeleporter.IsValid())
+	if (!IsValid(OtherTeleporter))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ATeleporter::IsOtherTeleporterValid: OtherTeleporter is invalid!"));
 

@@ -19,6 +19,8 @@ class SHAPESHIFTER_API ABallPawn : public APawn
 public:
 	ABallPawn();
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	UStaticMeshComponent* GetMesh() const;
 
 	// Limits PlayerCameraManager ViewPitch
@@ -80,10 +82,6 @@ protected:
 
 	void Jump(const FInputActionValue& Value);
 
-	// TODO: Remove this function
-	UFUNCTION(meta = (DeprecatedFunction))
-	bool IsZVelocityClear(const float Tolerance = 0.1) const;
-
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
@@ -94,6 +92,9 @@ private:
 	float MovementSpeed = 150;
 
 	bool bCanJump = true;
+
+	// Velocity from previous tick
+	FVector LastUpdateVelocity;
 
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float JumpImpulse = 500;

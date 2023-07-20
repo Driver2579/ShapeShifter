@@ -65,6 +65,13 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 }
 
+void ABallPawn::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	LastUpdateVelocity = GetVelocity();
+}
+
 void ABallPawn::LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const
 {
 	const APlayerController* PlayerController = GetController<APlayerController>();
@@ -249,11 +256,6 @@ void ABallPawn::Jump(const FInputActionValue& Value)
 	bCanJump = false;
 }
 
-bool ABallPawn::IsZVelocityClear(const float Tolerance) const
-{
-	return GetVelocity().Z >= -Tolerance && GetVelocity().Z <= Tolerance;
-}
-
 bool ABallPawn::IsFalling() const
 {
 	// Get Mesh bounds
@@ -285,13 +287,14 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
-	// Enable jumping if we're not falling
-	/**
-	 * TODO: Надо поменять проверку NormalImpulse.Z на что-то другое, так как NormalImpule.Z дает разные результаты
-	 * TODO: в зависимости от физического материала (Rubber или Metal), из-за чего BallPawn может, либо прыгнуть
-	 * TODO: слишком рано, либо не прыгнуть вовсе
-	 */
-	if (!IsFalling() && NormalImpulse.Z < 10)
+	// Calculate HitImpulse (impact impulse) by subtracting LastUpdateVelocity and current velocity
+	const FVector HitImpulse = LastUpdateVelocity - GetVelocity();
+
+	// Maximum HitImpulse.Z tolerance to allow jumping
+	const float Tolerance = 1;
+
+	// Enable jumping if we're not falling and HitImpulse.Z is in range of Tolerance
+	if (!IsFalling() && HitImpulse.Z >= -Tolerance && HitImpulse.Z <= Tolerance)
 	{
 		bCanJump = true;
 	}

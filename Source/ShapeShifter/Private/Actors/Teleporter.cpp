@@ -34,6 +34,12 @@ void ATeleporter::BeginPlay()
 void ATeleporter::OnTeleportTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	// We can't teleport if Teleporter isn't active
+	if (!IsActive())
+	{
+		return;
+	}
+
 	// Cast OtherActor to ABallPawn
 	ABallPawn* BallPawn = Cast<ABallPawn>(OtherActor);
 
@@ -83,4 +89,40 @@ bool ATeleporter::IsOtherTeleporterValid() const
 	}
 
 	return true;
+}
+
+void ATeleporter::Activate()
+{
+	IActivatable::Activate();
+
+	NiagaraParticles->Activate();
+
+	TArray<USceneComponent*> ChildrenComponents;
+	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
+
+	for (USceneComponent* It : ChildrenComponents)
+	{
+		if (IsValid(It) && It->IsA<UNiagaraComponent>())
+		{
+			It->Activate();
+		}
+	}
+}
+
+void ATeleporter::Deactivate()
+{
+	IActivatable::Activate();
+
+	NiagaraParticles->Deactivate();
+
+	TArray<USceneComponent*> ChildrenComponents;
+	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
+
+	for (USceneComponent* It : ChildrenComponents)
+	{
+		if (IsValid(It) && It->IsA<UNiagaraComponent>())
+		{
+			It->Deactivate();
+		}
+	}
 }

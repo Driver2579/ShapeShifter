@@ -4,16 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/Activatable.h"
 #include "Teleporter.generated.h"
 
 UCLASS()
-class SHAPESHIFTER_API ATeleporter : public AActor
+class SHAPESHIFTER_API ATeleporter : public AActor, public IActivatable
 {
 	GENERATED_BODY()
-	
+
 public:
 	// Sets default values for this actor's properties
 	ATeleporter();
+
+	virtual void Activate() override;
+	virtual void Deactivate() override;
 
 protected:
 	// Called when the game starts or when spawned

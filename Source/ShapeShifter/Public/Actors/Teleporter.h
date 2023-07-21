@@ -20,6 +20,7 @@ public:
 	virtual void Deactivate() override;
 
 	virtual bool IsActive() const override final;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
 

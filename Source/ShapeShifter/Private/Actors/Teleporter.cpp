@@ -98,16 +98,19 @@ void ATeleporter::Activate()
 {
 	bActive = true;
 
-	NiagaraParticles->Activate();
+	// Activate NiagaraParticles
+	NiagaraParticles->SetVisibility(true);
 
+	// Get ChildrenComponents of NiagaraParticles
 	TArray<USceneComponent*> ChildrenComponents;
 	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
 
+	// Activate ChildrenComponents of NiagaraParticles
 	for (USceneComponent* It : ChildrenComponents)
 	{
 		if (IsValid(It) && It->IsA<UNiagaraComponent>())
 		{
-			It->Activate();
+			It->SetVisibility(true);
 		}
 	}
 }
@@ -116,16 +119,19 @@ void ATeleporter::Deactivate()
 {
 	bActive = false;
 
-	NiagaraParticles->Deactivate();
+	// Deactivate NiagaraParticles
+	NiagaraParticles->SetVisibility(false);
 
+	// Get ChildrenComponents of NiagaraParticles
 	TArray<USceneComponent*> ChildrenComponents;
 	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
 
+	// Deactivate ChildrenComponents of NiagaraParticles
 	for (USceneComponent* It : ChildrenComponents)
 	{
 		if (IsValid(It) && It->IsA<UNiagaraComponent>())
 		{
-			It->Deactivate();
+			It->SetVisibility(false);
 		}
 	}
 }

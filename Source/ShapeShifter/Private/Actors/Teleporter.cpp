@@ -27,6 +27,9 @@ void ATeleporter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Set default Active state
+	SetActive(bActive);
+
 	TeleportTrigger->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerBeginOverlap);
 	TeleportTrigger->OnComponentEndOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerEndOverlap);
 }
@@ -93,7 +96,7 @@ bool ATeleporter::IsOtherTeleporterValid() const
 
 void ATeleporter::Activate()
 {
-	IActivatable::Activate();
+	bActive = true;
 
 	NiagaraParticles->Activate();
 
@@ -111,7 +114,7 @@ void ATeleporter::Activate()
 
 void ATeleporter::Deactivate()
 {
-	IActivatable::Activate();
+	bActive = false;
 
 	NiagaraParticles->Deactivate();
 
@@ -125,4 +128,9 @@ void ATeleporter::Deactivate()
 			It->Deactivate();
 		}
 	}
+}
+
+bool ATeleporter::IsActive() const
+{
+	return bActive;
 }

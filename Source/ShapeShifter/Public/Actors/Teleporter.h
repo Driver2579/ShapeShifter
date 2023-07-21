@@ -19,10 +19,7 @@ public:
 	virtual void Activate() override;
 	virtual void Deactivate() override;
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
+	virtual bool IsActive() const override final;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
 
@@ -38,6 +35,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* TeleportPoint;
 
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
 	UFUNCTION()
 	virtual void OnTeleportTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -47,6 +47,9 @@ protected:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+	UPROPERTY(EditAnywhere, Category = "Activation")
+	bool bActive = true;
+
 	UPROPERTY(EditInstanceOnly)
 	ATeleporter* OtherTeleporter;
 

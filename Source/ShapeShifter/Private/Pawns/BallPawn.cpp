@@ -21,6 +21,8 @@ void ABallPawn::SetupComponents()
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sphere"));
 	RootComponent = MeshComponent;
 
+	MeshComponent->SetCollisionProfileName(TEXT("Pawn"));
+
 	MeshComponent->SetSimulatePhysics(true);
 
 	// Enable Hit Events

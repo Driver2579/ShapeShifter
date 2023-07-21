@@ -19,6 +19,8 @@ class SHAPESHIFTER_API ABallPawn : public APawn
 public:
 	ABallPawn();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	virtual void Tick(float DeltaSeconds) override;
 
 	UStaticMeshComponent* GetMesh() const;
@@ -40,13 +42,6 @@ public:
 	void CreateClone();
 
 protected:
-	virtual void OnConstruction(const FTransform& Transform) override;
-
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
 
@@ -58,6 +53,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	class UInputMappingContext* DefaultMappingContext;
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// Call AddMappingContext to LocalPlayerSubsystem if it was not added before
 	void InitDefaultMappingContext() const;

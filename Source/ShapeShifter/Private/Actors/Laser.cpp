@@ -5,6 +5,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
+#include "Pawns/BallPawn.h"
 #include "ShapeShifter/ShapeShifter.h"
 
 ALaser::ALaser()
@@ -78,11 +79,14 @@ void ALaser::Tick(float DeltaTime)
 
 void ALaser::DrawLaserBeams()
 {
+	// Initialize first BeamStartLocation and BeamDirection
 	FVector BeamStartLocation = LaserSpawnPointComponent->GetComponentLocation();
 	FVector BeamDirection = LaserDirectionComponent->GetForwardVector();
 
+	// Initialize bHit with true to make first beam always rendered
 	bool bHit = true;
 
+	// Iterate through all beams in Beams array
 	for (int i = 0; i < Beams.Num(); ++i)
 	{
 		// We should never hit this
@@ -116,6 +120,9 @@ void ALaser::DrawLaserBeams()
 		bHit = GetWorld()->LineTraceSingleByChannel(HitResult, BeamStartLocation, TraceEnd, ECC_LASER_BEAM,
 			TraceParams);
 
+		// Calculate NextBeamIndex
+		const int NextBeamIndex = i + 1;
+
 		if (bHit)
 		{
 			// Set NextBeamDirection with ReflectionVector between BeamDirection and ImpactPoint
@@ -135,19 +142,39 @@ void ALaser::DrawLaserBeams()
 
 			// Set current beam EndLocation with next beam StartLocation
 			Beams[i]->SetVariableVec3(BeamEndLocationVariableName, BeamStartLocation);
+
+			// Cast hit Actor to ABallPawn
+			ABallPawn* BallPawn = Cast<ABallPawn>(HitResult.GetActor());
+
+			// Disable BeamEnd in current beam if we have to reflect all or we hit an Actor which can reflect laser
+			if (bReflectAll || IsValid(BallPawn))
+			{
+				Beams[i]->SetVariableBool(SpawnBeamEndVariableName, false);
+			}
+			else
+			{
+				// Set bHit with false to avoid calculating next reflected beams
+				bHit = false;
+
+				// Enable BeamEnd in current beam because there won't be any next reflected beams 
+				Beams[i]->SetVariableBool(SpawnBeamEndVariableName, true);
+
+				// Disable all next beams if NextBeamIndex is valid
+				if (Beams.IsValidIndex(NextBeamIndex))
+				{
+					SetBeamsActive(false, NextBeamIndex);
+				}
+			}
 		}
 		else
 		{
 			// Set current beam EndLocation
 			Beams[i]->SetVariableVec3(BeamEndLocationVariableName, HitResult.TraceEnd);
 
-			// Calculate NextBeamIndex
-			const int NextBeamIndex = i + 1;
-
 			// Disable all next beams if NextBeamIndex is valid
 			if (Beams.IsValidIndex(NextBeamIndex))
 			{
-				SetBeamsActive(false, i + 1);
+				SetBeamsActive(false, NextBeamIndex);
 			}
 		}
 	}

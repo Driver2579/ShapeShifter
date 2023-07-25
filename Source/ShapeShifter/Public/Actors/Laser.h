@@ -59,7 +59,7 @@ private:
 
 	// Distance between beam end location and impact point
 	UPROPERTY(EditAnywhere, Category = "Reflections", meta = (ClampMin = 0.1, ClampMax = 1))
-	float BeamDistanceToImpactPoint = 0.1;
+	float BeamDistanceToImpactPoint = 0.2;
 
 	TArray<class UNiagaraComponent*> Beams;
 

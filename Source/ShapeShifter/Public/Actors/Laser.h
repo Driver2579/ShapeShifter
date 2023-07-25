@@ -44,6 +44,30 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* NiagaraSystemTemplate;
 
+	UPROPERTY(EditAnywhere, Category = "Laser color")
+	FLinearColor BeamColor = FLinearColor(80.000000, 0.000000, 0.000000);
+
+	UPROPERTY(EditAnywhere, Category = "Laser color")
+	FLinearColor FireColor = FLinearColor(100.000000, 0.000000, 0.000000);
+
+	UPROPERTY(EditAnywhere, Category = "Laser color")
+	FLinearColor RingsColor = FLinearColor(20.000000, 0.000000, 0.000000, 1.000000);
+
+	UPROPERTY(EditAnywhere, Category = "Laser color")
+	FLinearColor HitRingColor = FLinearColor(20.000000, 0.000000, 0.000000, 1.000000);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
+	FName BeamColorVariableName = TEXT("BeamColor");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
+	FName FireColorVariableName = TEXT("FireColor");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
+	FName RingsColorVariableName = TEXT("RingsColor");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
+	FName HitRingColorVariableName = TEXT("HitRingColor");
+
 	void SpawnLaserBeams();
 
 	// Amount of beams to spawn and the maximum of reflections
@@ -63,7 +87,24 @@ private:
 
 	TArray<class UNiagaraComponent*> Beams;
 
+	/**
+	 * @brief Draws as many reflected beams as need to. This function calls DrawLaserBeamSingle function in Beams array
+	 * iterating for loop. Should be called in tick to recalculate beams dynamically.
+	 */
 	void DrawLaserBeams();
+
+	/**
+	 * @brief Draw one beam and calculate start location and direction of next beam. This should be called while
+	 * iterating through Beams array.
+	 * @param CurrentBeamIndex Current index of Beams array iteration.
+	 * @param BeamStartLocation Should be initialized with current beam start location. Out is next beam start location.
+	 * @param BeamDirection Should be initialized with current beam direction. Out is next beam direction.
+	 * @return True if there should be next reflected beam. You should keep calling this in Beams array iteration in
+	 * this case.
+	 * @return False if there can't be next reflected beam. You should stop calling this in Beams array iteration in
+	 * this case.
+	 */
+	bool DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStartLocation, FVector& BeamDirection);
 
 	/**
 	 * @brief Enables or disables all beams in Beams array from FirstBeamIndex.

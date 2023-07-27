@@ -236,9 +236,13 @@ bool ALaser::IsActive() const
 void ALaser::Activate()
 {
 	bActive = true;
+
+	SetBeamsActive(bActive);
 }
 
 void ALaser::Deactivate()
 {
 	bActive = false;
+
+	SetBeamsActive(bActive);
 }

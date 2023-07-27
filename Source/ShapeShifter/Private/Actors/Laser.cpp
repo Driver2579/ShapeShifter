@@ -199,6 +199,9 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 	{
 		Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamEndVariableName, false);
 
+		// Call OnLaserHit with bReflected true as HitActor reflected Laser
+		OnLaserHit(HitActor, true);
+
 		return true;
 	}
 
@@ -211,8 +214,16 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 		SetBeamsActive(false, NextBeamIndex);
 	}
 
+	// Call OnLaserHit with bReflected false as this HitActor blocked Laser
+	OnLaserHit(HitActor, false);
+
 	// Return false to stop drawing next reflected beams
 	return false;
+}
+
+void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
+{
+	// Nothing here...
 }
 
 void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)

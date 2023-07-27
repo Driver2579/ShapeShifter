@@ -37,6 +37,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UArrowComponent* LaserDirectionComponent;
 
+	/**
+	 * @brief Called when Laser beam hit any not ignored Actor. This function called every tick while hitting Actor.
+	 * @param HitActor Hit Actor by Laser beam.
+	 * @param bReflected Whether HitActor reflected Laser beam or not.
+	 */
+	virtual void OnLaserHit(AActor* HitActor, const bool bReflected);
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = true;

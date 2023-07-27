@@ -5,7 +5,6 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
-#include "Pawns/BallPawn.h"
 #include "ShapeShifter/ShapeShifter.h"
 
 ALaser::ALaser()
@@ -176,14 +175,17 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 	// Set current beam EndLocation with next beam StartLocation
 	Beams[CurrentBeamIndex]->SetVariableVec3(BeamEndLocationVariableName, BeamStartLocation);
 
-	// Cast hit Actor to ABallPawn
-	ABallPawn* BallPawn = Cast<ABallPawn>(HitResult.GetActor());
+	// Get HitActor from HitResult
+	AActor* HitActor = HitResult.GetActor();
+
+	// Remember if we can reflect HitActor or not
+	const bool bReflectActor = IsValid(HitActor) && HitActor->ActorHasTag(ReflectActorTagName);
 
 	/**
 	 * Disable BeamEnd in current beam if we have to reflect all or we hit an Actor which can reflect laser and return
 	 * true to draw next reflected beams
 	 */
-	if (bReflectAll || IsValid(BallPawn))
+	if (bReflectAll || bReflectActor)
 	{
 		Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamEndVariableName, false);
 

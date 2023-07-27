@@ -81,6 +81,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Reflections")
 	bool bReflectAll = false;
 
+	// If ReflectAll is false than only Actors with this tag will reflect beams
+	UPROPERTY(EditAnywhere, Category = "Reflections")
+	FName ReflectActorTagName = TEXT("LaserReflect");
+
 	// Distance between beam end location and impact point
 	UPROPERTY(EditAnywhere, Category = "Reflections", meta = (ClampMin = 0.1, ClampMax = 1))
 	float BeamDistanceToImpactPoint = 0.2;

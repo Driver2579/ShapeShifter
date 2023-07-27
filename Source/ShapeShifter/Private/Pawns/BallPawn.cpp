@@ -320,6 +320,17 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 	CurrentForm = NewForm;
 
+	// Allow Laser reflection if CurrentForm is Metal
+	if (CurrentForm == EBallPawnForm::Metal)
+	{
+		Tags.Add(ReflectLaserTagName);
+	}
+	// Forbid Laser reflection in another case
+	else
+	{
+		Tags.Remove(ReflectLaserTagName);
+	}
+
 	/*
 	 * Find Material associated with NewForm in FormMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer

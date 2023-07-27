@@ -85,6 +85,8 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+	void SpawnClone();
+
 private:
 	void SetupComponents();
 
@@ -130,5 +132,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	bool bDestroyCloneOnChangeForm = true;
 
-	void SpawnClone();
+	// This tag will work only if CurrentForm is Metal 
+	UPROPERTY(EditAnywhere, Category = "Clone")
+	FName ReflectLaserTagName = TEXT("LaserReflect");
 };

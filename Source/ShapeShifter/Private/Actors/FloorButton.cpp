@@ -33,8 +33,8 @@ void AFloorButton::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Set default Active state
-	SetActive(bActive);
+	/*// Set default Active state
+	SetActive(bActive);*/
 
 	StartButtonLocation = ButtonMeshComponent->GetComponentLocation();
 	EndButtonLocation = StartButtonLocation - FVector(0, 0, MoveOffset);
@@ -90,63 +90,34 @@ void AFloorButton::Activate()
 {
 	bActive = true;
 
-	// Activate all ActorsToActivate which implement Activatable interface
-	for (AActor* It : ActorsToActivate)
-	{
-		IActivatable* ActorToActivate = Cast<IActivatable>(It);
-
-		if (ActorToActivate)
-		{
-			ActorToActivate->Activate();
-		}
-	}
-
-	// Deactivate ActorsToDeactivate which implement Activatable interface
-	for (AActor* It : ActorsToDeactivate)
-	{
-		IActivatable* ActorToDeactivate = Cast<IActivatable>(It);
-
-		if (ActorToDeactivate)
-		{
-			ActorToDeactivate->Deactivate();
-		}
-	}
+	SwitchActorsActivation();
 }
 
 void AFloorButton::Deactivate()
 {
 	bActive = false;
 
-	/**
-	 * Deactivate all ActorsToActivate which implement Activatable interface because they don't have to be activated
-	 * anymore
-	 */
-	for (AActor* It : ActorsToActivate)
-	{
-		IActivatable* ActorToActivate = Cast<IActivatable>(It);
-
-		if (ActorToActivate)
-		{
-			ActorToActivate->Deactivate();
-		}
-	}
-
-	/**
-	 * Activate all ActorsToDeactivate which implement Activatable interface because they don't have to be deactivated
-	 * anymore
-	 */
-	for (AActor* It : ActorsToDeactivate)
-	{
-		IActivatable* ActorToDeactivate = Cast<IActivatable>(It);
-
-		if (ActorToDeactivate)
-		{
-			ActorToDeactivate->Activate();
-		}
-	}
+	SwitchActorsActivation();
 }
 
 bool AFloorButton::IsActive() const
 {
 	return bActive;
+}
+
+void AFloorButton::SwitchActorsActivation() const
+{
+	// Iterate through ActorsToSwitchActivation
+	for (AActor* It : ActorsToSwitchActivation)
+	{
+		// Cast It to ActorToSwitchActivation to use Activatable interface functions
+		IActivatable* ActorToSwitchActivation = Cast<IActivatable>(It);
+
+		// Check if ActorToSwitchActivation is valid
+		if (ActorToSwitchActivation)
+		{
+			// Switch Active state
+			ActorToSwitchActivation->SetActive(!ActorToSwitchActivation->IsActive());
+		}
+	}
 }

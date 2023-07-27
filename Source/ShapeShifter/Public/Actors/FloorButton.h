@@ -49,13 +49,14 @@ protected:
 private:
 	bool bActive = false;
 
-	// Actors in this array must implement Activatable interface. They will be activated on overlap
+	/**
+	 * Actors in this array must implement Activatable interface. They will be activated or deactivated on overlap
+	 * depending on their current state
+	 */
 	UPROPERTY(EditInstanceOnly)
-	TArray<AActor*> ActorsToActivate;
+	TArray<AActor*> ActorsToSwitchActivation;
 
-	// Actors in this array must implement Activatable interface. They will be deactivated on overlap
-	UPROPERTY(EditInstanceOnly)
-	TArray<AActor*> ActorsToDeactivate;
+	void SwitchActorsActivation() const;
 
 	FVector StartButtonLocation;
 	FVector EndButtonLocation;

@@ -5,6 +5,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "ShapeShifter/ShapeShifter.h"
 
 ALaser::ALaser()
@@ -129,9 +130,18 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 	// Calculate TraceEnd
 	const FVector TraceEnd = BeamStartLocation + BeamDirection * MaxBeamLength;
 
-	// Create TraceParams and turn on TraceComplex
+	// Create TraceParams
 	FCollisionQueryParams TraceParams;
+
+	// Turn on TraceComplex to use complex collision
 	TraceParams.bTraceComplex = true;
+
+	// Get all Actors we need to ignore using tag
+	TArray<AActor*> IgnoredActors;
+	UGameplayStatics::GetAllActorsWithTag(this, IgnoreActorTagName, IgnoredActors);
+
+	// Add IgnoredActors
+	TraceParams.AddIgnoredActors(IgnoredActors);
 
 	// LineTrace to set current beam variables
 	FHitResult HitResult;

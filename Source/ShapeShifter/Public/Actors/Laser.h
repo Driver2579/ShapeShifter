@@ -81,10 +81,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Reflections")
 	bool bReflectAll = false;
 
-	// If ReflectAll is false than only Actors with this tag will reflect beams
-	UPROPERTY(EditAnywhere, Category = "Reflections")
-	FName ReflectActorTagName = TEXT("LaserReflect");
-
 	// Distance between beam end location and impact point
 	UPROPERTY(EditAnywhere, Category = "Reflections", meta = (ClampMin = 0.1, ClampMax = 1))
 	float BeamDistanceToImpactPoint = 0.2;
@@ -109,6 +105,14 @@ private:
 	 * this case.
 	 */
 	bool DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStartLocation, FVector& BeamDirection);
+
+	// If ReflectAll is false than only Actors with this tag will reflect beams
+	UPROPERTY(EditAnywhere, Category = "Tags")
+	FName ReflectActorTagName = TEXT("LaserReflect");
+
+	// Actors with this tag will be ignored by Laser
+	UPROPERTY(EditAnywhere, Category = "Tags")
+	FName IgnoreActorTagName = TEXT("IgnoreLaser");
 
 	/**
 	 * @brief Enables or disables all beams in Beams array from FirstBeamIndex.

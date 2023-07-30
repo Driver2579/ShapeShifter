@@ -6,7 +6,6 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "ShapeShifter/ShapeShifter.h"
 
 ALaser::ALaser()
 {
@@ -145,8 +144,8 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 
 	// LineTrace to set current beam variables
 	FHitResult HitResult;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, BeamStartLocation, TraceEnd, ECC_LASER_BEAM,
-		TraceParams);
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, BeamStartLocation, TraceEnd,
+		LaserCollisionTraceChanel, TraceParams);
 
 	// Calculate NextBeamIndex
 	const int NextBeamIndex = CurrentBeamIndex + 1;

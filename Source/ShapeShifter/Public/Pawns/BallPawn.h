@@ -95,6 +95,13 @@ private:
 
 	bool bCanJump = true;
 
+	/**
+	 * You must set your own custom Collision Trace Channel with "Block" default response to this variable to make
+	 * Jump and IsFalling functions work properly!
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Collision")
+	TEnumAsByte<ECollisionChannel> FallingCollisionTraceChanel = ECC_GameTraceChannel1;
+
 	// Velocity from previous tick
 	FVector LastUpdateVelocity;
 
@@ -134,5 +141,5 @@ private:
 
 	// This tag will work only if CurrentForm is Metal 
 	UPROPERTY(EditAnywhere, Category = "Clone")
-	FName ReflectLaserTagName = TEXT("LaserReflect");
+	FName ReflectLaserTagName = TEXT("ReflectLaser");
 };

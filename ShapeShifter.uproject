@@ -20,6 +20,11 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "LaserReflectionSystem",
+			"Enabled": false,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/5e5962737c014cfd9817d454e1980b11"
 		}
 	]
 }

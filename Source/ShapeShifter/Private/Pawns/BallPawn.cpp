@@ -7,7 +7,6 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
-#include "ShapeShifter/ShapeShifter.h"
 
 ABallPawn::ABallPawn()
 {
@@ -281,8 +280,8 @@ bool ABallPawn::IsFalling() const
 	Params.AddIgnoredActor(this);
 
 	// LineTrace from MeshComponent to ground to check if we're touching ground and return false if we do
-	return !GetWorld()->LineTraceSingleByChannel(HitResult, MeshCenter, TraceEnd,
-		ECC_BALL_PAWN_FALLING, Params);
+	return !GetWorld()->LineTraceSingleByChannel(HitResult, MeshCenter, TraceEnd, FallingCollisionTraceChanel,
+		Params);
 }
 
 void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,

@@ -48,7 +48,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = true;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Laser")
 	class UNiagaraSystem* NiagaraSystemTemplate;
 
 	UPROPERTY(EditAnywhere, Category = "Laser color")
@@ -113,9 +113,16 @@ private:
 	 */
 	bool DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStartLocation, FVector& BeamDirection);
 
+	/**
+	 * You must set your own custom Collision Trace Channel with "Block" default response to this variable to make laser
+	 * work properly!
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Collision")
+	TEnumAsByte<ECollisionChannel> LaserCollisionTraceChanel = ECC_GameTraceChannel2;
+
 	// If ReflectAll is false than only Actors with this tag will reflect beams
 	UPROPERTY(EditAnywhere, Category = "Tags")
-	FName ReflectActorTagName = TEXT("LaserReflect");
+	FName ReflectActorTagName = TEXT("ReflectLaser");
 
 	// Actors with this tag will be ignored by Laser
 	UPROPERTY(EditAnywhere, Category = "Tags")

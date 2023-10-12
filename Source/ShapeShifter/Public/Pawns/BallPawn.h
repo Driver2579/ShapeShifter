@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Common/Enums/BallPawnForm.h"
 #include "GameFramework/Pawn.h"
+#include "Common/Enums/BallPawnForm.h"
 #include "BallPawn.generated.h"
 
 class UInputAction;

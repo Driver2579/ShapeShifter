@@ -25,9 +25,6 @@ public:
 
 	UStaticMeshComponent* GetMesh() const;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
 	bool IsFalling() const;
 
 	void SetForm(const EBallPawnForm NewForm);
@@ -58,6 +55,9 @@ protected:
 
 	// Call AddMappingContext to LocalPlayerSubsystem if it was not added before
 	void InitDefaultMappingContext() const;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* MoveAction;
@@ -110,7 +110,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterial*> FormMaterials;
 
-	UPROPERTY(EditAnywhere, Category = "Physical Materials")
+	UPROPERTY(EditAnywhere, Category = "Collision")
 	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Physics")

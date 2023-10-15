@@ -7,6 +7,11 @@ AFloorButton::AFloorButton()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	SetupComponents();
+}
+
+void AFloorButton::SetupComponents()
+{
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
 	BaseMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base Mesh"));
@@ -33,14 +38,11 @@ void AFloorButton::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/*// Set default Active state
-	SetActive(bActive);*/
-
 	StartButtonLocation = ButtonMeshComponent->GetComponentLocation();
 	EndButtonLocation = StartButtonLocation - FVector(0, 0, MoveOffset);
 
-	ButtonTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AFloorButton::OnBeginOverlap);
-	ButtonTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AFloorButton::OnEndOverlap);
+	ButtonTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AFloorButton::OnButtonTriggerBeginOverlap);
+	ButtonTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AFloorButton::OnButtonTriggerEndOverlap);
 }
 
 void AFloorButton::Tick(float DeltaTime)
@@ -63,7 +65,7 @@ void AFloorButton::Tick(float DeltaTime)
 	ButtonMeshComponent->SetWorldLocation(NewLocation);
 }
 
-void AFloorButton::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void AFloorButton::OnButtonTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (IsValid(OtherActor) && OtherActor != this)
@@ -72,7 +74,7 @@ void AFloorButton::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	}
 }
 
-void AFloorButton::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void AFloorButton::OnButtonTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	TArray<AActor*> OverlappingActors;

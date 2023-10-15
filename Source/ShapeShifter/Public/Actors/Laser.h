@@ -38,7 +38,7 @@ protected:
 	class UArrowComponent* LaserDirectionComponent;
 
 	/**
-	 * @brief Called when Laser beam hit any not ignored Actor. This function called every tick while hitting Actor.
+	 * Called when Laser beam hit any not ignored Actor. This function called every tick while hitting Actor.
 	 * @param HitActor Hit Actor by Laser beam.
 	 * @param bReflected Whether HitActor reflected Laser beam or not.
 	 */
@@ -95,13 +95,13 @@ private:
 	TArray<class UNiagaraComponent*> Beams;
 
 	/**
-	 * @brief Draws as many reflected beams as need to. This function calls DrawLaserBeamSingle function in Beams array
+	 * Draws as many reflected beams as need to. This function calls DrawLaserBeamSingle function in Beams array
 	 * iterating for loop. Should be called in tick to recalculate beams dynamically.
 	 */
 	void DrawLaserBeams();
 
 	/**
-	 * @brief Draw one beam and calculate start location and direction of next beam. This should be called while
+	 * Draw one beam and calculate start location and direction of next beam. This should be called while
 	 * iterating through Beams array.
 	 * @param CurrentBeamIndex Current index of Beams array iteration.
 	 * @param BeamStartLocation Should be initialized with current beam start location. Out is next beam start location.
@@ -129,7 +129,7 @@ private:
 	FName IgnoreActorTagName = TEXT("IgnoreLaser");
 
 	/**
-	 * @brief Enables or disables all beams in Beams array from FirstBeamIndex.
+	 * Enables or disables all beams in Beams array from FirstBeamIndex.
 	 * @param bNewActive Whether we should enable or disable beams.
 	 * @param FirstBeamIndex First beam index which will be enabled/disabled. All previous indexes will not be hit.
 	 * You have to keep default 0 value if you need to enable/disable all beams.

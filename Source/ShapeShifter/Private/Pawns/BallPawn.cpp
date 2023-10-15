@@ -92,7 +92,8 @@ void ABallPawn::InitDefaultMappingContext() const
 	}
 
 	// Get LocalPlayerSubsystem
-	UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<
+		UEnhancedInputLocalPlayerSubsystem>();
 
 	if (!IsValid(LocalPlayerSubsystem))
 	{
@@ -116,7 +117,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (!IsValid(EnhancedInputComponent))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be overriden by EnhancedInputComponent!"));
+		UE_LOG(LogTemp, Error,
+			TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be EnhancedInputComponent!"));
 
 		return;
 	}
@@ -150,7 +152,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (IsValid(ChangeFormAction))
 	{
-		EnhancedInputComponent->BindAction(ChangeFormAction, ETriggerEvent::Triggered, this, &ABallPawn::ChangeForm);
+		EnhancedInputComponent->BindAction(ChangeFormAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::ChangeForm);
 	}
 	else
 	{
@@ -159,7 +162,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (IsValid(CreateCloneAction))
 	{
-		EnhancedInputComponent->BindAction(CreateCloneAction, ETriggerEvent::Triggered, this, &ABallPawn::CreateClone);
+		EnhancedInputComponent->BindAction(CreateCloneAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::CreateClone);
 	}
 	else
 	{
@@ -321,10 +325,11 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Send Warning log in another case
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Material associated with NewForm in FormMaterials"));
+		UE_LOG(LogTemp, Warning,
+			TEXT("ABallPawn::SetForm: Failed to find Material associated with NewForm in FormMaterials"));
 	}
 
-	/*
+	/**
 	 * Find PhysicalMaterial associated with NewForm in FormPhysicalMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer
 	 */
@@ -338,7 +343,8 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Send Warning log in another case
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find PhysicalMaterial associated with NewForm in FormPhysicalMaterials"));
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find PhysicalMaterial associated with NewForm in "
+			"FormPhysicalMaterials"));
 	}
 
 	// Find Mass associated with NewForm in FormMasses
@@ -396,7 +402,7 @@ void ABallPawn::SpawnClone()
 
 	// Create SpawnParameters
 	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 
 	// Spawn Clone
 	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform.GetLocation(),

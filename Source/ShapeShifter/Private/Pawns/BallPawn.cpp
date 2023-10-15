@@ -55,9 +55,6 @@ void ABallPawn::BeginPlay()
 	Super::BeginPlay();
 
 	InitDefaultMappingContext();
-
-	// Call LimitViewPitch with default values
-	LimitViewPitch(DefaultMinViewPitch, DefaultMaxViewPitch);
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -72,26 +69,6 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetVelocity();
-}
-
-void ABallPawn::LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const
-{
-	const APlayerController* PlayerController = GetController<APlayerController>();
-
-	if (!IsValid(PlayerController))
-	{
-		return;
-	}
-
-	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
-
-	if (!IsValid(PlayerCameraManager))
-	{
-		return;
-	}
-
-	PlayerCameraManager->ViewPitchMin = MinViewPitch;
-	PlayerCameraManager->ViewPitchMax = MaxViewPitch;
 }
 
 void ABallPawn::InitDefaultMappingContext() const

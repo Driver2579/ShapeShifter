@@ -25,9 +25,6 @@ public:
 
 	UStaticMeshComponent* GetMesh() const;
 
-	// Limits PlayerCameraManager ViewPitch
-	void LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -108,12 +105,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float JumpImpulse = 500;
 
-	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMax = 0))
-	float DefaultMinViewPitch = -80;
-
-	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMin = 0))
-	float DefaultMaxViewPitch = 30;
-
 	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
@@ -139,7 +130,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	bool bDestroyCloneOnChangeForm = true;
 
-	// This tag will work only if CurrentForm is Metal 
+	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
 };

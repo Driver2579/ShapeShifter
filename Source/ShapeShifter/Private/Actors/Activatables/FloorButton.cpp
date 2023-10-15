@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/FloorButton.h"
+#include "Actors/Activatables/FloorButton.h"
 
 AFloorButton::AFloorButton()
 {

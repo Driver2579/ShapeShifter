@@ -101,8 +101,8 @@ private:
 	void DrawLaserBeams();
 
 	/**
-	 * Draw one beam and calculate start location and direction of next beam. This should be called while
-	 * iterating through Beams array.
+	 * Draw one beam and calculate start location and direction of next beam. This should be called while iterating
+	 * through Beams array.
 	 * @param CurrentBeamIndex Current index of Beams array iteration.
 	 * @param BeamStartLocation Should be initialized with current beam start location. Out is next beam start location.
 	 * @param BeamDirection Should be initialized with current beam direction. Out is next beam direction.

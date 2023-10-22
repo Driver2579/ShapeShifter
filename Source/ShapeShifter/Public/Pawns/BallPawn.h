@@ -126,6 +126,9 @@ private:
 
 	FTransform CloneSpawnTransform;
 
+	// Check if Clone will collide anything on spawn.
+	bool CanSpawnClone() const;
+
 	// If true than Clone will be destroyed when changing Form
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	bool bDestroyCloneOnChangeForm = true;

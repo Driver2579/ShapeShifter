@@ -12,6 +12,12 @@ ABallPawn::ABallPawn()
 {
 	SetupComponents();
 
+	FormMaterials.Add(EBallPawnForm::Rubber);
+	FormMaterials.Add(EBallPawnForm::Metal);
+
+	FormPhysicalMaterials.Add(EBallPawnForm::Rubber);
+	FormPhysicalMaterials.Add(EBallPawnForm::Metal);
+
 	FormMasses.Add(EBallPawnForm::Rubber, 1);
 	FormMasses.Add(EBallPawnForm::Metal, 2);
 }
@@ -432,7 +438,7 @@ bool ABallPawn::CanSpawnClone() const
 	// Get CloneLocation from CloneSpawnTransform
 	const FVector CloneLocation = CloneSpawnTransform.GetLocation();
 
-	// Get CloneMeshRadius from MeshComponent Bounds and increase it on 1 to not collide with ground or walls
+	// Get CloneMeshRadius from MeshComponent Bounds and increase it by 1 to not collide with ground or walls
 	const float CloneMeshRadius = MeshComponent->Bounds.SphereRadius - 1;
 
 	// Unused HitResult for sphere trace

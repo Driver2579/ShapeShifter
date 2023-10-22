@@ -29,7 +29,7 @@ public:
 
 	void SetForm(const EBallPawnForm NewForm);
 
-	// Change form to the next one. Usually called from ChangeFormAction input
+	// Change form to the next one. Usually called from ChangeFormAction InputAction.
 	void ChangeForm();
 
 	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
@@ -126,7 +126,7 @@ private:
 
 	FTransform CloneSpawnTransform;
 
-	// Check if Clone will collide anything on spawn.
+	// Check if Clone will collide anything on spawn
 	bool CanSpawnClone() const;
 
 	// If true than Clone will be destroyed when changing Form

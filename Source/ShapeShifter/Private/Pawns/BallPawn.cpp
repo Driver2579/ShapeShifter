@@ -410,7 +410,7 @@ void ABallPawn::SpawnClone()
 	if (!CanSpawnClone())
 	{
 		UE_LOG(LogTemp, Display,
-			TEXT("ABallPawn::SpawnClone: Unable to spawn Clone. Clone is colliding with something."));
+			TEXT("ABallPawn::SpawnClone: Unable to spawn Clone. Clone is colliding with player."));
 
 		return;
 	}
@@ -438,13 +438,13 @@ bool ABallPawn::CanSpawnClone() const
 	// Get CloneLocation from CloneSpawnTransform
 	const FVector CloneLocation = CloneSpawnTransform.GetLocation();
 
-	// Get CloneMeshRadius from MeshComponent Bounds and increase it by 1 to not collide with ground or walls
-	const float CloneMeshRadius = MeshComponent->Bounds.SphereRadius - 1;
+	// Get CloneRadius from MeshComponent Bounds
+	const float CloneRadius = MeshComponent->Bounds.SphereRadius;
 
 	// Unused HitResult for sphere trace
 	FHitResult HitResult;
 
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
-		CloneSpawnTransform.GetRotation(), ECC_Pawn, FCollisionShape::MakeSphere(CloneMeshRadius));
+		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
 }

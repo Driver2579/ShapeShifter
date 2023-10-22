@@ -126,8 +126,18 @@ private:
 
 	FTransform CloneSpawnTransform;
 
-	// Check if Clone will collide anything on spawn
+	/**
+	 * Check if Clone will collide with player on spawn.
+	 * @return True if not colliding.
+	 */
 	bool CanSpawnClone() const;
+
+	/**
+	 * You must set your own custom Collision Trace Channel which will Block only pawn to make Clone spawning work
+	 * properly!
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Collision")
+	TEnumAsByte<ECollisionChannel> SpawnCloneCheckTraceChanel = ECC_GameTraceChannel3;
 
 	// If true than Clone will be destroyed when changing Form
 	UPROPERTY(EditAnywhere, Category = "Clone")

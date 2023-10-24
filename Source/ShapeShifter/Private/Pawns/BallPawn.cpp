@@ -12,6 +12,12 @@ ABallPawn::ABallPawn()
 {
 	SetupComponents();
 
+	FormMaterials.Add(EBallPawnForm::Rubber);
+	FormMaterials.Add(EBallPawnForm::Metal);
+
+	FormPhysicalMaterials.Add(EBallPawnForm::Rubber);
+	FormPhysicalMaterials.Add(EBallPawnForm::Metal);
+
 	FormMasses.Add(EBallPawnForm::Rubber, 1);
 	FormMasses.Add(EBallPawnForm::Metal, 2);
 }
@@ -55,9 +61,6 @@ void ABallPawn::BeginPlay()
 	Super::BeginPlay();
 
 	InitDefaultMappingContext();
-
-	// Call LimitViewPitch with default values
-	LimitViewPitch(DefaultMinViewPitch, DefaultMaxViewPitch);
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -72,26 +75,6 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetVelocity();
-}
-
-void ABallPawn::LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const
-{
-	const APlayerController* PlayerController = GetController<APlayerController>();
-
-	if (!IsValid(PlayerController))
-	{
-		return;
-	}
-
-	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
-
-	if (!IsValid(PlayerCameraManager))
-	{
-		return;
-	}
-
-	PlayerCameraManager->ViewPitchMin = MinViewPitch;
-	PlayerCameraManager->ViewPitchMax = MaxViewPitch;
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -115,7 +98,8 @@ void ABallPawn::InitDefaultMappingContext() const
 	}
 
 	// Get LocalPlayerSubsystem
-	UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<
+		UEnhancedInputLocalPlayerSubsystem>();
 
 	if (!IsValid(LocalPlayerSubsystem))
 	{
@@ -139,7 +123,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (!IsValid(EnhancedInputComponent))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be overriden by EnhancedInputComponent!"));
+		UE_LOG(LogTemp, Error,
+			TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be EnhancedInputComponent!"));
 
 		return;
 	}
@@ -173,7 +158,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (IsValid(ChangeFormAction))
 	{
-		EnhancedInputComponent->BindAction(ChangeFormAction, ETriggerEvent::Triggered, this, &ABallPawn::ChangeForm);
+		EnhancedInputComponent->BindAction(ChangeFormAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::ChangeForm);
 	}
 	else
 	{
@@ -182,7 +168,8 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (IsValid(CreateCloneAction))
 	{
-		EnhancedInputComponent->BindAction(CreateCloneAction, ETriggerEvent::Triggered, this, &ABallPawn::CreateClone);
+		EnhancedInputComponent->BindAction(CreateCloneAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::CreateClone);
 	}
 	else
 	{
@@ -344,10 +331,11 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Send Warning log in another case
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Material associated with NewForm in FormMaterials"));
+		UE_LOG(LogTemp, Warning,
+			TEXT("ABallPawn::SetForm: Failed to find Material associated with NewForm in FormMaterials"));
 	}
 
-	/*
+	/**
 	 * Find PhysicalMaterial associated with NewForm in FormPhysicalMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer
 	 */
@@ -361,7 +349,8 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Send Warning log in another case
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find PhysicalMaterial associated with NewForm in FormPhysicalMaterials"));
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find PhysicalMaterial associated with NewForm in "
+			"FormPhysicalMaterials"));
 	}
 
 	// Find Mass associated with NewForm in FormMasses
@@ -417,17 +406,45 @@ void ABallPawn::SpawnClone()
 		Clone->Destroy();
 	}
 
-	// Create SpawnParameters
+	// Check if we can spawn Clone and return if not
+	if (!CanSpawnClone())
+	{
+		UE_LOG(LogTemp, Display,
+			TEXT("ABallPawn::SpawnClone: Unable to spawn Clone. Clone is colliding with player."));
+
+		return;
+	}
+
 	FActorSpawnParameters SpawnParameters;
+
+	// We have to set Clone scale same as players instead of multiplying them by each other
+	SpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
+
+	// We have to always spawn clone because we have own check for colliding
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	// Spawn Clone
-	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform.GetLocation(),
-		CloneSpawnTransform.Rotator(), SpawnParameters);
+	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
 
 	// Set same Form to NewClone as ours but check if Clone is valid just in case
 	if (Clone.IsValid())
 	{
 		Clone->SetForm(CurrentForm);
 	}
+}
+
+bool ABallPawn::CanSpawnClone() const
+{
+	// Get CloneLocation from CloneSpawnTransform
+	const FVector CloneLocation = CloneSpawnTransform.GetLocation();
+
+	// Get CloneRadius from MeshComponent Bounds
+	const float CloneRadius = MeshComponent->Bounds.SphereRadius;
+
+	// Unused HitResult for sphere trace
+	FHitResult HitResult;
+
+	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
+	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
+		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
 }

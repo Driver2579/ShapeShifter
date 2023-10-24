@@ -25,17 +25,11 @@ public:
 
 	UStaticMeshComponent* GetMesh() const;
 
-	// Limits PlayerCameraManager ViewPitch
-	void LimitViewPitch(const float MinViewPitch, const float MaxViewPitch) const;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
 	bool IsFalling() const;
 
 	void SetForm(const EBallPawnForm NewForm);
 
-	// Change form to the next one. Usually called from ChangeFormAction input
+	// Change form to the next one. Usually called from ChangeFormAction InputAction.
 	void ChangeForm();
 
 	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
@@ -61,6 +55,9 @@ protected:
 
 	// Call AddMappingContext to LocalPlayerSubsystem if it was not added before
 	void InitDefaultMappingContext() const;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* MoveAction;
@@ -108,18 +105,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float JumpImpulse = 500;
 
-	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMax = 0))
-	float DefaultMinViewPitch = -80;
-
-	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMin = 0))
-	float DefaultMaxViewPitch = 30;
-
 	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterial*> FormMaterials;
 
-	UPROPERTY(EditAnywhere, Category = "Physical Materials")
+	UPROPERTY(EditAnywhere, Category = "Collision")
 	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Physics")
@@ -135,11 +126,24 @@ private:
 
 	FTransform CloneSpawnTransform;
 
+	/**
+	 * Check if Clone will collide with player on spawn.
+	 * @return True if not colliding.
+	 */
+	bool CanSpawnClone() const;
+
+	/**
+	 * You must set your own custom Collision Trace Channel which will Block only pawn to make Clone spawning work
+	 * properly!
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Collision")
+	TEnumAsByte<ECollisionChannel> SpawnCloneCheckTraceChanel = ECC_GameTraceChannel3;
+
 	// If true than Clone will be destroyed when changing Form
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	bool bDestroyCloneOnChangeForm = true;
 
-	// This tag will work only if CurrentForm is Metal 
+	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
 };

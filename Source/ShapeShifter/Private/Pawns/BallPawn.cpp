@@ -8,6 +8,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "BuoyancyComponent.h"
 
 ABallPawn::ABallPawn()
 {
@@ -21,6 +22,10 @@ ABallPawn::ABallPawn()
 
 	FormMasses.Add(EBallPawnForm::Rubber, 1);
 	FormMasses.Add(EBallPawnForm::Metal, 2);
+
+	// Add default BuoyancyData to all forms
+	FormBuoyancyData.Add(EBallPawnForm::Rubber, FBuoyancyData());
+	FormBuoyancyData.Add(EBallPawnForm::Metal, FBuoyancyData());
 }
 
 void ABallPawn::SetupComponents()
@@ -42,14 +47,19 @@ void ABallPawn::SetupComponents()
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
+
+	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
 }
 
 void ABallPawn::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	// Call SetForm in OnConstruction to preview CurrentForm and make it work after BeginPlay
+// This is just for preview in editor. We don't need to set it twice in packaged project.
+#if WITH_EDITOR
+	// Call SetForm in OnConstruction to preview CurrentForm
 	SetForm(CurrentForm);
+#endif
 }
 
 UStaticMeshComponent* ABallPawn::GetMesh() const
@@ -63,6 +73,9 @@ void ABallPawn::BeginPlay()
 
 	InitDefaultMappingContext();
 	InitWaterFluidSimulation();
+
+	// Call SetForm with CurrentForm to apply everything related to it
+	SetForm(CurrentForm);
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -311,7 +324,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Allow Laser reflection if CurrentForm is Metal
 	if (CurrentForm == EBallPawnForm::Metal)
 	{
-		Tags.Add(ReflectLaserTagName);
+		Tags.AddUnique(ReflectLaserTagName);
 	}
 	// Forbid Laser reflection in another case
 	else
@@ -321,7 +334,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 	/*
 	 * Find Material associated with NewForm in FormMaterials.
-	 * We call FindRef instead of Find to avoid pointer to pointer
+	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
 	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
 
@@ -339,7 +352,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 	/**
 	 * Find PhysicalMaterial associated with NewForm in FormPhysicalMaterials.
-	 * We call FindRef instead of Find to avoid pointer to pointer
+	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
 	UPhysicalMaterial* FormPhysicalMaterial = FormPhysicalMaterials.FindRef(NewForm);
 
@@ -367,6 +380,25 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Mass associated with NewForm in FormMasses"));
+	}
+
+	// Find Buoyancy associated with NewForm in FormBuoyancyData
+	const FBuoyancyData* BuoyancyData = FormBuoyancyData.Find(NewForm);
+
+	// This will be called only if we already begun play to avoid crash in editor
+	if (HasActorBegunPlay())
+	{
+		// Set BuoyancyData as BuoyancyComponent BuoyancyData if it's valid
+		if (BuoyancyData)
+		{
+			BuoyancyComponent->BuoyancyData = *BuoyancyData;
+		}
+		// Send Warning log in another case
+		else
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
+		}
 	}
 }
 

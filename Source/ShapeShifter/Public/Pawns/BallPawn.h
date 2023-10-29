@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Common/Enums/BallPawnForm.h"
+#include "BuoyancyTypes.h"
 #include "BallPawn.generated.h"
 
 class UInputAction;
@@ -44,6 +45,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UBuoyancyComponent* BuoyancyComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	class UInputMappingContext* DefaultMappingContext;
@@ -87,6 +91,7 @@ protected:
 	// Call RegisterDynamicForce for every FluidSim Actor on scene
 	void InitWaterFluidSimulation();
 
+	// Call RegisterDynamicForce with parameters for FluidSim. This needed to register components for fluid simulation.
 	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
@@ -153,6 +158,13 @@ private:
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
+
+	/**
+	 * BuoyancyData assigned to different BallPawnForms to swim on water.
+	 * The default values are same, so they all must be changed in BP except Pontoons.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Water Buoyancy Data")
+	TMap<EBallPawnForm, FBuoyancyData> FormBuoyancyData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation")
 	TSubclassOf<AActor> WaterFluidSimulationClass;

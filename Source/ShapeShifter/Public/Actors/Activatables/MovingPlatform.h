@@ -60,7 +60,7 @@ protected:
 	// Infinite movement when activated and stop in place when deactivated
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
 	bool bLoop = false;
-	
+
 	UFUNCTION()
 	void ProcessMovementTimeline(float Value);
 

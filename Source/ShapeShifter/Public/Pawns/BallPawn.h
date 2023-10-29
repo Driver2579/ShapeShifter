@@ -84,6 +84,13 @@ protected:
 
 	void SpawnClone();
 
+	// Call RegisterDynamicForce for every FluidSim Actor on scene
+	void InitWaterFluidSimulation();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
+	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
+		const float ForceStrength);
+
 private:
 	void SetupComponents();
 
@@ -146,4 +153,10 @@ private:
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Clone")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation")
+	TSubclassOf<AActor> WaterFluidSimulationClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
+	float WaterFluidForceStrength = 1;
 };

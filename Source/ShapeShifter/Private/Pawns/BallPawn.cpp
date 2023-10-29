@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
 ABallPawn::ABallPawn()
@@ -61,6 +62,7 @@ void ABallPawn::BeginPlay()
 	Super::BeginPlay();
 
 	InitDefaultMappingContext();
+	InitWaterFluidSimulation();
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -447,4 +449,24 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+void ABallPawn::InitWaterFluidSimulation()
+{
+	if (!WaterFluidSimulationClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::InitWaterFluidSimulation: WaterFluidSimulationClass is invalid!"));
+
+		return;
+	}
+
+	// Get all WaterFluidActors on scene
+	TArray<AActor*> WaterFluidActors;
+	UGameplayStatics::GetAllActorsOfClass(this, WaterFluidSimulationClass, WaterFluidActors);
+
+	// Call RegisterDynamicForce for every water fluid Actor
+	for (AActor* It : WaterFluidActors)
+	{
+		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius, WaterFluidForceStrength);
+	}
 }

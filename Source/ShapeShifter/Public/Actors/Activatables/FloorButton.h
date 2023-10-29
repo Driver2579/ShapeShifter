@@ -19,10 +19,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual bool IsActive() const override final;
+
 	virtual void Activate() override;
 	virtual void Deactivate() override;
-
-	virtual bool IsActive() const override final;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -31,7 +31,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* ButtonMeshComponent;
 
-	// This is used to generate overlap events with any collision shape. This component should not be visible
+	// This is used to generate overlap events with any collision shape. This component should not be visible.
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* ButtonTriggerComponent;
 

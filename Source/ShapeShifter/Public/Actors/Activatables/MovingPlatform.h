@@ -28,6 +28,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
 	USplineComponent* SplineComponent;
@@ -67,5 +68,5 @@ protected:
 private:
 	bool bIsActive = false;
 	FTimeline MovementTimeline;
-	FTimerHandle MoveTimerHandle;
+	FTimerHandle MoveTimer;
 };

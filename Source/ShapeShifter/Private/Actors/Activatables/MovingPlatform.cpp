@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Actors/Activatables/MovingPlatform.h"
 #include "Components/SplineComponent.h"
 
@@ -52,6 +51,13 @@ void AMovingPlatform::BeginPlay()
 	MovementTimeline.SetLooping(bLoop);
 }
 
+void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(MoveTimer);
+}
+
 void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -66,13 +72,13 @@ void AMovingPlatform::ProcessMovementTimeline(float Value)
 {
 	const float Distance = Value * SplineComponent->GetSplineLength();
 
-	const FVector CurrentSplineLocation = SplineComponent->GetLocationAtDistanceAlongSpline(
-		Distance, ESplineCoordinateSpace::World);
+	const FVector CurrentSplineLocation = SplineComponent->GetLocationAtDistanceAlongSpline(Distance,
+		ESplineCoordinateSpace::World);
 
 	if (bRotate)
 	{
-		FRotator CurrentSplineRotation = SplineComponent->GetRotationAtDistanceAlongSpline(
-			Distance, ESplineCoordinateSpace::World);
+		FRotator CurrentSplineRotation = SplineComponent->GetRotationAtDistanceAlongSpline(Distance,
+			ESplineCoordinateSpace::World);
 		CurrentSplineRotation.Pitch = 0.f;
 
 		MeshComponent->SetWorldLocationAndRotation(CurrentSplineLocation, CurrentSplineRotation);
@@ -95,7 +101,7 @@ void AMovingPlatform::Activate()
 		return;
 	}
 
-	GetWorldTimerManager().ClearTimer(MoveTimerHandle);
+	GetWorldTimerManager().ClearTimer(MoveTimer);
 
 	// Start with or without delay
 	if (StartDelay == 0)
@@ -104,7 +110,7 @@ void AMovingPlatform::Activate()
 	}
 	else
 	{
-		GetWorldTimerManager().SetTimer(MoveTimerHandle, [this]() {
+		GetWorldTimerManager().SetTimer(MoveTimer, [this]() {
 			MovementTimeline.Play();
 		}, StartDelay, false);
 	}
@@ -115,7 +121,7 @@ void AMovingPlatform::Deactivate()
 	bIsActive = false;
 	MovementTimeline.Stop();
 
-	GetWorldTimerManager().ClearTimer(MoveTimerHandle);
+	GetWorldTimerManager().ClearTimer(MoveTimer);
 
 	if (!bLoop)
 	{
@@ -126,8 +132,7 @@ void AMovingPlatform::Deactivate()
 		}
 		else
 		{
-			GetWorldTimerManager().SetTimer(MoveTimerHandle, [this]
-			{
+			GetWorldTimerManager().SetTimer(MoveTimer, [this]{
 				MovementTimeline.Reverse();
 			}, EndDelay, false);
 		}

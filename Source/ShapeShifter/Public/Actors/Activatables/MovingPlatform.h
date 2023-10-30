@@ -8,9 +8,6 @@
 #include "Components/TimelineComponent.h"
 #include "MovingPlatform.generated.h"
 
-class USplineComponent;
-class UBoxComponent;
-
 UCLASS()
 class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable
 {
@@ -21,7 +18,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	// Implementing the IActivatable
 	virtual void Activate() override;
 	virtual void Deactivate() override;
 	virtual bool IsActive() const override;
@@ -30,14 +26,17 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	UPROPERTY()
+	USceneComponent* SceneComponent;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
-	USplineComponent* SplineComponent;
+	class USplineComponent* MovementDirectionSplineComponent;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MovingPlatform")
 	UStaticMeshComponent* MeshComponent;
 	
 	/**
-	 * Should display the dependence of position on the route on time
+	 * Should display the dependence of location on the route on time
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
 	UCurveFloat* MovementCurve;
@@ -63,7 +62,7 @@ protected:
 	bool bLoop = false;
 
 	UFUNCTION()
-	void ProcessMovementTimeline(float Value);
+	void ProcessMovementTimeline(const float Value);
 
 private:
 	bool bIsActive = false;

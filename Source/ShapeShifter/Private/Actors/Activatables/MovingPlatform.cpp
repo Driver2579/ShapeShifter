@@ -1,52 +1,65 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Actors/Activatables/MovingPlatform.h"
-#include "Components/SplineComponent.h"
 
-DEFINE_LOG_CATEGORY_STATIC(MovingPlatform, All, All);
+#include "Components/SplineComponent.h"
 
 AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	SceneComponent =  CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = SceneComponent;
 	
-	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline Component"));
-	RootComponent = SplineComponent;
+	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movment Direction Spline"));
+	MovementDirectionSplineComponent->SetupAttachment(RootComponent);
 	
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
-	MeshComponent->SetupAttachment(RootComponent);
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	MeshComponent->SetupAttachment(MovementDirectionSplineComponent);
 }
 
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!MovementCurve)
+	if (MovementCurve->IsValidLowLevel())
 	{
-		UE_LOG(MovingPlatform, Error, TEXT("%s: Movement Curve not found"), *GetName());
-
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
+		
 		return;
 	}
 
 	// Duplicate curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
-	// Changing Animation Time
+	if (MovementCurve->IsValidLowLevel())
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
+
+		return;
+	}
+	
+	// Change animation time by MoveTime
 	for (FRichCurveKey& Key : MovementCurve->FloatCurve.Keys)
 	{
 		Key.Time *= MoveTime;
 	}
 
-	// Calibrate the spline position of mesh
+	// Calibrate the spline location of mesh
 	ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 
-	// Calibrate the world position of mesh 
-	const FVector SplineLocation = SplineComponent->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);
+	// Calibrate the world location of mesh 
+	const FVector SplineLocation = MovementDirectionSplineComponent->GetLocationAtSplinePoint(0,
+		ESplineCoordinateSpace::World);
+	
 	MeshComponent->SetWorldLocation(SplineLocation);
 
+	//Create a delegate to handle value changes on the timeline
 	FOnTimelineFloat ProgressFunction;
 	ProgressFunction.BindUFunction(this, TEXT("ProcessMovementTimeline"));
+	
+	// Add motion curve interpolation to the timeline using the given delegate
 	MovementTimeline.AddInterpFloat(MovementCurve, ProgressFunction);
 
+	// Set the timeline length mode based on the last key point of the curve and set the timeline to cycle
 	MovementTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
 	MovementTimeline.SetLooping(bLoop);
 }
@@ -62,29 +75,36 @@ void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(MovementTimeline.IsPlaying())
+	// Update platform position
+	if (MovementTimeline.IsPlaying())
 	{
 		MovementTimeline.TickTimeline(DeltaTime);	
 	}
 }
 
-void AMovingPlatform::ProcessMovementTimeline(float Value)
+void AMovingPlatform::ProcessMovementTimeline(const float Value)
 {
-	const float Distance = Value * SplineComponent->GetSplineLength();
+	// Location on the spline
+	const float Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
 
-	const FVector CurrentSplineLocation = SplineComponent->GetLocationAtDistanceAlongSpline(Distance,
+	// Calculation of location in space
+	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
 	if (bRotate)
 	{
-		FRotator CurrentSplineRotation = SplineComponent->GetRotationAtDistanceAlongSpline(Distance,
+		// Calculation of rotation in space
+		FRotator CurrentSplineRotation = MovementDirectionSplineComponent->GetRotationAtDistanceAlongSpline(Distance,
 			ESplineCoordinateSpace::World);
+
 		CurrentSplineRotation.Pitch = 0.f;
 
+		// Setting a new location and rotation
 		MeshComponent->SetWorldLocationAndRotation(CurrentSplineLocation, CurrentSplineRotation);
 	}
 	else
 	{
+		// Setting a new position
 		MeshComponent->SetWorldLocation(CurrentSplineLocation);
 	}
 }
@@ -96,8 +116,8 @@ void AMovingPlatform::Activate()
 
 	if (MoveTime == 0)
 	{
-		UE_LOG(MovingPlatform, Warning, TEXT("%s: Move Time is 0"), *GetName());
-
+		UE_LOG(LogTemp, Warning, TEXT("AMovingPlatform::Activate: Platform can't be moved because MoveTime is 0!"));
+		
 		return;
 	}
 
@@ -123,19 +143,19 @@ void AMovingPlatform::Deactivate()
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
-	if (!bLoop)
+	// Infinite movement when activated and stop in place when deactivated
+	if (bLoop) return;
+	
+	// Reverse with or without delay
+	if (EndDelay == 0)
 	{
-		// Reverse with or without delay
-		if (EndDelay == 0)
-		{
+		MovementTimeline.Reverse();
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(MoveTimer, [this]{
 			MovementTimeline.Reverse();
-		}
-		else
-		{
-			GetWorldTimerManager().SetTimer(MoveTimer, [this]{
-				MovementTimeline.Reverse();
-			}, EndDelay, false);
-		}
+		}, EndDelay, false);
 	}
 }
 

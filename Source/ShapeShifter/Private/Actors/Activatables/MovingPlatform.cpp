@@ -20,7 +20,7 @@ void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (MovementCurve->IsValidLowLevel())
+	if (!IsValid(MovementCurve))
 	{
 		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
 		
@@ -30,7 +30,7 @@ void AMovingPlatform::BeginPlay()
 	// Duplicate curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
-	if (MovementCurve->IsValidLowLevel())
+	if (!IsValid(MovementCurve))
 	{
 		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
 

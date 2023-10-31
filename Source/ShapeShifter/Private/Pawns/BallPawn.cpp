@@ -24,8 +24,8 @@ ABallPawn::ABallPawn()
 	FormMasses.Add(EBallPawnForm::Metal, 2);
 
 	// Add default BuoyancyData to all forms
-	FormBuoyancyData.Add(EBallPawnForm::Rubber, FBuoyancyData());
-	FormBuoyancyData.Add(EBallPawnForm::Metal, FBuoyancyData());
+	FormBuoyancyData.Add(EBallPawnForm::Rubber);
+	FormBuoyancyData.Add(EBallPawnForm::Metal);
 }
 
 void ABallPawn::SetupComponents()

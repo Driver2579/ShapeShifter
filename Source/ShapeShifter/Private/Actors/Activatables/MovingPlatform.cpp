@@ -55,6 +55,12 @@ void AMovingPlatform::BeginPlay()
 	// Set the timeline length mode based on the last key point of the curve and set the timeline to cycle
 	MovementTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
 	MovementTimeline.SetLooping(bLoop);
+
+
+	if (bActive)
+	{
+		Activate();
+	}
 }
 
 void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)

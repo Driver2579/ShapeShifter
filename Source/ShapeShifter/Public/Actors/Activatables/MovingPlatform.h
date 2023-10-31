@@ -54,18 +54,20 @@ protected:
 	float EndDelay = 0;
 
 	// Whether the platform will turn towards the route or not
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bRotate = false;
 
 	// Infinite movement when activated and stop in place when deactivated
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bLoop = false;
-
+	
 	UFUNCTION()
 	void ProcessMovementTimeline(const float Value);
 
 private:
+	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
+	
 	FTimeline MovementTimeline;
 	FTimerHandle MoveTimer;
 };

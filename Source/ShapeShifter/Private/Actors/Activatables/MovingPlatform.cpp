@@ -9,7 +9,7 @@ AMovingPlatform::AMovingPlatform()
 	SceneComponent =  CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = SceneComponent;
 	
-	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movment Direction Spline"));
+	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
 	MovementDirectionSplineComponent->SetupAttachment(RootComponent);
 	
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
@@ -30,13 +30,6 @@ void AMovingPlatform::BeginPlay()
 	// Duplicate curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
-	if (!IsValid(MovementCurve))
-	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
-
-		return;
-	}
-	
 	// Change animation time by MoveTime
 	for (FRichCurveKey& Key : MovementCurve->FloatCurve.Keys)
 	{
@@ -52,7 +45,7 @@ void AMovingPlatform::BeginPlay()
 	
 	MeshComponent->SetWorldLocation(SplineLocation);
 
-	//Create a delegate to handle value changes on the timeline
+	// Add an event to handle value changes on the timeline
 	FOnTimelineFloat ProgressFunction;
 	ProgressFunction.BindUFunction(this, TEXT("ProcessMovementTimeline"));
 	
@@ -91,43 +84,38 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
-	if (bRotate)
-	{
-		// Calculation of rotation in space
-		FRotator CurrentSplineRotation = MovementDirectionSplineComponent->GetRotationAtDistanceAlongSpline(Distance,
-			ESplineCoordinateSpace::World);
+	// Setting new position for platform
+	MeshComponent->SetWorldLocation(CurrentSplineLocation);
 
-		CurrentSplineRotation.Pitch = 0.f;
-
-		// Setting a new location and rotation
-		MeshComponent->SetWorldLocationAndRotation(CurrentSplineLocation, CurrentSplineRotation);
-	}
-	else
+	// The platform has shifted in the indicated direction
+	if (!bRotate)
 	{
-		// Setting a new position
-		MeshComponent->SetWorldLocation(CurrentSplineLocation);
+		return;
 	}
+	
+	// Calculation of rotation in space
+	FRotator CurrentSplineRotation = MovementDirectionSplineComponent->GetRotationAtDistanceAlongSpline(Distance,
+		ESplineCoordinateSpace::World);
+	
+	CurrentSplineRotation.Pitch = 0.f;
+
+	// Setting new location and rotation for platform
+	MeshComponent->SetWorldRotation(CurrentSplineRotation);
 }
 
 
 void AMovingPlatform::Activate()
 {
-	bIsActive = true;
-
-	if (MoveTime == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("AMovingPlatform::Activate: Platform can't be moved because MoveTime is 0!"));
-		
-		return;
-	}
-
+	bActive = true;
+	
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
-	// Start with or without delay
+	// Start movement immediately if StartDelay is 0
 	if (StartDelay == 0)
 	{
 		MovementTimeline.Play();
 	}
+	// Start movement with delay in another case
 	else
 	{
 		GetWorldTimerManager().SetTimer(MoveTimer, [this]() {
@@ -138,20 +126,24 @@ void AMovingPlatform::Activate()
 
 void AMovingPlatform::Deactivate()
 {
-	bIsActive = false;
+	bActive = false;
 	MovementTimeline.Stop();
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
-	// Infinite movement when activated and stop in place when deactivated
-	if (bLoop) return;
-	
-	// Reverse with or without delay
+	// If the platform is not loop it should not move to the starting location
+	if (bLoop)
+	{
+		return;
+	}
+
+	// Start reversing movement immediately if EndDelay is 0
 	if (EndDelay == 0)
 	{
 		MovementTimeline.Reverse();
 	}
-	else
+	// Start reversing with delay in another case
+	else 
 	{
 		GetWorldTimerManager().SetTimer(MoveTimer, [this]{
 			MovementTimeline.Reverse();
@@ -161,5 +153,5 @@ void AMovingPlatform::Deactivate()
 
 bool AMovingPlatform::IsActive() const
 {
-	return bIsActive;
+	return bActive;
 }

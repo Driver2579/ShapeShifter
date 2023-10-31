@@ -18,9 +18,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+
+	virtual bool IsActive() const override final;
+
 	virtual void Activate() override;
 	virtual void Deactivate() override;
-	virtual bool IsActive() const override;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -29,31 +31,29 @@ protected:
 	UPROPERTY()
 	USceneComponent* SceneComponent;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USplineComponent* MovementDirectionSplineComponent;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MovingPlatform")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComponent;
 	
-	/**
-	 * Should display the dependence of location on the route on time
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
+	// Should display the dependence of location on the route on time
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
 	UCurveFloat* MovementCurve;
 
 	// Time it takes the platform to complete the route
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform", meta = (ClampMin = "0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0.01"))
 	float MoveTime = 1;
 
-	// Time it takes the platform to complete the route
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform", meta = (ClampMin = "0"))
+	// Delay before starting to move
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	float StartDelay = 0;
 
 	// Delay before starting to move back
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform", meta = (ClampMin = "0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	float EndDelay = 0;
 
-	// Should the platform be turned towards the route
+	// Whether the platform will turn towards the route or not
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MovingPlatform")
 	bool bRotate = false;
 
@@ -65,7 +65,7 @@ protected:
 	void ProcessMovementTimeline(const float Value);
 
 private:
-	bool bIsActive = false;
+	bool bActive = false;
 	FTimeline MovementTimeline;
 	FTimerHandle MoveTimer;
 };

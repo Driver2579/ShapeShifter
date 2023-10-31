@@ -55,7 +55,7 @@ private:
 	 * Actors in this array must implement Activatable interface. They will be activated or deactivated on overlap
 	 * depending on their current state
 	 */
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditInstanceOnly, Category = "Activation")
 	TArray<AActor*> ActorsToSwitchActivation;
 
 	void SwitchActorsActivation() const;

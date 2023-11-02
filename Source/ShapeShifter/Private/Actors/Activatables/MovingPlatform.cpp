@@ -6,7 +6,7 @@ AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	SceneComponent =  CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = SceneComponent;
 	
 	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
@@ -36,10 +36,9 @@ void AMovingPlatform::BeginPlay()
 		Key.Time *= MoveTime;
 	}
 
-	// Calibrate the spline location of mesh
+	// Move platform to starting point
 	ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 
-	// Calibrate the world location of mesh 
 	const FVector SplineLocation = MovementDirectionSplineComponent->GetLocationAtSplinePoint(0,
 		ESplineCoordinateSpace::World);
 	
@@ -52,15 +51,14 @@ void AMovingPlatform::BeginPlay()
 	// Add motion curve interpolation to the timeline using the given delegate
 	MovementTimeline.AddInterpFloat(MovementCurve, ProgressFunction);
 
-	// Set the timeline length mode based on the last key point of the curve and set the timeline to cycle
+	// Set the timeline length mode based on the last key point of the curve
 	MovementTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
+
+	// Set the timeline to cycle
 	MovementTimeline.SetLooping(bLoop);
 
-
-	if (bActive)
-	{
-		Activate();
-	}
+	// Set to activated location if necessary
+	SetActive(bActive);
 }
 
 void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -74,7 +72,7 @@ void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Update platform position
+	// Update platform location
 	if (MovementTimeline.IsPlaying())
 	{
 		MovementTimeline.TickTimeline(DeltaTime);	
@@ -90,7 +88,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
-	// Setting new position for platform
+	// Set new location for platform
 	MeshComponent->SetWorldLocation(CurrentSplineLocation);
 
 	// The platform has shifted in the indicated direction
@@ -109,6 +107,10 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	MeshComponent->SetWorldRotation(CurrentSplineRotation);
 }
 
+bool AMovingPlatform::IsActive() const
+{
+	return bActive;
+}
 
 void AMovingPlatform::Activate()
 {
@@ -137,7 +139,7 @@ void AMovingPlatform::Deactivate()
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
-	// If the platform is not loop it should not move to the starting location
+	// If the platform is not looped it should not move to the starting location
 	if (bLoop)
 	{
 		return;
@@ -151,13 +153,8 @@ void AMovingPlatform::Deactivate()
 	// Start reversing with delay in another case
 	else 
 	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]{
+		GetWorldTimerManager().SetTimer(MoveTimer, [this] {
 			MovementTimeline.Reverse();
 		}, EndDelay, false);
 	}
-}
-
-bool AMovingPlatform::IsActive() const
-{
-	return bActive;
 }

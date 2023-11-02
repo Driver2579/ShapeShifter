@@ -37,20 +37,20 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComponent;
 	
-	// Should display the dependence of location on the route on time
+	// Should display the time dependence of the location on the route
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
 	UCurveFloat* MovementCurve;
 
 	// Time it takes the platform to complete the route
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0.01"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.01))
 	float MoveTime = 1;
 
 	// Delay before starting to move
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
 	float StartDelay = 0;
 
-	// Delay before starting to move back
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	// Delay before starting to move backwards
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
 	float EndDelay = 0;
 
 	// Whether the platform will turn towards the route or not

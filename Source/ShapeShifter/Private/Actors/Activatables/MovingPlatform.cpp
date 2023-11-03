@@ -6,8 +6,7 @@ AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	RootComponent = SceneComponent;
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	
 	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
 	MovementDirectionSplineComponent->SetupAttachment(RootComponent);
@@ -103,7 +102,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	
 	CurrentSplineRotation.Pitch = 0.f;
 
-	// Setting new location and rotation for platform
+	// Set new location and rotation for platform
 	MeshComponent->SetWorldRotation(CurrentSplineRotation);
 }
 

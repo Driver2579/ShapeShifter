@@ -28,9 +28,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UPROPERTY()
-	USceneComponent* SceneComponent;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USplineComponent* MovementDirectionSplineComponent;
 	
@@ -60,7 +57,11 @@ protected:
 	// Infinite movement when activated and stop in place when deactivated
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bLoop = false;
-	
+
+	/**
+	 * Handles the movement of the platform along the spline.
+	 * @param Value Position of the platform on the spline (from 0 to 1).
+	 */
 	UFUNCTION()
 	void ProcessMovementTimeline(const float Value);
 

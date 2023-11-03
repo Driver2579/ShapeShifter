@@ -241,6 +241,12 @@ void ABallPawn::Look(const FInputActionValue& Value)
 
 void ABallPawn::Jump(const FInputActionValue& Value)
 {
+	// Check if we're ever able to jump. Return if not.
+	if (!bCanEverJump)
+	{
+		return;
+	}
+
 	// Disable jumping if we're falling
 	if (IsFalling())
 	{
@@ -404,6 +410,12 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 void ABallPawn::ChangeForm()
 {
+	// Check if we're ever able to change form. Return if not.
+	if (!bCanEverChangeForm)
+	{
+		return;
+	}
+
 	switch (CurrentForm)
 	{
 	// Set Metal form if CurrentForm is Rubber
@@ -434,6 +446,12 @@ void ABallPawn::CreateClone()
 
 void ABallPawn::SpawnClone()
 {
+	// Check if we're ever able to create clone. Return if not.
+	if (!bCanEverCreateClone)
+	{
+		return;
+	}
+
 	// Destroy old Clone if it was created before
 	if (Clone.IsValid())
 	{

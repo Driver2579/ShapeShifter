@@ -102,6 +102,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float MovementSpeed = 150;
 
+	// Whether player can jump or not
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	bool bCanEverJump = true;
+
 	bool bCanJump = true;
 
 	/**
@@ -114,8 +118,12 @@ private:
 	// Velocity from previous tick
 	FVector LastUpdateVelocity;
 
-	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, EditCondition = "bCanEverJump"))
 	float JumpImpulse = 500;
+
+	// Whether player can change form or not
+	UPROPERTY(EditAnywhere, Category = "Form")
+	bool bCanEverChangeForm = true; 
 
 	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
 
@@ -128,12 +136,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Physics")
 	TMap<EBallPawnForm, float> FormMasses;
 
+	// Whether player can create clone or not
+	UPROPERTY(EditAnywhere, Category = "Clone")
+	bool bCanEverCreateClone = true;
+
 	TWeakObjectPtr<ABallPawn> Clone;
 
 	FTimerHandle CreateCloneTimer;
 
 	// A delay before Clone will be created
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	float CreateCloneRate = 3;
 
 	FTransform CloneSpawnTransform;
@@ -152,11 +164,11 @@ private:
 	TEnumAsByte<ECollisionChannel> SpawnCloneCheckTraceChanel = ECC_GameTraceChannel3;
 
 	// If true than Clone will be destroyed when changing Form
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
 
 	// This tag will work only if CurrentForm is Metal
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Laser")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
 
 	/**

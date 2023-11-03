@@ -102,7 +102,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	
 	CurrentSplineRotation.Pitch = 0.f;
 
-	// Set new location and rotation for platform
+	// Set new rotation for platform
 	MeshComponent->SetWorldRotation(CurrentSplineRotation);
 }
 

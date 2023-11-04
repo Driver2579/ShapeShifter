@@ -20,7 +20,7 @@ public class ShapeShifter : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Niagara" });
 
 		// Water
-		PrivateDependencyModuleNames.AddRange(new string[] { "Water", "Water" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Water" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

@@ -28,6 +28,7 @@ public:
 
 	bool IsFalling() const;
 
+	EBallPawnForm GetForm() const;
 	void SetForm(const EBallPawnForm NewForm);
 
 	// Change form to the next one. Usually called from ChangeFormAction InputAction.
@@ -35,6 +36,9 @@ public:
 
 	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
 	void CreateClone();
+
+	bool IsSwimmingOnWaterSurface() const;
+	void SetSwimmingOnWaterSurface(const bool bNewSwimmingOnWaterSurface);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -120,6 +124,17 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, EditCondition = "bCanEverJump"))
 	float JumpImpulse = 500;
+
+	bool bSwimmingOnWaterSurface = false;
+
+	FTimerHandle JumpOnWaterSurfaceTimer;
+
+	// Delay between jumping on water surface
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0.1, EditCondition = "bCanEverJump"))
+	float JumpOnWaterSurfaceDelay = 0.75;
+
+	// Enable jumping in JumpOnWaterSurfaceDelay if swimming on water surface when execute
+	void EnableJumpIfSwimmingWithDelay();
 
 	// Whether player can change form or not
 	UPROPERTY(EditAnywhere, Category = "Form")

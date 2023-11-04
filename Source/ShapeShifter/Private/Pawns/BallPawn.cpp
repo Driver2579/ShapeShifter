@@ -22,10 +22,6 @@ ABallPawn::ABallPawn()
 
 	FormMasses.Add(EBallPawnForm::Rubber, 1);
 	FormMasses.Add(EBallPawnForm::Metal, 2);
-
-	// Add default BuoyancyData to all forms
-	FormBuoyancyData.Add(EBallPawnForm::Rubber);
-	FormBuoyancyData.Add(EBallPawnForm::Metal);
 }
 
 void ABallPawn::SetupComponents()
@@ -34,6 +30,7 @@ void ABallPawn::SetupComponents()
 	RootComponent = MeshComponent;
 
 	MeshComponent->SetCollisionProfileName(TEXT("Pawn"));
+	MeshComponent->bMultiBodyOverlap = true;
 
 	MeshComponent->SetSimulatePhysics(true);
 
@@ -83,6 +80,7 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+	GetWorldTimerManager().ClearTimer(JumpOnWaterSurfaceTimer);
 }
 
 void ABallPawn::Tick(float DeltaSeconds)
@@ -247,11 +245,14 @@ void ABallPawn::Jump(const FInputActionValue& Value)
 		return;
 	}
 
-	// Disable jumping if we're falling
-	if (IsFalling())
+	// Disable jumping if we're falling and if we're not swimming on water surface
+	if (IsFalling() && !bSwimmingOnWaterSurface)
 	{
 		bCanJump = false;
 	}
+
+	// We're doing it here to be able to jump if BallPawn is swimming but didn't has enough force to jump from water
+	EnableJumpIfSwimmingWithDelay();
 
 	// Return if we can't jump
 	if (!bCanJump)
@@ -308,6 +309,29 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 	{
 		bCanJump = true;
 	}
+}
+
+void ABallPawn::EnableJumpIfSwimmingWithDelay()
+{
+	// Don't do anything if timer was already set
+	if (GetWorldTimerManager().IsTimerActive(JumpOnWaterSurfaceTimer))
+	{
+		return;
+	}
+
+	// Set JumpOnWaterSurfaceTimer with JumpOnWaterSurfaceDelay. Enable jumping if swimming on execute.
+	GetWorldTimerManager().SetTimer(JumpOnWaterSurfaceTimer, [this]()
+	{
+		if (bSwimmingOnWaterSurface)
+		{
+			bCanJump = true;
+		}
+	}, JumpOnWaterSurfaceDelay, false);
+}
+
+EBallPawnForm ABallPawn::GetForm() const
+{
+	return CurrentForm;
 }
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
@@ -391,20 +415,33 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Find Buoyancy associated with NewForm in FormBuoyancyData
 	const FBuoyancyData* BuoyancyData = FormBuoyancyData.Find(NewForm);
 
-	// This will be called only if we already begun play to avoid crash in editor
-	if (HasActorBegunPlay())
+	/**
+	 * The next functionality will be called only if we already begun play to avoid crash in editor.
+	 * We don't need to check it in packaged project.
+	 */
+#if WITH_EDITOR
+	if (!HasActorBegunPlay())
 	{
-		// Set BuoyancyData as BuoyancyComponent BuoyancyData if it's valid
-		if (BuoyancyData)
-		{
-			BuoyancyComponent->BuoyancyData = *BuoyancyData;
-		}
-		// Send Warning log in another case
-		else
-		{
-			UE_LOG(LogTemp, Warning,
-				TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
-		}
+		return;
+	}
+#endif
+
+	// BallPawn can swim on water surface only in Rubber form
+	if (CurrentForm != EBallPawnForm::Rubber)
+	{
+		bSwimmingOnWaterSurface = false;
+	}
+
+	// Set BuoyancyData as BuoyancyComponent BuoyancyData if it's valid
+	if (BuoyancyData)
+	{
+		BuoyancyComponent->BuoyancyData = *BuoyancyData;
+	}
+	// Send Warning log in another case
+	else
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
 	}
 }
 
@@ -518,5 +555,21 @@ void ABallPawn::InitWaterFluidSimulation()
 	for (AActor* It : WaterFluidActors)
 	{
 		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius, WaterFluidForceStrength);
+	}
+}
+
+bool ABallPawn::IsSwimmingOnWaterSurface() const
+{
+	return bSwimmingOnWaterSurface;
+}
+
+void ABallPawn::SetSwimmingOnWaterSurface(const bool bNewSwimmingOnWaterSurface)
+{
+	bSwimmingOnWaterSurface = bNewSwimmingOnWaterSurface;
+
+	// Try to enable jumping if we're swimming on water surface
+	if (bSwimmingOnWaterSurface)
+	{
+		EnableJumpIfSwimmingWithDelay();
 	}
 }

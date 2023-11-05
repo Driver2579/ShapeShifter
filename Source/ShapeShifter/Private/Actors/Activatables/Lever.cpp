@@ -69,7 +69,7 @@ void ALever::Tick(float DeltaTime)
 
 	LeverMeshComponent->SetRelativeRotation(NewRotation);
 
-	// We need this because the default tolerance in Equals function is too small and it could fail sometimes
+	// We need this because the default Tolerance in Equals function is too small and it could fail sometimes
 	const float Tolerance = 0.001;
 
 	if (LeverMeshComponent->GetRelativeRotation().Equals(LeverMeshTargetRotation, Tolerance))

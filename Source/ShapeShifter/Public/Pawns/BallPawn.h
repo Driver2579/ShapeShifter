@@ -37,8 +37,12 @@ public:
 	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
 	void CreateClone();
 
+	/**
+	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber
+	 */
 	bool IsSwimmingOnWaterSurface() const;
-	void SetSwimmingOnWaterSurface(const bool bNewSwimmingOnWaterSurface);
+
+	void SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -125,13 +129,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, EditCondition = "bCanEverJump"))
 	float JumpImpulse = 500;
 
-	bool bSwimmingOnWaterSurface = false;
+	bool bOverlappingWaterJumpZone = false;
 
 	FTimerHandle JumpOnWaterSurfaceTimer;
 
 	// Delay between jumping on water surface
-	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0.1, EditCondition = "bCanEverJump"))
-	float JumpOnWaterSurfaceDelay = 0.75;
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0.1, ClampMax = 1, EditCondition = "bCanEverJump"))
+	float JumpOnWaterSurfaceDelay = 0.5;
 
 	// Enable jumping in JumpOnWaterSurfaceDelay if swimming on water surface when execute
 	void EnableJumpIfSwimmingWithDelay();

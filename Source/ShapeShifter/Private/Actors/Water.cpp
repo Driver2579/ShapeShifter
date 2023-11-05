@@ -27,10 +27,9 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 {
 	ABallPawn* BallPawn = Cast<ABallPawn>(OtherActor);
 
-	// We enable BallPawn jumping only if he is in Rubber form now
-	if (IsValid(BallPawn) && BallPawn->GetForm() == EBallPawnForm::Rubber)
+	if (IsValid(BallPawn))
 	{
-		BallPawn->SetSwimmingOnWaterSurface(true);
+		BallPawn->SetOverlappingWaterJumpZone(true);
 	}
 }
 
@@ -41,6 +40,6 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 
 	if (IsValid(BallPawn))
 	{
-		BallPawn->SetSwimmingOnWaterSurface(false);
+		BallPawn->SetOverlappingWaterJumpZone(false);
 	}
 }

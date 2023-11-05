@@ -246,13 +246,16 @@ void ABallPawn::Jump(const FInputActionValue& Value)
 	}
 
 	// Disable jumping if we're falling and if we're not swimming on water surface
-	if (IsFalling() && !bSwimmingOnWaterSurface)
+	if (IsFalling() && !IsSwimmingOnWaterSurface())
 	{
 		bCanJump = false;
 	}
 
 	// We're doing it here to be able to jump if BallPawn is swimming but didn't has enough force to jump from water
-	EnableJumpIfSwimmingWithDelay();
+	if (bOverlappingWaterJumpZone)
+	{
+		EnableJumpIfSwimmingWithDelay();
+	}
 
 	// Return if we can't jump
 	if (!bCanJump)
@@ -322,7 +325,7 @@ void ABallPawn::EnableJumpIfSwimmingWithDelay()
 	// Set JumpOnWaterSurfaceTimer with JumpOnWaterSurfaceDelay. Enable jumping if swimming on execute.
 	GetWorldTimerManager().SetTimer(JumpOnWaterSurfaceTimer, [this]()
 	{
-		if (bSwimmingOnWaterSurface)
+		if (IsSwimmingOnWaterSurface())
 		{
 			bCanJump = true;
 		}
@@ -426,10 +429,16 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	}
 #endif
 
-	// BallPawn can swim on water surface only in Rubber form
-	if (CurrentForm != EBallPawnForm::Rubber)
+	// Disable jumping if BallPawn is overlapping water zone but he isn't in Rubber form
+	if (bOverlappingWaterJumpZone)
 	{
-		bSwimmingOnWaterSurface = false;
+		if (CurrentForm != EBallPawnForm::Rubber)
+		{
+			bCanJump = false;
+		}
+
+		// Enable jumping back if swimming on water surface, but with delay to avoid jump spamming
+		EnableJumpIfSwimmingWithDelay();
 	}
 
 	// Set BuoyancyData as BuoyancyComponent BuoyancyData if it's valid
@@ -560,15 +569,21 @@ void ABallPawn::InitWaterFluidSimulation()
 
 bool ABallPawn::IsSwimmingOnWaterSurface() const
 {
-	return bSwimmingOnWaterSurface;
+	return bOverlappingWaterJumpZone && CurrentForm == EBallPawnForm::Rubber;
 }
 
-void ABallPawn::SetSwimmingOnWaterSurface(const bool bNewSwimmingOnWaterSurface)
+void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone)
 {
-	bSwimmingOnWaterSurface = bNewSwimmingOnWaterSurface;
+	// Don't do anything if current and new states are same
+	if (bOverlappingWaterJumpZone == bNewOverlappingWaterJumpZone)
+	{
+		return;
+	}
 
-	// Try to enable jumping if we're swimming on water surface
-	if (bSwimmingOnWaterSurface)
+	bOverlappingWaterJumpZone = bNewOverlappingWaterJumpZone;
+
+	// Try to enable jumping if we're overlapping water jump zone
+	if (bOverlappingWaterJumpZone)
 	{
 		EnableJumpIfSwimmingWithDelay();
 	}

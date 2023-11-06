@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/Activatables/Lever.h"
+#include "Actors/Activatables/ActivationSwitchers/Lever.h"
 
 #include "Components/BoxComponent.h"
 
@@ -55,8 +55,8 @@ void ALever::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Return to safe performance if we don't need to rotate
-	if (!bRotate)
+	// Return to safe performance if we don't need to rotate LeverMeshComponent
+	if (!bRotateLeverMesh)
 	{
 		return;
 	}
@@ -74,7 +74,7 @@ void ALever::Tick(float DeltaTime)
 
 	if (LeverMeshComponent->GetRelativeRotation().Equals(LeverMeshTargetRotation, Tolerance))
 	{
-		bRotate = false;
+		bRotateLeverMesh = false;
 	}
 }
 
@@ -113,16 +113,17 @@ bool ALever::IsActive() const
 
 void ALever::Activate()
 {
-	// We don't need to do anything if Lever is already inactive
+	// We don't need to do anything if Lever is already active
 	if (bActive)
 	{
 		return;
 	}
 
 	bActive = true;
+	OnActiveSwitch();
 
 	// Turn on LeverMeshComponent rotation because activation was switched
-	bRotate = true;
+	bRotateLeverMesh = true;
 }
 
 void ALever::Deactivate()
@@ -134,7 +135,13 @@ void ALever::Deactivate()
 	}
 
 	bActive = false;
+	OnActiveSwitch();
+}
 
+void ALever::OnActiveSwitch()
+{
 	// Turn on LeverMeshComponent rotation because activation was switched
-	bRotate = true;
+	bRotateLeverMesh = true;
+
+	SwitchActorsActivation();
 }

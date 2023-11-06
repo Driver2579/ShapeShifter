@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "ActivationSwitcher.h"
 #include "Interfaces/Activatable.h"
 #include "Lever.generated.h"
 
 class UBoxComponent;
 
 UCLASS()
-class SHAPESHIFTER_API ALever : public AActor, public IActivatable
+class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this actor's properties
 	ALever();
 
@@ -23,7 +23,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual bool IsActive() const override final;
+	virtual bool IsActive() const override;
 
 	virtual void Activate() override;
 	virtual void Deactivate() override;
@@ -52,11 +52,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
+	void OnActiveSwitch();
+
 	// Velocity needed for physics component to activate or deactivate the lever
 	UPROPERTY(EditDefaultsOnly, Category = "Activation")
 	float VelocityToSwitchActivation = 10;
 
-	bool bRotate = false;
+	bool bRotateLeverMesh = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
 	FRotator LeverMeshActiveRotation = FRotator(0, 0, 110);
@@ -65,5 +67,5 @@ private:
 	FRotator LeverMeshInactiveRotation = FRotator(0, 0, 70);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
-	float RotationSpeed = 20;
+	float RotationSpeed = 25;
 };

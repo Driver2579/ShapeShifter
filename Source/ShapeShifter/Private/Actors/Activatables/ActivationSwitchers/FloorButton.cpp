@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/Activatables/FloorButton.h"
+#include "Actors/Activatables/ActivationSwitchers/FloorButton.h"
 
 AFloorButton::AFloorButton()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this actor to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
 
 	SetupComponents();
@@ -38,8 +38,8 @@ void AFloorButton::BeginPlay()
 {
 	Super::BeginPlay();
 
-	StartButtonLocation = ButtonMeshComponent->GetComponentLocation();
-	EndButtonLocation = StartButtonLocation - FVector(0, 0, MoveOffset);
+	ButtonMeshInactiveLocation = ButtonMeshComponent->GetRelativeLocation();
+	ButtonMeshActiveLocation = ButtonMeshInactiveLocation - FVector(0, 0, MoveOffset);
 
 	ButtonTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AFloorButton::OnButtonTriggerBeginOverlap);
 	ButtonTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AFloorButton::OnButtonTriggerEndOverlap);
@@ -49,20 +49,18 @@ void AFloorButton::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector NewLocation;
+	// Get ButtonMeshTargetLocation by bActive state
+	const FVector& ButtonMeshTargetLocation = bActive ? ButtonMeshActiveLocation : ButtonMeshInactiveLocation;
 
-	if (IsActive())
+	if (ButtonMeshComponent->GetRelativeLocation().Equals(ButtonMeshTargetLocation))
 	{
-		NewLocation = FMath::VInterpConstantTo(ButtonMeshComponent->GetComponentLocation(),
-			EndButtonLocation, DeltaTime, MoveSpeed);
-	}
-	else
-	{
-		NewLocation = FMath::VInterpConstantTo(ButtonMeshComponent->GetComponentLocation(),
-			StartButtonLocation, DeltaTime, MoveSpeed);
+		return;
 	}
 
-	ButtonMeshComponent->SetWorldLocation(NewLocation);
+	const FVector& NewLocation = FMath::VInterpConstantTo(ButtonMeshComponent->GetRelativeLocation(),
+		ButtonMeshTargetLocation, DeltaTime, MoveSpeed);
+
+	ButtonMeshComponent->SetRelativeLocation(NewLocation);
 }
 
 void AFloorButton::OnButtonTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -77,8 +75,9 @@ void AFloorButton::OnButtonTriggerBeginOverlap(UPrimitiveComponent* OverlappedCo
 void AFloorButton::OnButtonTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	TArray<AActor*> OverlappingActors;
-	GetOverlappingActors(OverlappingActors);
+	// We use TSet here instead of TArray because GetOverlappingActors with TSet overload is better for performance
+	TSet<AActor*> OverlappingActors;
+	ButtonTriggerComponent->GetOverlappingActors(OverlappingActors);
 
 	OverlappingActors.Remove(this);
 
@@ -88,8 +87,19 @@ void AFloorButton::OnButtonTriggerEndOverlap(UPrimitiveComponent* OverlappedComp
 	}
 }
 
+bool AFloorButton::IsActive() const
+{
+	return bActive;
+}
+
 void AFloorButton::Activate()
 {
+	// We don't need to do anything if it's already active
+	if (bActive)
+	{
+		return;
+	}
+
 	bActive = true;
 
 	SwitchActorsActivation();
@@ -97,29 +107,13 @@ void AFloorButton::Activate()
 
 void AFloorButton::Deactivate()
 {
+	// We don't need to do anything if it's already inactive
+	if (!bActive)
+	{
+		return;
+	}
+
 	bActive = false;
 
 	SwitchActorsActivation();
-}
-
-bool AFloorButton::IsActive() const
-{
-	return bActive;
-}
-
-void AFloorButton::SwitchActorsActivation() const
-{
-	// Iterate through ActorsToSwitchActivation
-	for (AActor* It : ActorsToSwitchActivation)
-	{
-		// Cast It to ActorToSwitchActivation to use Activatable interface functions
-		IActivatable* ActorToSwitchActivation = Cast<IActivatable>(It);
-
-		// Check if ActorToSwitchActivation is valid
-		if (ActorToSwitchActivation)
-		{
-			// Switch Active state
-			ActorToSwitchActivation->SetActive(!ActorToSwitchActivation->IsActive());
-		}
-	}
 }

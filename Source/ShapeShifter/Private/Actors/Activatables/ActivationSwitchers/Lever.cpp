@@ -95,6 +95,7 @@ void ALever::OnLeverMeshComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	{
 		Activate();
 
+		// Reset OtherComp velocity to make it look more physically correct
 		OtherComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 	// Deactivate the Lever if OtherComp hit the bottom of it and clear OtherComp velocity
@@ -102,6 +103,7 @@ void ALever::OnLeverMeshComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	{
 		Deactivate();
 
+		// Reset OtherComp velocity to make it look more physically correct
 		OtherComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 }
@@ -121,9 +123,6 @@ void ALever::Activate()
 
 	bActive = true;
 	OnActiveSwitch();
-
-	// Turn on LeverMeshComponent rotation because activation was switched
-	bRotateLeverMesh = true;
 }
 
 void ALever::Deactivate()

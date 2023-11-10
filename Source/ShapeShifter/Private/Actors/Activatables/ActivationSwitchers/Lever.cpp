@@ -17,10 +17,14 @@ ALever::ALever()
 	LeverMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Lever Mesh"));
 	LeverMeshComponent->SetupAttachment(RootComponent);
 
-	SwitchActivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activate Zone"));
-	SwitchActivationZoneComponent->SetupAttachment(LeverMeshComponent);
+	ActivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activation Zone"));
+	ActivationZoneComponent->SetupAttachment(LeverMeshComponent);
 
-	SwitchActivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	DeactivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivation Zone"));
+    DeactivationZoneComponent->SetupAttachment(LeverMeshComponent);
+
+	ActivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	DeactivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 }
 
 void ALever::OnConstruction(const FTransform& Transform)
@@ -41,8 +45,9 @@ void ALever::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SwitchActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this,
-		&ALever::OnSwitchActivationComponentBeginOverlap);
+	ActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnActivationZoneComponentBeginOverlap);
+	DeactivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this,
+		&ALever::OnDeactivationZoneComponentBeginOverlap);
 }
 
 void ALever::Tick(float DeltaTime)
@@ -72,8 +77,19 @@ void ALever::Tick(float DeltaTime)
 	}
 }
 
-void ALever::OnSwitchActivationComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void ALever::OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	SetActiveIfHaveTo(OtherComp, true);
+}
+
+void ALever::OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	SetActiveIfHaveTo(OtherComp, false);
+}
+
+void ALever::SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive)
 {
 	// We don't need to handle OtherComps without physics
 	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
@@ -84,13 +100,13 @@ void ALever::OnSwitchActivationComponentBeginOverlap(UPrimitiveComponent* Overla
 	// Get ZVelocity of OtherComp
 	const float ZVelocity = OtherComp->GetComponentVelocity().Z;
 
-	// Activate the Lever if OtherComp hit the top of it and clear OtherComp velocity
-	if (ZVelocity > VelocityToSwitchActivation)
+	// Activate the Lever if OtherComp overlap the top of it
+	if (bNewActive && ZVelocity > VelocityToSwitchActivation)
 	{
 		Activate();
 	}
-	// Deactivate the Lever if OtherComp hit the bottom of it and clear OtherComp velocity
-	else if (ZVelocity < -VelocityToSwitchActivation)
+	// Deactivate the Lever if OtherComp overlap the bottom of it
+	else if (!bNewActive && ZVelocity < -VelocityToSwitchActivation)
 	{
 		Deactivate();
 	}

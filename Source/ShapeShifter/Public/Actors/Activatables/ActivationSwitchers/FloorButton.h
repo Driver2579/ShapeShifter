@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "ActivationSwitcher.h"
 #include "Interfaces/Activatable.h"
 #include "FloorButton.generated.h"
 
 UCLASS()
-class SHAPESHIFTER_API AFloorButton : public AActor, public IActivatable
+class SHAPESHIFTER_API AFloorButton : public AActivationSwitcher, public IActivatable
 {
 	GENERATED_BODY()
 
@@ -19,10 +19,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual bool IsActive() const override;
+
 	virtual void Activate() override;
 	virtual void Deactivate() override;
-
-	virtual bool IsActive() const override final;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -31,7 +31,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* ButtonMeshComponent;
 
-	// This is used to generate overlap events with any collision shape. This component should not be visible
+	// This is used to generate overlap events with any collision shape. This component should not be visible.
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* ButtonTriggerComponent;
 
@@ -51,17 +51,11 @@ private:
 
 	bool bActive = false;
 
-	/**
-	 * Actors in this array must implement Activatable interface. They will be activated or deactivated on overlap
-	 * depending on their current state
-	 */
-	UPROPERTY(EditInstanceOnly)
-	TArray<AActor*> ActorsToSwitchActivation;
+	// ButtonMeshComponent location when pressed
+	FVector ButtonMeshActiveLocation;
 
-	void SwitchActorsActivation() const;
-
-	FVector StartButtonLocation;
-	FVector EndButtonLocation;
+	// ButtonMeshComponent location when released
+	FVector ButtonMeshInactiveLocation;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Button Movement")
 	float MoveOffset = 5;

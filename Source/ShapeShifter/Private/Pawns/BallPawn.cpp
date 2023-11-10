@@ -6,7 +6,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "BuoyancyComponent.h"
 
 ABallPawn::ABallPawn()
 {
@@ -28,6 +30,7 @@ void ABallPawn::SetupComponents()
 	RootComponent = MeshComponent;
 
 	MeshComponent->SetCollisionProfileName(TEXT("Pawn"));
+	MeshComponent->bMultiBodyOverlap = true;
 
 	MeshComponent->SetSimulatePhysics(true);
 
@@ -41,14 +44,19 @@ void ABallPawn::SetupComponents()
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
+
+	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
 }
 
 void ABallPawn::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	// Call SetForm in OnConstruction to preview CurrentForm and make it work after BeginPlay
+// This is just for preview in editor. We don't need to set it twice in packaged project.
+#if WITH_EDITOR
+	// Call SetForm in OnConstruction to preview CurrentForm
 	SetForm(CurrentForm);
+#endif
 }
 
 UStaticMeshComponent* ABallPawn::GetMesh() const
@@ -61,6 +69,10 @@ void ABallPawn::BeginPlay()
 	Super::BeginPlay();
 
 	InitDefaultMappingContext();
+	InitWaterFluidSimulation();
+
+	// Call SetForm with CurrentForm to apply everything related to it
+	SetForm(CurrentForm);
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -68,6 +80,7 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+	GetWorldTimerManager().ClearTimer(JumpOnWaterSurfaceTimer);
 }
 
 void ABallPawn::Tick(float DeltaSeconds)
@@ -226,10 +239,22 @@ void ABallPawn::Look(const FInputActionValue& Value)
 
 void ABallPawn::Jump(const FInputActionValue& Value)
 {
-	// Disable jumping if we're falling
-	if (IsFalling())
+	// Check if we're ever able to jump. Return if not.
+	if (!bCanEverJump)
+	{
+		return;
+	}
+
+	// Disable jumping if we're falling and if we're not swimming on water surface
+	if (IsFalling() && !IsSwimmingOnWaterSurface())
 	{
 		bCanJump = false;
+	}
+
+	// We're doing it here to be able to jump if BallPawn is swimming but didn't has enough force to jump from water
+	if (bOverlappingWaterJumpZone)
+	{
+		EnableJumpIfSwimmingWithDelay();
 	}
 
 	// Return if we can't jump
@@ -289,6 +314,29 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 	}
 }
 
+void ABallPawn::EnableJumpIfSwimmingWithDelay()
+{
+	// Don't do anything if timer was already set
+	if (GetWorldTimerManager().IsTimerActive(JumpOnWaterSurfaceTimer))
+	{
+		return;
+	}
+
+	// Set JumpOnWaterSurfaceTimer with JumpOnWaterSurfaceDelay. Enable jumping if swimming on execute.
+	GetWorldTimerManager().SetTimer(JumpOnWaterSurfaceTimer, [this]()
+	{
+		if (IsSwimmingOnWaterSurface())
+		{
+			bCanJump = true;
+		}
+	}, JumpOnWaterSurfaceDelay, false);
+}
+
+EBallPawnForm ABallPawn::GetForm() const
+{
+	return CurrentForm;
+}
+
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
 	// Destroy clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true
@@ -309,7 +357,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// Allow Laser reflection if CurrentForm is Metal
 	if (CurrentForm == EBallPawnForm::Metal)
 	{
-		Tags.Add(ReflectLaserTagName);
+		Tags.AddUnique(ReflectLaserTagName);
 	}
 	// Forbid Laser reflection in another case
 	else
@@ -319,7 +367,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 	/*
 	 * Find Material associated with NewForm in FormMaterials.
-	 * We call FindRef instead of Find to avoid pointer to pointer
+	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
 	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
 
@@ -337,7 +385,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 
 	/**
 	 * Find PhysicalMaterial associated with NewForm in FormPhysicalMaterials.
-	 * We call FindRef instead of Find to avoid pointer to pointer
+	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
 	UPhysicalMaterial* FormPhysicalMaterial = FormPhysicalMaterials.FindRef(NewForm);
 
@@ -366,10 +414,54 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Mass associated with NewForm in FormMasses"));
 	}
+
+	// Find Buoyancy associated with NewForm in FormBuoyancyData
+	const FBuoyancyData* BuoyancyData = FormBuoyancyData.Find(NewForm);
+
+	/**
+	 * The next functionality will be called only if we already begun play to avoid crash in editor.
+	 * We don't need to check it in packaged project.
+	 */
+#if WITH_EDITOR
+	if (!HasActorBegunPlay())
+	{
+		return;
+	}
+#endif
+
+	// Disable jumping if BallPawn is overlapping water zone but he isn't in Rubber form
+	if (bOverlappingWaterJumpZone)
+	{
+		if (CurrentForm != EBallPawnForm::Rubber)
+		{
+			bCanJump = false;
+		}
+
+		// Enable jumping back if swimming on water surface, but with delay to avoid jump spamming
+		EnableJumpIfSwimmingWithDelay();
+	}
+
+	// Set BuoyancyData as BuoyancyComponent BuoyancyData if it's valid
+	if (BuoyancyData)
+	{
+		BuoyancyComponent->BuoyancyData = *BuoyancyData;
+	}
+	// Send Warning log in another case
+	else
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
+	}
 }
 
 void ABallPawn::ChangeForm()
 {
+	// Check if we're ever able to change form. Return if not.
+	if (!bCanEverChangeForm)
+	{
+		return;
+	}
+
 	switch (CurrentForm)
 	{
 	// Set Metal form if CurrentForm is Rubber
@@ -400,6 +492,12 @@ void ABallPawn::CreateClone()
 
 void ABallPawn::SpawnClone()
 {
+	// Check if we're ever able to create clone. Return if not.
+	if (!bCanEverCreateClone)
+	{
+		return;
+	}
+
 	// Destroy old Clone if it was created before
 	if (Clone.IsValid())
 	{
@@ -447,4 +545,46 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+void ABallPawn::InitWaterFluidSimulation()
+{
+	if (!WaterFluidSimulationClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::InitWaterFluidSimulation: WaterFluidSimulationClass is invalid!"));
+
+		return;
+	}
+
+	// Get all WaterFluidActors on scene
+	TArray<AActor*> WaterFluidActors;
+	UGameplayStatics::GetAllActorsOfClass(this, WaterFluidSimulationClass, WaterFluidActors);
+
+	// Call RegisterDynamicForce for every water fluid Actor
+	for (AActor* It : WaterFluidActors)
+	{
+		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius, WaterFluidForceStrength);
+	}
+}
+
+bool ABallPawn::IsSwimmingOnWaterSurface() const
+{
+	return bOverlappingWaterJumpZone && CurrentForm == EBallPawnForm::Rubber;
+}
+
+void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone)
+{
+	// Don't do anything if current and new states are same
+	if (bOverlappingWaterJumpZone == bNewOverlappingWaterJumpZone)
+	{
+		return;
+	}
+
+	bOverlappingWaterJumpZone = bNewOverlappingWaterJumpZone;
+
+	// Try to enable jumping if we're overlapping water jump zone
+	if (bOverlappingWaterJumpZone)
+	{
+		EnableJumpIfSwimmingWithDelay();
+	}
 }

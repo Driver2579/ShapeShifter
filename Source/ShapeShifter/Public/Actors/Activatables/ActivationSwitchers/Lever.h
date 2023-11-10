@@ -31,22 +31,19 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
-	
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* LeverMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* ActivateZoneComponent;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* DeactivateZoneComponent;
+	UBoxComponent* SwitchActivationZoneComponent;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	virtual void OnLeverMeshComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnSwitchActivationComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")

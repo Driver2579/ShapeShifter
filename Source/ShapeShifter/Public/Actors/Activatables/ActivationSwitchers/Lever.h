@@ -36,13 +36,20 @@ protected:
 	UStaticMeshComponent* LeverMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* SwitchActivationZoneComponent;
+	UBoxComponent* ActivationZoneComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UBoxComponent* DeactivationZoneComponent;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	virtual void OnSwitchActivationComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	virtual void OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 private:
@@ -54,6 +61,9 @@ private:
 	// Velocity needed for physics component to activate or deactivate the lever
 	UPROPERTY(EditDefaultsOnly, Category = "Activation")
 	float VelocityToSwitchActivation = 10;
+
+	// Call Activate or Deactivate only if OtherComp is simulating physics and its velicity match bNewActive 
+	void SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive);
 
 	bool bRotateLeverMesh = false;
 

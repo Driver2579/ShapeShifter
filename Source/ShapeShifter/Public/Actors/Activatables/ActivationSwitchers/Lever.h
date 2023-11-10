@@ -62,7 +62,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Activation")
 	float VelocityToSwitchActivation = 10;
 
-	// Call Activate or Deactivate only if OtherComp is simulating physics and its velicity match bNewActive 
+	// Call Activate or Deactivate only if OtherComp is simulating physics and its velocity match bNewActive 
 	void SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive);
 
 	bool bRotateLeverMesh = false;

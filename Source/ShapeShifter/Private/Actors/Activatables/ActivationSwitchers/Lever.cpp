@@ -45,9 +45,8 @@ void ALever::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnActivationZoneComponentBeginOverlap);
-	DeactivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this,
-		&ALever::OnDeactivationZoneComponentBeginOverlap);
+	ActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnActivationZoneBeginOverlap);
+	DeactivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnDeactivationZoneBeginOverlap);
 }
 
 void ALever::Tick(float DeltaTime)
@@ -77,13 +76,13 @@ void ALever::Tick(float DeltaTime)
 	}
 }
 
-void ALever::OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void ALever::OnActivationZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	SetActiveIfHaveTo(OtherComp, true);
 }
 
-void ALever::OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void ALever::OnDeactivationZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	SetActiveIfHaveTo(OtherComp, false);

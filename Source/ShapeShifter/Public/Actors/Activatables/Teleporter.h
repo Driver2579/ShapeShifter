@@ -16,25 +16,25 @@ public:
 	// Sets default values for this actor's properties
 	ATeleporter();
 
+	virtual bool IsActive() const override final;
+
 	virtual void Activate() override;
 	virtual void Deactivate() override;
-
-	virtual bool IsActive() const override final;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
 
 	// Triggers teleportation to connected teleporter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UCapsuleComponent* TeleportTrigger;
+	UStaticMeshComponent* TeleportTriggerComponent;
 
-	// Attach all other NiagaraParticles to this if you need more
+	// Attach all other NiagaraParticlesComponent to this if you need more
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UNiagaraComponent* NiagaraParticles;
+	class UNiagaraComponent* NiagaraParticlesComponent;
 
 	// A point where Pawn will be teleported to
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* TeleportPoint;
+	USceneComponent* TeleportPointComponent;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

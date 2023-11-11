@@ -17,17 +17,14 @@ ALever::ALever()
 	LeverMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Lever Mesh"));
 	LeverMeshComponent->SetupAttachment(RootComponent);
 
-	// Enable Hit Events
-	LeverMeshComponent->SetNotifyRigidBodyCollision(true);
+	ActivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activation Zone"));
+	ActivationZoneComponent->SetupAttachment(LeverMeshComponent);
 
-	ActivateZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activate Zone"));
-	ActivateZoneComponent->SetupAttachment(LeverMeshComponent);
+	DeactivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivation Zone"));
+    DeactivationZoneComponent->SetupAttachment(LeverMeshComponent);
 
-	DeactivateZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivate Zone"));
-	DeactivateZoneComponent->SetupAttachment(LeverMeshComponent);
-
-	ActivateZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
-	DeactivateZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	ActivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	DeactivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 }
 
 void ALever::OnConstruction(const FTransform& Transform)
@@ -48,7 +45,9 @@ void ALever::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LeverMeshComponent->OnComponentHit.AddDynamic(this, &ALever::OnLeverMeshComponentHit);
+	ActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnActivationZoneComponentBeginOverlap);
+	DeactivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this,
+		&ALever::OnDeactivationZoneComponentBeginOverlap);
 }
 
 void ALever::Tick(float DeltaTime)
@@ -78,8 +77,19 @@ void ALever::Tick(float DeltaTime)
 	}
 }
 
-void ALever::OnLeverMeshComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ALever::OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	SetActiveIfHaveTo(OtherComp, true);
+}
+
+void ALever::OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	SetActiveIfHaveTo(OtherComp, false);
+}
+
+void ALever::SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive)
 {
 	// We don't need to handle OtherComps without physics
 	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
@@ -90,19 +100,15 @@ void ALever::OnLeverMeshComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	// Get ZVelocity of OtherComp
 	const float ZVelocity = OtherComp->GetComponentVelocity().Z;
 
-	// Activate the Lever if OtherComp hit the top of it and clear OtherComp velocity
-	if (ZVelocity > VelocityToSwitchActivation && OtherComp->IsOverlappingComponent(ActivateZoneComponent))
+	// Activate the Lever if OtherComp overlap the top of it
+	if (bNewActive && ZVelocity > VelocityToSwitchActivation)
 	{
 		Activate();
-
-		OtherComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
-	// Deactivate the Lever if OtherComp hit the bottom of it and clear OtherComp velocity
-	else if (ZVelocity < -VelocityToSwitchActivation && OtherComp->IsOverlappingComponent(DeactivateZoneComponent))
+	// Deactivate the Lever if OtherComp overlap the bottom of it
+	else if (!bNewActive && ZVelocity < -VelocityToSwitchActivation)
 	{
 		Deactivate();
-
-		OtherComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 }
 
@@ -121,9 +127,6 @@ void ALever::Activate()
 
 	bActive = true;
 	OnActiveSwitch();
-
-	// Turn on LeverMeshComponent rotation because activation was switched
-	bRotateLeverMesh = true;
 }
 
 void ALever::Deactivate()

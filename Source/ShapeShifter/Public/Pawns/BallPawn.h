@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Common/Enums/BallPawnForm.h"
+#include "BuoyancyTypes.h"
 #include "BallPawn.generated.h"
 
 class UInputAction;
@@ -27,6 +28,7 @@ public:
 
 	bool IsFalling() const;
 
+	EBallPawnForm GetForm() const;
 	void SetForm(const EBallPawnForm NewForm);
 
 	// Change form to the next one. Usually called from ChangeFormAction InputAction.
@@ -34,6 +36,13 @@ public:
 
 	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
 	void CreateClone();
+
+	/**
+	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber
+	 */
+	bool IsSwimmingOnWaterSurface() const;
+
+	void SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -44,6 +53,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UBuoyancyComponent* BuoyancyComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	class UInputMappingContext* DefaultMappingContext;
@@ -84,11 +96,23 @@ protected:
 
 	void SpawnClone();
 
+	// Call RegisterDynamicForce for every FluidSim Actor on scene
+	void InitWaterFluidSimulation();
+
+	// Call RegisterDynamicForce with parameters for FluidSim. This needed to register components for fluid simulation.
+	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
+	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
+		const float ForceStrength);
+
 private:
 	void SetupComponents();
 
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float MovementSpeed = 150;
+
+	// Whether player can jump or not
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	bool bCanEverJump = true;
 
 	bool bCanJump = true;
 
@@ -102,8 +126,23 @@ private:
 	// Velocity from previous tick
 	FVector LastUpdateVelocity;
 
-	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, EditCondition = "bCanEverJump"))
 	float JumpImpulse = 500;
+
+	bool bOverlappingWaterJumpZone = false;
+
+	FTimerHandle JumpOnWaterSurfaceTimer;
+
+	// Delay between jumping on water surface
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0.1, ClampMax = 1, EditCondition = "bCanEverJump"))
+	float JumpOnWaterSurfaceDelay = 0.5;
+
+	// Enable jumping in JumpOnWaterSurfaceDelay if swimming on water surface when execute
+	void EnableJumpIfSwimmingWithDelay();
+
+	// Whether player can change form or not
+	UPROPERTY(EditAnywhere, Category = "Form")
+	bool bCanEverChangeForm = true; 
 
 	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
 
@@ -116,12 +155,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Physics")
 	TMap<EBallPawnForm, float> FormMasses;
 
+	// Whether player can create clone or not
+	UPROPERTY(EditAnywhere, Category = "Clone")
+	bool bCanEverCreateClone = true;
+
 	TWeakObjectPtr<ABallPawn> Clone;
 
 	FTimerHandle CreateCloneTimer;
 
 	// A delay before Clone will be created
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	float CreateCloneRate = 3;
 
 	FTransform CloneSpawnTransform;
@@ -140,10 +183,23 @@ private:
 	TEnumAsByte<ECollisionChannel> SpawnCloneCheckTraceChanel = ECC_GameTraceChannel3;
 
 	// If true than Clone will be destroyed when changing Form
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
 
 	// This tag will work only if CurrentForm is Metal
-	UPROPERTY(EditAnywhere, Category = "Clone")
+	UPROPERTY(EditAnywhere, Category = "Laser")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
+
+	/**
+	 * BuoyancyData assigned to different BallPawnForms to swim on water.
+	 * The default values are same, so they all must be changed in BP except Pontoons.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Water Buoyancy Data")
+	TMap<EBallPawnForm, FBuoyancyData> FormBuoyancyData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation")
+	TSubclassOf<AActor> WaterFluidSimulationClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
+	float WaterFluidForceStrength = 1;
 };

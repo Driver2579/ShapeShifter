@@ -18,7 +18,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-
 	virtual bool IsActive() const override final;
 
 	virtual void Activate() override;

@@ -74,7 +74,7 @@ void ASaveGameManager::SaveGame()
 	UGameplayStatics::AsyncSaveGameToSlot(SaveGameObject.Get(), SaveGameSlotName, 0);
 }
 
-void ASaveGameManager::LoadGame()
+void ASaveGameManager::LoadGame() const
 {
 	// Load the game if save game slot exists
 	if (UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))

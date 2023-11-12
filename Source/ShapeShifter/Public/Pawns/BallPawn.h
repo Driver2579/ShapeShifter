@@ -89,12 +89,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* JumpAction;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* ChangeFormAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* CreateCloneAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* SaveGameAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* LoadGameAction;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -105,6 +111,9 @@ protected:
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
 	void SpawnClone();
+
+	void SaveGame();
+	void LoadGame();
 
 	// Call RegisterDynamicForce for every FluidSim Actor on scene
 	void InitWaterFluidSimulation();
@@ -195,6 +204,8 @@ private:
 	// If true than Clone will be destroyed when changing Form
 	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
+
+	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")

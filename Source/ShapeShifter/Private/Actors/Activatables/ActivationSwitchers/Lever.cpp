@@ -2,7 +2,10 @@
 
 #include "Actors/Activatables/ActivationSwitchers/Lever.h"
 
+#include "Actors/SaveGameManager.h"
 #include "Components/BoxComponent.h"
+#include "GameModes/ShapeShifterGameMode.h"
+#include "Objects/ShapeShifterSaveGame.h"
 
 ALever::ALever()
 {
@@ -72,6 +75,50 @@ void ALever::Tick(float DeltaTime)
 	if (LeverMeshComponent->GetRelativeRotation().Equals(LeverMeshTargetRotation, Tolerance))
 	{
 		bRotateLeverMesh = false;
+	}
+}
+
+void ALever::SetupSaveLoadDelegates()
+{
+	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+
+	if (!IsValid(GameMode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get GameMode!"));
+
+		return;
+	}
+
+	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
+
+	if (!IsValid(SaveGameManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get SaveGameManager!"));
+
+		return;
+	}
+
+	SaveGameManager->OnSaveGame.AddDynamic(this, &ALever::OnSaveGame);
+	SaveGameManager->OnLoadGame.AddDynamic(this, &ALever::OnLoadGame);
+}
+
+void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+}
+
+void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
 	}
 }
 

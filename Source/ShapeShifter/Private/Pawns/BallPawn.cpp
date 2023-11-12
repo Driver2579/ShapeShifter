@@ -115,9 +115,9 @@ void ABallPawn::SetupSaveLoadDelegates()
 		return;
 	}
 
-	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
+	SaveGameManager = GameMode->GetSaveGameManager();
 
-	if (!IsValid(SaveGameManager))
+	if (!SaveGameManager.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get SaveGameManager!"));
 
@@ -138,23 +138,23 @@ void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 	}
 
 	// Save player variables
-	SaveGameObject->PlayerTransform = GetActorTransform();
-	SaveGameObject->PlayerVelocity = GetVelocity();
-	SaveGameObject->PlayerForm = CurrentForm;
+	SaveGameObject->BallPawnSaveData.PlayerTransform = GetActorTransform();
+	SaveGameObject->BallPawnSaveData.PlayerVelocity = GetVelocity();
+	SaveGameObject->BallPawnSaveData.PlayerForm = CurrentForm;
 
 	// Don't save Clone variables if it doesn't exists
 	if (!Clone.IsValid())
 	{
 		// Save that we don't have Clone
-		SaveGameObject->bHasPlayerClone = false;
+		SaveGameObject->BallPawnSaveData.bHasPlayerClone = false;
 
 		return;
 	}
 
 	// Save that we have Clone and its variables in another case
-	SaveGameObject->bHasPlayerClone = true;
-	SaveGameObject->CloneTransform = Clone->GetActorTransform();
-	SaveGameObject->CloneVelocity = Clone->GetVelocity();
+	SaveGameObject->BallPawnSaveData.bHasPlayerClone = true;
+	SaveGameObject->BallPawnSaveData.CloneTransform = Clone->GetActorTransform();
+	SaveGameObject->BallPawnSaveData.CloneVelocity = Clone->GetVelocity();
 }
 
 void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
@@ -167,12 +167,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	}
 
 	// Load player variables
-	SetActorTransform(SaveGameObject->PlayerTransform);
-	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->PlayerVelocity);
-	SetForm(SaveGameObject->PlayerForm);
+	SetActorTransform(SaveGameObject->BallPawnSaveData.PlayerTransform);
+	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
+	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
 
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
-	if (!SaveGameObject->bHasPlayerClone)
+	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
 	{
 		if (Clone.IsValid())
 		{
@@ -197,8 +197,8 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	}
 
 	// Load Clone variables
-	Clone->SetActorTransform(SaveGameObject->CloneTransform);
-	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->CloneVelocity);
+	Clone->SetActorTransform(SaveGameObject->BallPawnSaveData.CloneTransform);
+	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -298,6 +298,26 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: CreateCloneAction is invalid!"));
+	}
+
+	if (IsValid(SaveGameAction))
+	{
+		EnhancedInputComponent->BindAction(SaveGameAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::SaveGame);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: SaveGameAction is invalid!"));
+	}
+
+	if (IsValid(LoadGameAction))
+	{
+		EnhancedInputComponent->BindAction(LoadGameAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::LoadGame);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: LoadGameAction is invalid!"));
 	}
 }
 
@@ -656,6 +676,32 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ABallPawn::SaveGame()
+{
+	if (SaveGameManager.IsValid())
+	{
+		SaveGameManager->SaveGame();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManager is invalid!"));
+	}
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ABallPawn::LoadGame()
+{
+	if (SaveGameManager.IsValid())
+	{
+		SaveGameManager->LoadGame();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManager is invalid!"));
+	}
 }
 
 void ABallPawn::InitWaterFluidSimulation()

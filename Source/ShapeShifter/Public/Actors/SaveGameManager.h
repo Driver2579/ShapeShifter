@@ -22,12 +22,10 @@ public:
 	UShapeShifterSaveGame* GetSaveGameObject() const;
 
 	// Call this after BeginPlay to save all variables of subscribed Actors to OnSaveGame delegate to save file
-	UFUNCTION(BlueprintCallable)
 	void SaveGame();
 
 	// Call this after BeginPlay to load all variables to subscribed Actors to OnLoadGame delegate from save file
-	UFUNCTION(BlueprintCallable)
-	void LoadGame();
+	void LoadGame() const;
 
 	// Called right before saving game. Use it to save data for a specific class to the SaveGameObject.
 	FOnSaveLoadGameSignature OnSaveGame;

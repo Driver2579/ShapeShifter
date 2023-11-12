@@ -8,6 +8,7 @@
 #include "Lever.generated.h"
 
 class UBoxComponent;
+class UShapeShifterSaveGame;
 
 UCLASS()
 class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable
@@ -43,6 +44,14 @@ protected:
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void SetupSaveLoadDelegates();
+
+	UFUNCTION()
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
+
+	UFUNCTION()
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
 
 	UFUNCTION()
 	virtual void OnLeverMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,

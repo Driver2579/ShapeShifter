@@ -78,7 +78,7 @@ void AMovingPlatform::Tick(float DeltaTime)
 	}
 }
 
-void AMovingPlatform::ProcessMovementTimeline(const float Value)
+void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 {
 	// Location on the spline
 	const float Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
@@ -111,10 +111,31 @@ bool AMovingPlatform::IsActive() const
 	return bActive;
 }
 
+/*void OnLoaded()
+{
+	SetPlaybackPosition(LoadedPosition, false, true);
+
+	if (IsActive)
+	{
+		Play
+	}
+	else if (!bLoop)
+	{
+		Reverse
+	}
+
+	bWasLoaded = true;
+}*/
+
 void AMovingPlatform::Activate()
 {
+	/*if (!bWasLoaded)
+	{
+		return;
+	}*/
+
 	bActive = true;
-	
+
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
 	// Start movement immediately if StartDelay is 0
@@ -133,8 +154,19 @@ void AMovingPlatform::Activate()
 
 void AMovingPlatform::Deactivate()
 {
+	/*if (!bWasLoaded)
+	{
+		return;
+	}*/
+
 	bActive = false;
-	MovementTimeline.Stop();
+
+	/*if (!bWasEverDeactivated && UGameplayStatics::DoesSaveGameExist())
+	{*/
+		MovementTimeline.Stop();
+	//}
+
+	//bWasEverDeactivated = true;
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
@@ -150,7 +182,7 @@ void AMovingPlatform::Deactivate()
 		MovementTimeline.Reverse();
 	}
 	// Start reversing with delay in another case
-	else 
+	else
 	{
 		GetWorldTimerManager().SetTimer(MoveTimer, [this] {
 			MovementTimeline.Reverse();

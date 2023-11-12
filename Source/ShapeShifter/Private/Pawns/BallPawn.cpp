@@ -6,13 +6,19 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Common/Enums/BallPawnForm.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
+#include "Actors/SaveGameManager.h"
+#include "GameModes/ShapeShifterGameMode.h"
+#include "Objects/ShapeShifterSaveGame.h"
 
 ABallPawn::ABallPawn()
 {
 	SetupComponents();
+
+	CurrentForm = EBallPawnForm::Rubber;
 
 	FormMaterials.Add(EBallPawnForm::Rubber);
 	FormMaterials.Add(EBallPawnForm::Metal);
@@ -73,6 +79,8 @@ void ABallPawn::BeginPlay()
 
 	// Call SetForm with CurrentForm to apply everything related to it
 	SetForm(CurrentForm);
+
+	SetupSaveLoadDelegates();
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -88,6 +96,109 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetVelocity();
+}
+
+void ABallPawn::SetupSaveLoadDelegates()
+{
+	// Don't manage save/load for Clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
+	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+
+	if (!IsValid(GameMode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get GameMode!"));
+
+		return;
+	}
+
+	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
+
+	if (!IsValid(SaveGameManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get SaveGameManager!"));
+
+		return;
+	}
+
+	SaveGameManager->OnSaveGame.AddDynamic(this, &ABallPawn::OnSaveGame);
+	SaveGameManager->OnLoadGame.AddDynamic(this, &ABallPawn::OnLoadGame);
+}
+
+void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	// Save player variables
+	SaveGameObject->PlayerTransform = GetActorTransform();
+	SaveGameObject->PlayerVelocity = GetVelocity();
+	SaveGameObject->PlayerForm = CurrentForm;
+
+	// Don't save Clone variables if it doesn't exists
+	if (!Clone.IsValid())
+	{
+		// Save that we don't have Clone
+		SaveGameObject->bHasPlayerClone = false;
+
+		return;
+	}
+
+	// Save that we have Clone and its variables in another case
+	SaveGameObject->bHasPlayerClone = true;
+	SaveGameObject->CloneTransform = Clone->GetActorTransform();
+	SaveGameObject->CloneVelocity = Clone->GetVelocity();
+}
+
+void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	// Load player variables
+	SetActorTransform(SaveGameObject->PlayerTransform);
+	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->PlayerVelocity);
+	SetForm(SaveGameObject->PlayerForm);
+
+	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
+	if (!SaveGameObject->bHasPlayerClone)
+	{
+		if (Clone.IsValid())
+		{
+			Clone->Destroy();
+		}
+
+		return;
+	}
+
+	// Spawn Clone in another case and if wasn't spawned before  
+	if (!Clone.IsValid())
+	{
+		SpawnClone();
+
+		// Return if failed to spawn Clone
+		if (!Clone.IsValid())
+		{
+			UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: Failed to spawn clone!"));
+
+			return;
+		}
+	}
+
+	// Load Clone variables
+	Clone->SetActorTransform(SaveGameObject->CloneTransform);
+	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const

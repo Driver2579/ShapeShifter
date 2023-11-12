@@ -4,13 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Common/Enums/BallPawnForm.h"
 #include "BuoyancyTypes.h"
 #include "BallPawn.generated.h"
 
+class UShapeShifterSaveGame;
 class UInputAction;
 
 struct FInputActionValue;
+
+enum class EBallPawnForm;
 
 UCLASS()
 class SHAPESHIFTER_API ABallPawn : public APawn
@@ -64,6 +66,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	void SetupSaveLoadDelegates();
+
+	UFUNCTION()
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
+
+	UFUNCTION()
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
 
 	// Call AddMappingContext to LocalPlayerSubsystem if it was not added before
 	void InitDefaultMappingContext() const;
@@ -144,7 +154,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Form")
 	bool bCanEverChangeForm = true; 
 
-	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
+	EBallPawnForm CurrentForm;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterial*> FormMaterials;

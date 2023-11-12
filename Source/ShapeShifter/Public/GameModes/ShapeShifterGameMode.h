@@ -6,12 +6,23 @@
 #include "GameFramework/GameModeBase.h"
 #include "ShapeShifterGameMode.generated.h"
 
+class ASaveGameManager;
+
 UCLASS()
 class SHAPESHIFTER_API AShapeShifterGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+public:
+	ASaveGameManager* GetSaveGameManager() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+private:
+	UPROPERTY(EditDefaultsOnly, Category = "Save Game")
+	TSubclassOf<ASaveGameManager> SaveGameManagerClass;
+
+	TWeakObjectPtr<ASaveGameManager> SaveGameManager;
 };

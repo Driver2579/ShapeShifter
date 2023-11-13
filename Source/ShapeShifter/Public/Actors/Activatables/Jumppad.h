@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Jumppad.generated.h"
 
+class UJumpPadTargetComponent;
+
 UCLASS()
 class SHAPESHIFTER_API AJumpPad : public AActor
 {
@@ -13,6 +15,8 @@ class SHAPESHIFTER_API AJumpPad : public AActor
 
 public:	
 	AJumpPad();
+
+	UStaticMeshComponent* GetMesh() const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,7 +35,7 @@ protected:
 
 	// Indicates where the player should land in the level.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USceneComponent* TargetLocationComponent;
+	UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
 	FTimerHandle JumpTimer;

@@ -1,7 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Actors/Activatables/Jumppad.h"
 
+#include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
 
 AJumpPad::AJumpPad()
@@ -14,13 +15,18 @@ AJumpPad::AJumpPad()
 	BaseMeshComponent->SetupAttachment(RootComponent);
 
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
-	PadMeshComponent->SetupAttachment(RootComponent);
+	PadMeshComponent->SetupAttachment(BaseMeshComponent);
 
 	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	JumpTriggerComponent->SetupAttachment(RootComponent);
+	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
 
-	TargetLocationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Target Location"));
+	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
+}
+
+UStaticMeshComponent* AJumpPad::GetMesh() const
+{
+	return BaseMeshComponent;
 }
 
 void AJumpPad::BeginPlay()
@@ -96,3 +102,12 @@ void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
 {
 	GetWorldTimerManager().ClearTimer(JumpTimer);
 }
+
+//void AJumpPad::OnTransformUpdated(USceneComponent* UpdatedComponent, EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
+//{
+	//const FVector NewDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
+	//float Angle = FMath::Acos(FVector::DotProduct(NewDirection, FVector::ForwardVector)) * (180.0f / PI);
+
+	//const FRotator NewRotation = FRotator(0.0f, Angle, 0.0f);;
+	//BaseMeshComponent->SetWorldRotation(NewRotation);
+//}

@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/Activatables/Jumppad.h"
+#include "Actors/Activatables/JumpPad.h"
 
 #include "Components/BoxComponent.h"
 

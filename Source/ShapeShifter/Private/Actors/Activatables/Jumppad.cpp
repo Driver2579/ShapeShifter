@@ -16,7 +16,7 @@ AJumpPad::AJumpPad()
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
 	PadMeshComponent->SetupAttachment(RootComponent);
 
-	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
+	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
 	JumpTriggerComponent->SetupAttachment(RootComponent);
 
 	TargetLocationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Target Location"));
@@ -49,10 +49,10 @@ void AJumpPad::BeginPlay()
 	const float HorizontalVelocity = FVector::VectorPlaneProject(TargetLocationComponent->GetRelativeLocation(),
 		FVector(0, 0, 1)).Length() / FlightTime;
 
-	InitialVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
-	InitialVelocity.Z += VerticalVelocity;
+	ThrowVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
+	ThrowVelocity.Z += VerticalVelocity;
 
-	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpBeginTriggerOverlap);
+	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerBeginOverlap);
 	JumpTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerEndOverlap);
 }
 
@@ -68,25 +68,25 @@ void AJumpPad::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!IsValid(OtherActor) || !OtherComp->IsSimulatingPhysics())
+	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
 	{
 		return;
 	}
 	
-	// Jump the mesh if delay is 0
+	// Throw the mesh immediately if delay is 0
 	if (JumpDelay == 0)
 	{
-		OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+		OtherComp->SetPhysicsLinearVelocity(ThrowVelocity);
 	}
-	// Jump the mesh with delay
+	// Throw the mesh with delay
 	else
 	{
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
-			OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+			OtherComp->SetPhysicsLinearVelocity(ThrowVelocity);
 		}, JumpDelay, false);
 	}
 }

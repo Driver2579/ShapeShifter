@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Jumppad.generated.h"
+#include "JumpPad.generated.h"
 
 UCLASS()
 class SHAPESHIFTER_API AJumpPad : public AActor
@@ -20,7 +20,7 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -29,15 +29,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
 
-	// Indicates where the player should land in the level.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	// Indicates where the player should land in the level
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* TargetLocationComponent;
 
 private:
 	FTimerHandle JumpTimer;
 
 	// The velocity that will be added to the required jump 
-	FVector InitialVelocity = FVector::ZeroVector;
+	FVector ThrowVelocity;
 
 	// Delay before jump
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
@@ -48,7 +48,7 @@ private:
 	float JumpHeight = 200;
 
 	UFUNCTION()
-	void OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	void OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()

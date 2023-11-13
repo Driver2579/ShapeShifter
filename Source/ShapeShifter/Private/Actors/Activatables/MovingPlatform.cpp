@@ -110,18 +110,23 @@ void AMovingPlatform::SetupSaveLoadDelegates()
 
 void AMovingPlatform::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 {
-	/**
-	 * Save MovingPlatform unique name and MovementTimeline PlaybackPosition. Add() will also replace PlaybackPosition
-	 * value if key with unique name was already saved before, instead of adding a key duplicate.
-	 */
 	if (!IsValid(SaveGameObject))
 	{
-		SaveGameObject->MovingPlatformSaveData.Add(GetName(), MovementTimeline.GetPlaybackPosition());
-	}
-	else
-	{
 		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
 	}
+
+	FMovingPlatformSaveData MovingPlatformSaveData;
+
+	MovingPlatformSaveData.bActive = bActive;
+	MovingPlatformSaveData.PlaybackPosition = MovementTimeline.GetPlaybackPosition();
+
+	/**
+	 * Save MovingPlatform unique name and MovingPlatformSaveData. Add() will also replace MovingPlatformSaveData value
+	 * instead of adding a key duplicate if key with unique name was already saved before.
+	 */
+	SaveGameObject->MovingPlatformSaveData.Add(GetName(), MovingPlatformSaveData);
 }
 
 void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)

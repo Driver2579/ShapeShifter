@@ -100,8 +100,8 @@ void ALever::SetupSaveLoadDelegates()
 void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 {
 	/**
-	 * Save Lever unique name and bActive. Add() will also replace bActive value if key with save name was already
-	 * unique before, instead of adding a key duplicate.
+	 * Save Lever unique name and bActive. Add() will also replace bActive value instead of adding a key duplicate if
+	 * key with save name was already unique before.
 	 */
 	if (IsValid(SaveGameObject))
 	{

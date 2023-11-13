@@ -22,30 +22,31 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UStaticMeshComponent* BaseMeshComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* LeftDoorMeshComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* RightDoorMeshComponent;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
-	// Start and end positions for each door
+	// Start and end locations for each door
 	FVector StartLeftDoorLocation;
 	FVector StartRightDoorLocation;
 	FVector EndLeftDoorLocation;
 	FVector EndRightDoorLocation;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta=(ClampMin = 0))
 	float MoveOffset = 60;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (ClampMin = 0))
 	float MoveSpeed = 75;
 };

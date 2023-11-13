@@ -1,11 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Actors/Activatables/Jumppad.h"
 
 #include "Components/BoxComponent.h"
 
-AJumppad::AJumppad()
+AJumpPad::AJumpPad()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -17,21 +16,21 @@ AJumppad::AJumppad()
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
 	PadMeshComponent->SetupAttachment(RootComponent);
 
-	TriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	TriggerComponent->SetupAttachment(RootComponent);
+	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
+	JumpTriggerComponent->SetupAttachment(RootComponent);
 
-	TargetLocation = CreateDefaultSubobject<USceneComponent>(TEXT("Target Location"));
-	TargetLocation->SetupAttachment(RootComponent);
+	TargetLocationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Target Location"));
+	TargetLocationComponent->SetupAttachment(RootComponent);
 }
 
-void AJumppad::BeginPlay()
+void AJumpPad::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// The player cannot jump onto a platform if the jump is below the platform.
-	if (TargetLocation->GetRelativeLocation().Z > JumpHeight)
+	// The player cannot jump onto a platform if the jump is below the platform
+	if (TargetLocationComponent->GetRelativeLocation().Z > JumpHeight)
 	{
-		UE_LOG(LogTemp, Error, TEXT("AJumppad:BeginPlay: Jump lower than TargetLocation"));
+		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: JumpHeight is lower than TargetLocationComponent height"));
 		
 		return;
 	}
@@ -42,66 +41,57 @@ void AJumppad::BeginPlay()
 	// Velocity to achieve jumping heights
 	const float VerticalVelocity = FMath::Sqrt(2 * Gravity * JumpHeight);
 
-	// The time the mouse will spend in the air
+	// The time the object will spend in the air
 	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(
-		2 * (JumpHeight - TargetLocation->GetRelativeLocation().Z) / Gravity);
+		2 * (JumpHeight - TargetLocationComponent->GetRelativeLocation().Z) / Gravity);
 
 	// Velocity to the TargetLocation
-	const float HorizontalVelocity = FVector::VectorPlaneProject(TargetLocation->GetRelativeLocation(),
+	const float HorizontalVelocity = FVector::VectorPlaneProject(TargetLocationComponent->GetRelativeLocation(),
 		FVector(0, 0, 1)).Length() / FlightTime;
 
-	InitialVelocity = TargetLocation->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
+	InitialVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
 	InitialVelocity.Z += VerticalVelocity;
 
-	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumppad::OnTriggerOverlapBegin);
-	TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumppad::OnTriggerEndBegin);
+	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpBeginTriggerOverlap);
+	JumpTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerEndOverlap);
 }
 
-void AJumppad::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AJumpPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
 	GetWorldTimerManager().ClearTimer(JumpTimer);
 }
 
-void AJumppad::Tick(float DeltaTime)
+void AJumpPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-void AJumppad::OnTriggerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!IsValid(OtherActor))
+	if (!IsValid(OtherActor) || !OtherComp->IsSimulatingPhysics())
 	{
 		return;
 	}
 	
-	TArray<UStaticMeshComponent*> MeshComponents;
-	OtherActor->GetComponents<UStaticMeshComponent>(MeshComponents);
-
 	// Jump the mesh if delay is 0
 	if (JumpDelay == 0)
 	{
-		for (UStaticMeshComponent* MeshComponent : MeshComponents)
-		{
-			MeshComponent->SetPhysicsLinearVelocity(InitialVelocity); 
-		}
+		OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
 	}
 	// Jump the mesh with delay
 	else
 	{
-		GetWorldTimerManager().SetTimer(JumpTimer, [this, MeshComponents]
+		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
-			for (UStaticMeshComponent* MeshComponent : MeshComponents)
-			{
-				MeshComponent->SetPhysicsLinearVelocity(InitialVelocity); 
-			}
+			OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
 		}, JumpDelay, false);
 	}
 }
 
-void AJumppad::OnTriggerEndBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	GetWorldTimerManager().ClearTimer(JumpTimer);

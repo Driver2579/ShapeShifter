@@ -35,12 +35,12 @@ void ADoor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector TargetLeftDoorLocation = bActive ? EndLeftDoorLocation : StartLeftDoorLocation;
-	FVector NewLeftLocation = FMath::VInterpConstantTo(LeftDoorMeshComponent->GetRelativeLocation(),
+	const FVector& TargetLeftDoorLocation = bActive ? EndLeftDoorLocation : StartLeftDoorLocation;
+	const FVector& NewLeftLocation = FMath::VInterpConstantTo(LeftDoorMeshComponent->GetRelativeLocation(),
 		TargetLeftDoorLocation, DeltaTime, MoveSpeed);
 
-	FVector TargetRightDoorLocation = bActive ? EndRightDoorLocation : StartRightDoorLocation;
-	FVector NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
+	const FVector& TargetRightDoorLocation = bActive ? EndRightDoorLocation : StartRightDoorLocation;
+	const FVector& NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
 		TargetRightDoorLocation, DeltaTime, MoveSpeed);
 
 	LeftDoorMeshComponent->SetRelativeLocation(NewLeftLocation);

@@ -75,18 +75,18 @@ void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AA
 	{
 		return;
 	}
-	
-	// Throw the mesh immediately if delay is 0
+
+	// Throw the OtherComp immediately if delay is 0
 	if (JumpDelay == 0)
 	{
-		OtherComp->SetPhysicsLinearVelocity(ThrowVelocity);
+		OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
 	}
-	// Throw the mesh with delay
+	// Throw the OtherComp with delay
 	else
 	{
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
-			OtherComp->SetPhysicsLinearVelocity(ThrowVelocity);
+			OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
 		}, JumpDelay, false);
 	}
 }

@@ -74,13 +74,13 @@ void ABallPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetupSaveLoadDelegates();
+
 	InitDefaultMappingContext();
 	InitWaterFluidSimulation();
 
 	// Call SetForm with CurrentForm to apply everything related to it
 	SetForm(CurrentForm);
-
-	SetupSaveLoadDelegates();
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -138,6 +138,7 @@ void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 	}
 
 	// Save player variables
+	SaveGameObject->BallPawnSaveData.CameraRotation = GetControlRotation();
 	SaveGameObject->BallPawnSaveData.PlayerTransform = GetActorTransform();
 	SaveGameObject->BallPawnSaveData.PlayerVelocity = GetVelocity();
 	SaveGameObject->BallPawnSaveData.PlayerForm = CurrentForm;
@@ -164,6 +165,18 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: SaveGameObject is invalid!"));
 
 		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	// Load CameraRotation if PlayerController is valid
+	if (IsValid(PlayerController))
+	{
+		PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: PlayerController is invalid!"));
 	}
 
 	// Load player variables

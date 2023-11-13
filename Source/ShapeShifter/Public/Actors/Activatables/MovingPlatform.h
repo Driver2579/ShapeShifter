@@ -8,6 +8,8 @@
 #include "Components/TimelineComponent.h"
 #include "MovingPlatform.generated.h"
 
+class UShapeShifterSaveGame;
+
 UCLASS()
 class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable
 {
@@ -24,14 +26,22 @@ public:
 	virtual void Deactivate() override;
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USplineComponent* MovementDirectionSplineComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComponent;
+
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	void SetupSaveLoadDelegates();
+
+	UFUNCTION()
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
+
+	UFUNCTION()
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
 
 	/**
 	 * Handles the movement of the platform along the spline.
@@ -43,6 +53,8 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
+
+	bool bHasEverSwitchedActivation = false;
 
 	// Time it takes the platform to complete the route
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))
@@ -69,5 +81,6 @@ private:
 	UCurveFloat* MovementCurve;
 
 	FTimeline MovementTimeline;
+
 	FTimerHandle MoveTimer;
 };

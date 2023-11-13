@@ -99,14 +99,18 @@ void ALever::SetupSaveLoadDelegates()
 
 void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 {
-	if (!IsValid(SaveGameObject))
+	/**
+	 * Save Lever unique name and bActive. Add() will also replace bActive value if key with save name was already
+	 * unique before, instead of adding a key duplicate.
+	 */
+	if (IsValid(SaveGameObject))
+	{
+		SaveGameObject->LeverSaveData.Add(GetName(), bActive);
+	}
+	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
-
-		return;
 	}
-
-	SaveGameObject->LeverSaveData.Add(GetName(), bActive);
 }
 
 void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
@@ -118,12 +122,12 @@ void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		return;
 	}
 
-	// Get saved bActive by Lever unique name
+	// Load saved bActive by Lever unique name
 	const bool* SavedActive = SaveGameObject->LeverSaveData.Find(GetName());
 
 	if (SavedActive == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALever::OnLoadGame: SavedActive is invalid for %s"), *GetName());
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnLoadGame: SavedActive is invalid for %s!"), *GetName());
 
 		return;
 	}

@@ -17,7 +17,11 @@ public:
 	UPROPERTY()
 	FBallPawnSaveData BallPawnSaveData;
 
-	// Lever instance unique name (using GetName) and Active state
+	// Lever instance unique name (use GetName) and Active state
 	UPROPERTY()
 	TMap<FString, bool> LeverSaveData;
+
+	// MovingPlatform instance unique name (use GetName) and MovementTimeline PlaybackPosition
+	UPROPERTY()
+	TMap<FString, float> MovingPlatformSaveData;
 };

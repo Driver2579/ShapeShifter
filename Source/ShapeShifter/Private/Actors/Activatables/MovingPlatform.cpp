@@ -1,6 +1,9 @@
 #include "Actors/Activatables/MovingPlatform.h"
 
+#include "Actors/SaveGameManager.h"
 #include "Components/SplineComponent.h"
+#include "GameModes/ShapeShifterGameMode.h"
+#include "Objects/ShapeShifterSaveGame.h"
 
 AMovingPlatform::AMovingPlatform()
 {
@@ -18,6 +21,8 @@ AMovingPlatform::AMovingPlatform()
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetupSaveLoadDelegates();
 
 	if (!IsValid(MovementCurve))
 	{
@@ -78,6 +83,72 @@ void AMovingPlatform::Tick(float DeltaTime)
 	}
 }
 
+void AMovingPlatform::SetupSaveLoadDelegates()
+{
+	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+
+	if (!IsValid(GameMode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::SetupSaveLoadDelegates: Failed to get GameMode!"));
+
+		return;
+	}
+
+	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
+
+	if (!IsValid(SaveGameManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
+
+		return;
+	}
+
+	SaveGameManager->OnSaveGame.AddDynamic(this, &AMovingPlatform::OnSaveGame);
+	SaveGameManager->OnLoadGame.AddDynamic(this, &AMovingPlatform::OnLoadGame);
+}
+
+void AMovingPlatform::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	/**
+	 * Save MovingPlatform unique name and MovementTimeline PlaybackPosition. Add() will also replace PlaybackPosition
+	 * value if key with unique name was already saved before, instead of adding a key duplicate.
+	 */
+	if (IsValid(SaveGameObject))
+	{
+		SaveGameObject->MovingPlatformSaveData.Add(GetName(), MovementTimeline.GetPlaybackPosition());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnSaveGame: SaveGameObject is invalid!"));
+	}
+}
+
+void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	// Load saved PlaybackPosition by MovingPlatform unique name
+	const float* PlaybackPosition = SaveGameObject->MovingPlatformSaveData.Find(GetName());
+
+	if (PlaybackPosition == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: PlaybackPosition is invalid for %s!"), *GetName());
+
+		return;
+	}
+
+	// Load saved PlaybackPosition by MovingPlatform unique name
+	MovementTimeline.SetPlaybackPosition(*PlaybackPosition, false, true);
+
+	// Clear MoveTimer in case if it was set before loading
+	GetWorldTimerManager().ClearTimer(MoveTimer);
+}
+
 void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 {
 	// Location on the spline
@@ -95,11 +166,11 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 	{
 		return;
 	}
-	
+
 	// Calculation of rotation in space
 	FRotator CurrentSplineRotation = MovementDirectionSplineComponent->GetRotationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
-	
+
 	CurrentSplineRotation.Pitch = 0.f;
 
 	// Set new rotation for platform
@@ -111,29 +182,8 @@ bool AMovingPlatform::IsActive() const
 	return bActive;
 }
 
-/*void OnLoaded()
-{
-	SetPlaybackPosition(LoadedPosition, false, true);
-
-	if (IsActive)
-	{
-		Play
-	}
-	else if (!bLoop)
-	{
-		Reverse
-	}
-
-	bWasLoaded = true;
-}*/
-
 void AMovingPlatform::Activate()
 {
-	/*if (!bWasLoaded)
-	{
-		return;
-	}*/
-
 	bActive = true;
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
@@ -154,19 +204,9 @@ void AMovingPlatform::Activate()
 
 void AMovingPlatform::Deactivate()
 {
-	/*if (!bWasLoaded)
-	{
-		return;
-	}*/
-
 	bActive = false;
 
-	/*if (!bWasEverDeactivated && UGameplayStatics::DoesSaveGameExist())
-	{*/
-		MovementTimeline.Stop();
-	//}
-
-	//bWasEverDeactivated = true;
+	MovementTimeline.Stop();
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 

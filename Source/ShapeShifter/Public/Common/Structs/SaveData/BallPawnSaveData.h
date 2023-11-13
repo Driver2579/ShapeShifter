@@ -13,6 +13,9 @@ struct FBallPawnSaveData
 	FTransform PlayerTransform;
 
 	UPROPERTY()
+	FRotator CameraRotation;
+
+	UPROPERTY()
 	FVector PlayerVelocity;
 
 	UPROPERTY()

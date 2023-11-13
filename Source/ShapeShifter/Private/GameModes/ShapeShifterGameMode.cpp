@@ -8,6 +8,7 @@ void AShapeShifterGameMode::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	// We spawn SaveGameManager in PostInitializeComponents to make sure it spawned before all Actors called BeginPlay
 	SaveGameManager = GetWorld()->SpawnActor<ASaveGameManager>();
 }
 

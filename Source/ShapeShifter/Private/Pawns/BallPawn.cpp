@@ -110,7 +110,7 @@ void ABallPawn::SetupSaveLoadDelegates()
 
 	if (!IsValid(GameMode))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get GameMode!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: GameMode is invalid!"));
 
 		return;
 	}
@@ -119,7 +119,7 @@ void ABallPawn::SetupSaveLoadDelegates()
 
 	if (!SaveGameManager.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get SaveGameManager!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
 
 		return;
 	}

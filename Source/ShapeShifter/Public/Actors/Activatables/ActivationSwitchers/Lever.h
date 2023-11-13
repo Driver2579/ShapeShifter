@@ -61,6 +61,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
+	// Set LeverMesh rotation to active/inactive state immediately without animation 
+	void SetLeverMeshRotationByActive() const;
+
 	void OnActiveSwitch();
 
 	// Velocity needed for physics component to activate or deactivate the lever

@@ -17,8 +17,7 @@ public:
 	ASaveGameManager* GetSaveGameManager() const;
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Save Game")

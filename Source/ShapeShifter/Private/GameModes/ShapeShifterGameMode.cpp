@@ -4,9 +4,9 @@
 
 #include "Actors/SaveGameManager.h"
 
-void AShapeShifterGameMode::BeginPlay()
+void AShapeShifterGameMode::PostInitializeComponents()
 {
-	Super::BeginPlay();
+	Super::PostInitializeComponents();
 
 	SaveGameManager = GetWorld()->SpawnActor<ASaveGameManager>();
 }

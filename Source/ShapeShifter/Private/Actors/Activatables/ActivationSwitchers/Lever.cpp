@@ -34,19 +34,14 @@ void ALever::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	if (bActive)
-	{
-		LeverMeshComponent->SetRelativeRotation(LeverMeshActiveRotation);
-	}
-	else
-	{
-		LeverMeshComponent->SetRelativeRotation(LeverMeshInactiveRotation);
-	}
+	SetLeverMeshRotationByActive();
 }
 
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetupSaveLoadDelegates();
 
 	LeverMeshComponent->OnComponentHit.AddDynamic(this, &ALever::OnLeverMeshHit);
 }
@@ -84,7 +79,7 @@ void ALever::SetupSaveLoadDelegates()
 
 	if (!IsValid(GameMode))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get GameMode!"));
+		UE_LOG(LogTemp, Error, TEXT("ALever::SetupSaveLoadDelegates: Failed to get GameMode!"));
 
 		return;
 	}
@@ -93,7 +88,7 @@ void ALever::SetupSaveLoadDelegates()
 
 	if (!IsValid(SaveGameManager))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: Failed to get SaveGameManager!"));
+		UE_LOG(LogTemp, Error, TEXT("ALever::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
 
 		return;
 	}
@@ -110,6 +105,8 @@ void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 
 		return;
 	}
+
+	SaveGameObject->LeverSaveData.Add(GetName(), bActive);
 }
 
 void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
@@ -119,6 +116,34 @@ void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
 
 		return;
+	}
+
+	// Get saved bActive by Lever unique name
+	const bool* SavedActive = SaveGameObject->LeverSaveData.Find(GetName());
+
+	if (SavedActive == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnLoadGame: SavedActive is invalid for %s"), *GetName());
+
+		return;
+	}
+
+	// SetActive using SavedActive
+	SetActive(*SavedActive);
+
+	// Skip rotation animation
+	SetLeverMeshRotationByActive();
+}
+
+void ALever::SetLeverMeshRotationByActive() const
+{
+	if (bActive)
+	{
+		LeverMeshComponent->SetRelativeRotation(LeverMeshActiveRotation);
+	}
+	else
+	{
+		LeverMeshComponent->SetRelativeRotation(LeverMeshInactiveRotation);
 	}
 }
 

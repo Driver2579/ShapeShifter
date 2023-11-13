@@ -1,6 +1,7 @@
 #include "Actors/Activatables/MovingPlatform.h"
 
 #include "Actors/SaveGameManager.h"
+#include "Common/Structs/SaveData/MovingPlatformSaveData.h"
 #include "Components/SplineComponent.h"
 #include "GameModes/ShapeShifterGameMode.h"
 #include "Objects/ShapeShifterSaveGame.h"
@@ -113,7 +114,7 @@ void AMovingPlatform::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 	 * Save MovingPlatform unique name and MovementTimeline PlaybackPosition. Add() will also replace PlaybackPosition
 	 * value if key with unique name was already saved before, instead of adding a key duplicate.
 	 */
-	if (IsValid(SaveGameObject))
+	if (!IsValid(SaveGameObject))
 	{
 		SaveGameObject->MovingPlatformSaveData.Add(GetName(), MovementTimeline.GetPlaybackPosition());
 	}
@@ -132,21 +133,30 @@ void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		return;
 	}
 
-	// Load saved PlaybackPosition by MovingPlatform unique name
-	const float* PlaybackPosition = SaveGameObject->MovingPlatformSaveData.Find(GetName());
+	// Get saved MovingPlatformSaveData by MovingPlatform unique name
+	const FMovingPlatformSaveData* MovingPlatformSaveData = SaveGameObject->MovingPlatformSaveData.Find(GetName());
 
-	if (PlaybackPosition == nullptr)
+	if (MovingPlatformSaveData == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: PlaybackPosition is invalid for %s!"), *GetName());
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: MovingPlatformSaveData is invalid for %s"), *GetName());
 
 		return;
 	}
 
 	// Load saved PlaybackPosition by MovingPlatform unique name
-	MovementTimeline.SetPlaybackPosition(*PlaybackPosition, false, true);
+	MovementTimeline.SetPlaybackPosition(MovingPlatformSaveData->PlaybackPosition, false, true);
 
 	// Clear MoveTimer in case if it was set before loading
 	GetWorldTimerManager().ClearTimer(MoveTimer);
+
+	if (MovingPlatformSaveData->bActive)
+	{
+		MovementTimeline.Play();
+	}
+	else if (!bLoop)
+	{
+		MovementTimeline.Reverse();
+	}
 }
 
 void AMovingPlatform::ProcessMovementTimeline(const float Value) const

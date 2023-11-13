@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
 #include "Common/Structs/SaveData/BallPawnSaveData.h"
+#include "Common/Structs/SaveData/MovingPlatformSaveData.h"
 #include "ShapeShifterSaveGame.generated.h"
 
 // Use this class as a struct to store variables you want to save/load for any class
@@ -21,7 +22,7 @@ public:
 	UPROPERTY()
 	TMap<FString, bool> LeverSaveData;
 
-	// MovingPlatform instance unique name (use GetName) and MovementTimeline PlaybackPosition
+	// MovingPlatform instance unique name (use GetName) and FMovingPlatformSaveData struct
 	UPROPERTY()
-	TMap<FString, float> MovingPlatformSaveData;
+	TMap<FString, FMovingPlatformSaveData> MovingPlatformSaveData;
 };

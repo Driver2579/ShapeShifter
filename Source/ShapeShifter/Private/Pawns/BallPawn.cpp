@@ -179,8 +179,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: PlayerController is invalid!"));
 	}
 
-	// Load player variables
-	SetActorTransform(SaveGameObject->BallPawnSaveData.PlayerTransform);
+	// Set location in PlayerTransform a little upper to avoid colliding with moving objects by Z axis
+	FTransform& PlayerTransform = SaveGameObject->BallPawnSaveData.PlayerTransform;
+	PlayerTransform.SetLocation(PlayerTransform.GetLocation() + FVector(0, 0, 1));
+
+	// Load other player variables
+	SetActorTransform(PlayerTransform);
 	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
 

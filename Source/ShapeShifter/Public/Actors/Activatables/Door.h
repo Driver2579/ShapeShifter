@@ -25,7 +25,7 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -38,13 +38,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
-	// Start and end locations for each door
-	FVector StartLeftDoorLocation;
+	// Start and end locations for right door
 	FVector StartRightDoorLocation;
-	FVector EndLeftDoorLocation;
 	FVector EndRightDoorLocation;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta=(ClampMin = 0))
+	// Start and end locations for left door
+	FVector StartLeftDoorLocation;
+	FVector EndLeftDoorLocation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (ClampMin = 0))
 	float MoveOffset = 60;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (ClampMin = 0))

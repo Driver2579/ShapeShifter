@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/TimelineComponent.h"
-#include "Jumppad.generated.h"
+#include "JumpPad.generated.h"
 
 class UJumpPadTargetComponent;
 
@@ -14,8 +14,10 @@ class SHAPESHIFTER_API AJumpPad : public AActor
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	AJumpPad();
+
+	virtual void Tick(float DeltaTime) override;
 
 	UStaticMeshComponent* GetMesh() const;
 
@@ -23,9 +25,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -35,7 +35,7 @@ protected:
 	class UBoxComponent* JumpTriggerComponent;
 
 	// Indicates where the player should land in the level.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
@@ -44,7 +44,7 @@ private:
 	FTimerHandle JumpTimer;
 
 	// The velocity that will be added to the required jump 
-	FVector InitialVelocity = FVector::ZeroVector;
+	FVector ThrowVelocity;
 
 	// Delay before jump
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
@@ -63,7 +63,7 @@ private:
 	UCurveFloat* AnimateCurve;
 
 	UFUNCTION()
-	void OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	void OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
@@ -71,5 +71,5 @@ private:
 		int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void ProcessAnimateTimeline(const float Value);
+	void ProcessAnimateTimeline(const float Value) const;
 };

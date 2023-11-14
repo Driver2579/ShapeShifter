@@ -22,9 +22,11 @@ void ADoor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Set open and closed states
+	// Set open and closed left door states
 	StartLeftDoorLocation = LeftDoorMeshComponent->GetRelativeLocation();
 	EndLeftDoorLocation = StartLeftDoorLocation - FVector(MoveOffset, 0, 0);
+
+	// Set open and closed right door states
 	StartRightDoorLocation = RightDoorMeshComponent->GetRelativeLocation();
 	EndRightDoorLocation = StartRightDoorLocation - FVector(-MoveOffset, 0, 0);
 }
@@ -33,11 +35,13 @@ void ADoor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector NewLeftLocation = FMath::VInterpConstantTo(LeftDoorMeshComponent->GetRelativeLocation(),
-		IsActive() ? EndLeftDoorLocation : StartLeftDoorLocation, DeltaTime, MoveSpeed);
+	const FVector& TargetLeftDoorLocation = bActive ? EndLeftDoorLocation : StartLeftDoorLocation;
+	const FVector& NewLeftLocation = FMath::VInterpConstantTo(LeftDoorMeshComponent->GetRelativeLocation(),
+		TargetLeftDoorLocation, DeltaTime, MoveSpeed);
 
-	FVector NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
-		IsActive() ? EndRightDoorLocation : StartRightDoorLocation, DeltaTime, MoveSpeed);
+	const FVector& TargetRightDoorLocation = bActive ? EndRightDoorLocation : StartRightDoorLocation;
+	const FVector& NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
+		TargetRightDoorLocation, DeltaTime, MoveSpeed);
 
 	LeftDoorMeshComponent->SetRelativeLocation(NewLeftLocation);
 	RightDoorMeshComponent->SetRelativeLocation(NewRightLocation);

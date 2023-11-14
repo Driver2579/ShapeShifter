@@ -1,6 +1,6 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/Activatables/Jumppad.h"
+#include "Actors/Activatables/JumpPad.h"
 
 #include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
@@ -17,16 +17,11 @@ AJumpPad::AJumpPad()
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
 	PadMeshComponent->SetupAttachment(BaseMeshComponent);
 
-	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
+	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
 	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
 
 	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
-}
-
-UStaticMeshComponent* AJumpPad::GetMesh() const
-{
-	return BaseMeshComponent;
 }
 
 void AJumpPad::BeginPlay()
@@ -58,10 +53,10 @@ void AJumpPad::BeginPlay()
 	// Set the timeline length mode based on the last key point of the curve
 	AnimateTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
 
-	// Normal in the direction of where to turn the jumppad
+	// Normal in the direction of where to turn the JumpPad
 	const FVector NewJumpPadDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
 
-	// The angle at which the jumppad should be turned
+	// The angle at which the JumpPad should be turned
 	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
 
 	// Removing a negative angle
@@ -87,10 +82,10 @@ void AJumpPad::BeginPlay()
 	const float HorizontalVelocity = FVector::VectorPlaneProject(TargetLocationComponent->GetRelativeLocation(),
 		FVector(0, 0, 1)).Length() / FlightTime;
 
-	InitialVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
-	InitialVelocity.Z += VerticalVelocity;
+	ThrowVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
+	ThrowVelocity.Z += VerticalVelocity;
 
-	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpBeginTriggerOverlap);
+	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerBeginOverlap);
 	JumpTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerEndOverlap);
 }
 
@@ -112,29 +107,34 @@ void AJumpPad::Tick(float DeltaTime)
 	}
 }
 
-void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!IsValid(OtherActor) || !OtherComp->IsSimulatingPhysics())
+	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
 	{
 		return;
 	}
-	
-	// Jump the mesh if delay is 0
+
+	// Throw the OtherComp immediately if delay is 0
 	if (JumpDelay == 0)
 	{
-		OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+		OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
 		AnimateTimeline.PlayFromStart();
 	}
-	// Jump the mesh with delay
+	// Throw the OtherComp with delay
 	else
 	{
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
-			OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+			OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
 			AnimateTimeline.PlayFromStart();
 		}, JumpDelay, false);
 	}
+}
+
+UStaticMeshComponent* AJumpPad::GetMesh() const
+{
+	return BaseMeshComponent;
 }
 
 void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -143,8 +143,8 @@ void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	GetWorldTimerManager().ClearTimer(JumpTimer);
 }
 
-void AJumpPad::ProcessAnimateTimeline(const float Value)
+void AJumpPad::ProcessAnimateTimeline(const float Value) const
 {
-	FRotator Rotation = PadMeshComponent->GetRelativeRotation();
+	const FRotator& Rotation = PadMeshComponent->GetRelativeRotation();
 	PadMeshComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
 }

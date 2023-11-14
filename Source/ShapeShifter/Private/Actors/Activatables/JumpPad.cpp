@@ -14,11 +14,14 @@ AJumpPad::AJumpPad()
 	BaseMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base Mesh"));
 	BaseMeshComponent->SetupAttachment(RootComponent);
 
-	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
-	PadMeshComponent->SetupAttachment(BaseMeshComponent);
-
 	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
 	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
+
+	AxisOfRotationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Axis of rotation"));
+	AxisOfRotationComponent->SetupAttachment(BaseMeshComponent);
+
+	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
+	PadMeshComponent->SetupAttachment(AxisOfRotationComponent);
 
 	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
@@ -28,33 +31,39 @@ void AJumpPad::BeginPlay()
 {
 	Super::BeginPlay();
 
+	const FVector& Target = TargetLocationComponent->GetRelativeLocation();
+
 	// The player cannot jump onto a platform if the jump is below the platform
-	if (TargetLocationComponent->GetRelativeLocation().Z > JumpHeight)
+	if (Target.Z > JumpHeight)
 	{
 		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: JumpHeight is lower than TargetLocationComponent height"));
 		
 		return;
 	}
 
-	if (!IsValid(AnimateCurve))
+	// There should be a curve showing the throw animation
+	if (!IsValid(AnimationCurve))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: AnimateCurve is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: AnimationCurve is invalid!"));
 
 		return;
 	}
 
-	// Add an event to handle value changes on the timeline
-	FOnTimelineFloat ProgressFunction;
-	ProgressFunction.BindUFunction(this, TEXT("ProcessAnimateTimeline"));
+	// Bind event to handle value changes on the timeline
+	FOnTimelineFloatStatic ProgressAnimation;
+	ProgressAnimation.BindUObject(this, &AJumpPad::ProgressAnimateTimeline);
+	AnimationTimeline.AddInterpFloat(AnimationCurve, ProgressAnimation);
 
-	// Add motion curve interpolation to the timeline using the given delegate
-	AnimateTimeline.AddInterpFloat(AnimateCurve, ProgressFunction);
+	// Bind event to handle the end of the timeline
+	FOnTimelineEventStatic OnAnimationFinished;
+	OnAnimationFinished.BindUObject(this, &AJumpPad::OnEndAnimation);
+	AnimationTimeline.SetTimelineFinishedFunc(OnAnimationFinished);
 
 	// Set the timeline length mode based on the last key point of the curve
-	AnimateTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
+	AnimationTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
 
 	// Normal in the direction of where to turn the JumpPad
-	const FVector NewJumpPadDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
+	const FVector NewJumpPadDirection = Target.GetSafeNormal();
 
 	// The angle at which the JumpPad should be turned
 	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
@@ -75,14 +84,17 @@ void AJumpPad::BeginPlay()
 	const float VerticalVelocity = FMath::Sqrt(2 * Gravity * JumpHeight);
 
 	// The time the object will spend in the air
-	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(
-		2 * (JumpHeight - TargetLocationComponent->GetRelativeLocation().Z) / Gravity);
+	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(2 * (JumpHeight - Target.Z) / Gravity);
+
+	// Path to target locations in XY plane
+	FVector HorizontalPath = Target;
+	HorizontalPath.Z = 0;
 
 	// Velocity to the TargetLocation
-	const float HorizontalVelocity = FVector::VectorPlaneProject(TargetLocationComponent->GetRelativeLocation(),
-		FVector(0, 0, 1)).Length() / FlightTime;
+	const float HorizontalVelocity = HorizontalPath.Length() / FlightTime;
 
-	ThrowVelocity = TargetLocationComponent->GetRelativeLocation().GetSafeNormal() * HorizontalVelocity;
+	// Set the throwing force
+	ThrowVelocity = HorizontalPath.GetSafeNormal() * HorizontalVelocity;
 	ThrowVelocity.Z += VerticalVelocity;
 
 	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerBeginOverlap);
@@ -100,35 +112,19 @@ void AJumpPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Update JumpPad rotation
-	if (AnimateTimeline.IsPlaying())
+	// Update animation frame
+	if (AnimationTimeline.IsPlaying())
 	{
-		AnimateTimeline.TickTimeline(DeltaTime);
+		AnimationTimeline.TickTimeline(DeltaTime);
 	}
-}
+} 
 
 void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
+	if (IsValid(OtherComp) && OtherComp->IsSimulatingPhysics() && !AnimationTimeline.IsPlaying())
 	{
-		return;
-	}
-
-	// Throw the OtherComp immediately if delay is 0
-	if (JumpDelay == 0)
-	{
-		OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
-		AnimateTimeline.PlayFromStart();
-	}
-	// Throw the OtherComp with delay
-	else
-	{
-		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
-		{
-			OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
-			AnimateTimeline.PlayFromStart();
-		}, JumpDelay, false);
+		ThrowObject(OtherComp);
 	}
 }
 
@@ -143,8 +139,39 @@ void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	GetWorldTimerManager().ClearTimer(JumpTimer);
 }
 
-void AJumpPad::ProcessAnimateTimeline(const float Value) const
+void AJumpPad::ProgressAnimateTimeline(const float Value) const
 {
-	const FRotator& Rotation = PadMeshComponent->GetRelativeRotation();
-	PadMeshComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
+	const FRotator& Rotation = AxisOfRotationComponent->GetRelativeRotation();
+	AxisOfRotationComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
+}
+
+void AJumpPad::OnEndAnimation()
+{
+	TArray<UPrimitiveComponent*> OverlappingComponents;
+	JumpTriggerComponent->GetOverlappingComponents(OverlappingComponents);
+
+	// Throw all objects that are on the jumppad
+	for (auto It : OverlappingComponents)
+	{
+		ThrowObject(It);
+	}
+}
+
+void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
+{
+	// Throw the OtherComp immediately if delay is 0
+	if (JumpDelay == 0)
+	{
+		Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
+		AnimationTimeline.PlayFromStart();
+	}
+	// Throw the OtherComp with delay
+	else
+	{
+		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object]
+			{
+				Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
+				AnimationTimeline.PlayFromStart();
+			}, JumpDelay, false);
+	}
 }

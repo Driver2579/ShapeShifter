@@ -19,6 +19,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+
 	UStaticMeshComponent* GetMesh() const;
 
 protected:
@@ -32,6 +33,9 @@ protected:
 	UStaticMeshComponent* PadMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* AxisOfRotationComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
 
 	// Indicates where the player should land in the level.
@@ -39,7 +43,7 @@ protected:
 	UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
-	FTimeline AnimateTimeline;
+	FTimeline AnimationTimeline;
 
 	FTimerHandle JumpTimer;
 
@@ -60,7 +64,7 @@ private:
 
 	// Should display the time dependence of the location on the route
 	UPROPERTY(EditAnywhere)
-	UCurveFloat* AnimateCurve;
+	UCurveFloat* AnimationCurve;
 
 	UFUNCTION()
 	void OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -70,6 +74,8 @@ private:
 	void OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
-	UFUNCTION()
-	void ProcessAnimateTimeline(const float Value) const;
+	void ProgressAnimateTimeline(const float Value) const;
+	void OnEndAnimation();
+
+	void ThrowObject(UPrimitiveComponent* Object);
 };

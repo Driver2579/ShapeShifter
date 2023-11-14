@@ -1,7 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Actors/Activatables/JumpPad.h"
 
+#include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
 
 AJumpPad::AJumpPad()
@@ -14,12 +15,12 @@ AJumpPad::AJumpPad()
 	BaseMeshComponent->SetupAttachment(RootComponent);
 
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
-	PadMeshComponent->SetupAttachment(RootComponent);
+	PadMeshComponent->SetupAttachment(BaseMeshComponent);
 
 	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
-	JumpTriggerComponent->SetupAttachment(RootComponent);
+	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
 
-	TargetLocationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Target Location"));
+	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
 }
 
@@ -34,6 +35,38 @@ void AJumpPad::BeginPlay()
 		
 		return;
 	}
+
+	if (!IsValid(AnimateCurve))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: AnimateCurve is invalid!"));
+
+		return;
+	}
+
+	// Add an event to handle value changes on the timeline
+	FOnTimelineFloat ProgressFunction;
+	ProgressFunction.BindUFunction(this, TEXT("ProcessAnimateTimeline"));
+
+	// Add motion curve interpolation to the timeline using the given delegate
+	AnimateTimeline.AddInterpFloat(AnimateCurve, ProgressFunction);
+
+	// Set the timeline length mode based on the last key point of the curve
+	AnimateTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
+
+	// Normal in the direction of where to turn the JumpPad
+	const FVector NewJumpPadDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
+
+	// The angle at which the JumpPad should be turned
+	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
+
+	// Removing a negative angle
+	if (Angle < 0.0f)
+	{
+		Angle += 360.0f;
+	}
+
+	// Set JumpPad Mesh rotation using Angle
+	BaseMeshComponent->SetWorldRotation(FRotator(0.0f, Angle, 0.0f));
 
 	// Acceleration of gravity
 	const float Gravity = 981.0f;
@@ -66,6 +99,12 @@ void AJumpPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AJumpPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Update JumpPad rotation
+	if (AnimateTimeline.IsPlaying())
+	{
+		AnimateTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -80,6 +119,7 @@ void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AA
 	if (JumpDelay == 0)
 	{
 		OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
+		AnimateTimeline.PlayFromStart();
 	}
 	// Throw the OtherComp with delay
 	else
@@ -87,12 +127,24 @@ void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AA
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
 			OtherComp->SetAllPhysicsLinearVelocity(ThrowVelocity);
+			AnimateTimeline.PlayFromStart();
 		}, JumpDelay, false);
 	}
+}
+
+UStaticMeshComponent* AJumpPad::GetMesh() const
+{
+	return BaseMeshComponent;
 }
 
 void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	GetWorldTimerManager().ClearTimer(JumpTimer);
+}
+
+void AJumpPad::ProcessAnimateTimeline(const float Value) const
+{
+	const FRotator& Rotation = PadMeshComponent->GetRelativeRotation();
+	PadMeshComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
 }

@@ -4,21 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/TimelineComponent.h"
 #include "JumpPad.generated.h"
+
+class UJumpPadTargetComponent;
 
 UCLASS()
 class SHAPESHIFTER_API AJumpPad : public AActor
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	AJumpPad();
+
+	virtual void Tick(float DeltaTime) override;
+
+	UStaticMeshComponent* GetMesh() const;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
@@ -29,11 +34,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
 
-	// Indicates where the player should land in the level
+	// Indicates where the player should land in the level.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* TargetLocationComponent;
+	UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
+	FTimeline AnimateTimeline;
+
 	FTimerHandle JumpTimer;
 
 	// The velocity that will be added to the required jump 
@@ -47,6 +54,14 @@ private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
 	float JumpHeight = 200;
 
+	// Maximum angle during animation
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
+	float RotationOffset = 20;
+
+	// Should display the time dependence of the location on the route
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* AnimateCurve;
+
 	UFUNCTION()
 	void OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -54,4 +69,7 @@ private:
 	UFUNCTION()
 	void OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void ProcessAnimateTimeline(const float Value) const;
 };

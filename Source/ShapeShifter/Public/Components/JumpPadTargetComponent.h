@@ -6,8 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "JumpPadTargetComponent.generated.h"
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class SHAPESHIFTER_API UJumpPadTargetComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -16,7 +15,6 @@ public:
 	UJumpPadTargetComponent();
 
 protected:
-	virtual void BeginPlay() override;
 
 #if WITH_EDITOR
 	virtual void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None) override;

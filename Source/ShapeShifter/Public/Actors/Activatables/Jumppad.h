@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/TimelineComponent.h"
 #include "Jumppad.generated.h"
 
 class UJumpPadTargetComponent;
@@ -38,6 +39,8 @@ protected:
 	UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
+	FTimeline AnimateTimeline;
+
 	FTimerHandle JumpTimer;
 
 	// The velocity that will be added to the required jump 
@@ -51,6 +54,14 @@ private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
 	float JumpHeight = 200;
 
+	// Maximum angle during animation
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
+	float RotationOffset = 20;
+
+	// Should display the time dependence of the location on the route
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* AnimateCurve;
+
 	UFUNCTION()
 	void OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -58,4 +69,7 @@ private:
 	UFUNCTION()
 	void OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void ProcessAnimateTimeline(const float Value);
 };

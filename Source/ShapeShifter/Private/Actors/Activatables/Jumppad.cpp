@@ -41,6 +41,38 @@ void AJumpPad::BeginPlay()
 		return;
 	}
 
+	if (!IsValid(AnimateCurve))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: AnimateCurve is invalid!"));
+
+		return;
+	}
+
+	// Add an event to handle value changes on the timeline
+	FOnTimelineFloat ProgressFunction;
+	ProgressFunction.BindUFunction(this, TEXT("ProcessAnimateTimeline"));
+
+	// Add motion curve interpolation to the timeline using the given delegate
+	AnimateTimeline.AddInterpFloat(AnimateCurve, ProgressFunction);
+
+	// Set the timeline length mode based on the last key point of the curve
+	AnimateTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
+
+	// Normal in the direction of where to turn the jumppad
+	const FVector NewJumpPadDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
+
+	// The angle at which the jumppad should be turned
+	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
+
+	// Removing a negative angle
+	if (Angle < 0.0f)
+	{
+		Angle += 360.0f;
+	}
+
+	// Set JumpPad Mesh rotation using Angle
+	BaseMeshComponent->SetWorldRotation(FRotator(0.0f, Angle, 0.0f));
+
 	// Acceleration of gravity
 	const float Gravity = 981.0f;
 
@@ -72,6 +104,12 @@ void AJumpPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AJumpPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Update JumpPad rotation
+	if (AnimateTimeline.IsPlaying())
+	{
+		AnimateTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -86,6 +124,7 @@ void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AA
 	if (JumpDelay == 0)
 	{
 		OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+		AnimateTimeline.PlayFromStart();
 	}
 	// Jump the mesh with delay
 	else
@@ -93,6 +132,7 @@ void AJumpPad::OnJumpBeginTriggerOverlap(UPrimitiveComponent* OverlappedComp, AA
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, OtherComp]
 		{
 			OtherComp->SetPhysicsLinearVelocity(InitialVelocity);
+			AnimateTimeline.PlayFromStart();
 		}, JumpDelay, false);
 	}
 }
@@ -103,11 +143,8 @@ void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	GetWorldTimerManager().ClearTimer(JumpTimer);
 }
 
-//void AJumpPad::OnTransformUpdated(USceneComponent* UpdatedComponent, EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
-//{
-	//const FVector NewDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
-	//float Angle = FMath::Acos(FVector::DotProduct(NewDirection, FVector::ForwardVector)) * (180.0f / PI);
-
-	//const FRotator NewRotation = FRotator(0.0f, Angle, 0.0f);;
-	//BaseMeshComponent->SetWorldRotation(NewRotation);
-//}
+void AJumpPad::ProcessAnimateTimeline(const float Value)
+{
+	FRotator Rotation = PadMeshComponent->GetRelativeRotation();
+	PadMeshComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
+}

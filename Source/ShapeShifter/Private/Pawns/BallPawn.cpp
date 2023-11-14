@@ -6,13 +6,18 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Common/Enums/BallPawnForm.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
+#include "Actors/SaveGameManager.h"
+#include "Objects/ShapeShifterSaveGame.h"
 
 ABallPawn::ABallPawn()
 {
 	SetupComponents();
+
+	CurrentForm = EBallPawnForm::Rubber;
 
 	FormMaterials.Add(EBallPawnForm::Rubber);
 	FormMaterials.Add(EBallPawnForm::Metal);
@@ -87,7 +92,114 @@ void ABallPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	LastUpdateVelocity = GetVelocity();
+	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
+}
+
+void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
+{
+	SaveGameManagerPtr = SaveGameManager;
+}
+
+void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	// Don't manage saving for the Clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	// Save player variables
+	SaveGameObject->BallPawnSaveData.CameraRotation = GetControlRotation();
+	SaveGameObject->BallPawnSaveData.PlayerTransform = GetActorTransform();
+	SaveGameObject->BallPawnSaveData.PlayerVelocity = GetVelocity();
+	SaveGameObject->BallPawnSaveData.PlayerForm = CurrentForm;
+
+	// Don't save Clone variables if it doesn't exists
+	if (!Clone.IsValid())
+	{
+		// Save that we don't have Clone
+		SaveGameObject->BallPawnSaveData.bHasPlayerClone = false;
+
+		return;
+	}
+
+	// Save that we have Clone and its variables in another case
+	SaveGameObject->BallPawnSaveData.bHasPlayerClone = true;
+	SaveGameObject->BallPawnSaveData.CloneTransform = Clone->GetActorTransform();
+	SaveGameObject->BallPawnSaveData.CloneVelocity = Clone->GetVelocity();
+}
+
+void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	// Don't manage loading for the Clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	// Load CameraRotation if PlayerController is valid
+	if (IsValid(PlayerController))
+	{
+		PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: PlayerController is invalid!"));
+	}
+
+	// Set location in PlayerTransform a little upper to avoid colliding with moving objects by Z axis
+	FTransform& PlayerTransform = SaveGameObject->BallPawnSaveData.PlayerTransform;
+	PlayerTransform.SetLocation(PlayerTransform.GetLocation() + FVector(0, 0, 1));
+
+	// Load other player variables
+	SetActorTransform(PlayerTransform);
+	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
+	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
+
+	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
+	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
+	{
+		if (Clone.IsValid())
+		{
+			Clone->Destroy();
+		}
+
+		return;
+	}
+
+	// Spawn Clone in another case and if wasn't spawned before  
+	if (!Clone.IsValid())
+	{
+		SpawnClone();
+
+		// Return if failed to spawn Clone
+		if (!Clone.IsValid())
+		{
+			UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: Failed to spawn clone!"));
+
+			return;
+		}
+	}
+
+	// Load Clone variables
+	Clone->SetActorTransform(SaveGameObject->BallPawnSaveData.CloneTransform);
+	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -187,6 +299,26 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: CreateCloneAction is invalid!"));
+	}
+
+	if (IsValid(SaveGameAction))
+	{
+		EnhancedInputComponent->BindAction(SaveGameAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::SaveGame);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: SaveGameAction is invalid!"));
+	}
+
+	if (IsValid(LoadGameAction))
+	{
+		EnhancedInputComponent->BindAction(LoadGameAction, ETriggerEvent::Triggered, this,
+			&ABallPawn::LoadGame);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupPlayerInputComponent: LoadGameAction is invalid!"));
 	}
 }
 
@@ -545,6 +677,32 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ABallPawn::SaveGame()
+{
+	if (SaveGameManagerPtr.IsValid())
+	{
+		SaveGameManagerPtr->SaveGame();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManagerPtr is invalid!"));
+	}
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ABallPawn::LoadGame()
+{
+	if (SaveGameManagerPtr.IsValid())
+	{
+		SaveGameManagerPtr->LoadGame();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManagerPtr is invalid!"));
+	}
 }
 
 void ABallPawn::InitWaterFluidSimulation()

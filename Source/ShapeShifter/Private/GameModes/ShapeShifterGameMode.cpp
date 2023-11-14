@@ -2,8 +2,17 @@
 
 #include "GameModes/ShapeShifterGameMode.h"
 
-void AShapeShifterGameMode::BeginPlay()
+#include "Actors/SaveGameManager.h"
+
+void AShapeShifterGameMode::PostInitializeComponents()
 {
-	Super::BeginPlay();
-	
+	Super::PostInitializeComponents();
+
+	// We spawn SaveGameManager in PostInitializeComponents to make sure it spawned before all Actors called BeginPlay
+	SaveGameManager = GetWorld()->SpawnActor<ASaveGameManager>();
+}
+
+ASaveGameManager* AShapeShifterGameMode::GetSaveGameManager() const
+{
+	return SaveGameManager.Get();
 }

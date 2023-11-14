@@ -4,16 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Common/Enums/BallPawnForm.h"
+#include "Interfaces/Savable.h"
 #include "BuoyancyTypes.h"
 #include "BallPawn.generated.h"
 
+class UShapeShifterSaveGame;
 class UInputAction;
 
 struct FInputActionValue;
 
+enum class EBallPawnForm;
+
 UCLASS()
-class SHAPESHIFTER_API ABallPawn : public APawn
+class SHAPESHIFTER_API ABallPawn : public APawn, public ISavable
 {
 	GENERATED_BODY()
 
@@ -79,12 +82,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* JumpAction;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* ChangeFormAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* CreateCloneAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* SaveGameAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UInputAction* LoadGameAction;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -95,6 +104,14 @@ protected:
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
 	void SpawnClone();
+
+	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
+
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
+
+	void SaveGame();
+	void LoadGame();
 
 	// Call RegisterDynamicForce for every FluidSim Actor on scene
 	void InitWaterFluidSimulation();
@@ -144,7 +161,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Form")
 	bool bCanEverChangeForm = true; 
 
-	EBallPawnForm CurrentForm = EBallPawnForm::Rubber;
+	EBallPawnForm CurrentForm;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterial*> FormMaterials;
@@ -185,6 +202,8 @@ private:
 	// If true than Clone will be destroyed when changing Form
 	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
+
+	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")

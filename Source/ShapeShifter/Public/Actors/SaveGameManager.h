@@ -9,7 +9,7 @@
 
 class UShapeShifterSaveGame;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveLoadGameSignature, UShapeShifterSaveGame*, SaveGameObject);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSaveLoadGameSignature, UShapeShifterSaveGame*);
 
 UCLASS()
 class SHAPESHIFTER_API ASaveGameManager : public AActor
@@ -52,6 +52,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	FString SaveGameSlotName = TEXT("SaveGame");
+
+	// Collect all Actors with Savable interface and bind their functions to OnSaveGame and OnLoadGame delegates
+	void BindAllSavables();
 
 	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinished;
 };

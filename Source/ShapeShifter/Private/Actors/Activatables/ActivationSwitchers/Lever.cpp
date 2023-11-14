@@ -2,9 +2,7 @@
 
 #include "Actors/Activatables/ActivationSwitchers/Lever.h"
 
-#include "Actors/SaveGameManager.h"
 #include "Components/BoxComponent.h"
-#include "GameModes/ShapeShifterGameMode.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
 ALever::ALever()
@@ -41,8 +39,6 @@ void ALever::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetupSaveLoadDelegates();
-
 	LeverMeshComponent->OnComponentHit.AddDynamic(this, &ALever::OnLeverMeshHit);
 }
 
@@ -71,30 +67,6 @@ void ALever::Tick(float DeltaTime)
 	{
 		bRotateLeverMesh = false;
 	}
-}
-
-void ALever::SetupSaveLoadDelegates()
-{
-	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(GameMode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ALever::SetupSaveLoadDelegates: Failed to get GameMode!"));
-
-		return;
-	}
-
-	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
-
-	if (!IsValid(SaveGameManager))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ALever::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager->OnSaveGame.AddDynamic(this, &ALever::OnSaveGame);
-	SaveGameManager->OnLoadGame.AddDynamic(this, &ALever::OnLoadGame);
 }
 
 void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)

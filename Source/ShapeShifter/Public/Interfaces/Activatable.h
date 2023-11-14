@@ -13,7 +13,7 @@ class UActivatable : public UInterface
 	GENERATED_BODY()
 };
 
-// An interface for Actors which should have active and inactive state
+// An interface for Actors that should have active and inactive state
 class SHAPESHIFTER_API IActivatable
 {
 	GENERATED_BODY()

@@ -11,7 +11,6 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
 #include "Actors/SaveGameManager.h"
-#include "GameModes/ShapeShifterGameMode.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
 ABallPawn::ABallPawn()
@@ -74,8 +73,6 @@ void ABallPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetupSaveLoadDelegates();
-
 	InitDefaultMappingContext();
 	InitWaterFluidSimulation();
 
@@ -95,41 +92,22 @@ void ABallPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	LastUpdateVelocity = GetVelocity();
+	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
 }
 
-void ABallPawn::SetupSaveLoadDelegates()
+void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
 {
-	// Don't manage save/load for Clone
+	SaveGameManagerPtr = SaveGameManager;
+}
+
+void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
+{
+	// Don't manage saving for the Clone
 	if (!IsPlayerControlled())
 	{
 		return;
 	}
 
-	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(GameMode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: GameMode is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager = GameMode->GetSaveGameManager();
-
-	if (!SaveGameManager.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager->OnSaveGame.AddDynamic(this, &ABallPawn::OnSaveGame);
-	SaveGameManager->OnLoadGame.AddDynamic(this, &ABallPawn::OnLoadGame);
-}
-
-void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
-{
 	if (!IsValid(SaveGameObject))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnSaveGame: SaveGameObject is invalid!"));
@@ -160,6 +138,12 @@ void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 
 void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 {
+	// Don't manage loading for the Clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
 	if (!IsValid(SaveGameObject))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABallPawn::OnLoadGame: SaveGameObject is invalid!"));
@@ -698,26 +682,26 @@ bool ABallPawn::CanSpawnClone() const
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::SaveGame()
 {
-	if (SaveGameManager.IsValid())
+	if (SaveGameManagerPtr.IsValid())
 	{
-		SaveGameManager->SaveGame();
+		SaveGameManagerPtr->SaveGame();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManager is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManagerPtr is invalid!"));
 	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::LoadGame()
 {
-	if (SaveGameManager.IsValid())
+	if (SaveGameManagerPtr.IsValid())
 	{
-		SaveGameManager->LoadGame();
+		SaveGameManagerPtr->LoadGame();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManager is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManagerPtr is invalid!"));
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "Actors/SaveGameManager.h"
 
+#include "Interfaces/Savable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
@@ -16,12 +17,19 @@ void ASaveGameManager::BeginPlay()
 
 	CreateSaveGameObjectIfNotExists();
 
+	BindAllSavables();
+
 	// Broadcast OnLoadGame to all subscribed Actors to load their variables once OnAsyncLoadGameFinished was executed
 	OnAsyncLoadGameFinished.BindLambda([this](const FString& SlotName, const int32 UserIndex,
 		USaveGame* SaveGameObject)
 	{
 		OnLoadGame.Broadcast(CastChecked<UShapeShifterSaveGame>(SaveGameObject));
 	});
+}
+
+UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const
+{
+	return SaveGameObject.Get();
 }
 
 bool ASaveGameManager::CreateSaveGameObjectIfNotExists()
@@ -50,13 +58,29 @@ bool ASaveGameManager::CreateSaveGameObjectIfNotExists()
 			
 		return false;
 	}
-	
+
 	return true;
 }
 
-UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const
+void ASaveGameManager::BindAllSavables()
 {
-	return SaveGameObject.Get();
+	// Get all Actors with Savable interface
+	TArray<AActor*> SavableActors;
+	UGameplayStatics::GetAllActorsWithInterface(this, USavable::StaticClass(),
+		SavableActors);
+
+	for (int i = 0; i < SavableActors.Num(); ++i)
+	{
+		// CastChecked to ISavable because we know for sure it's valid and it implements ISavable
+		ISavable* SavableActor = CastChecked<ISavable>(SavableActors[i]);
+
+		// Bind SavableActor to delegates
+		OnSaveGame.AddRaw(SavableActor, &ISavable::OnSaveGame);
+		OnLoadGame.AddRaw(SavableActor, &ISavable::OnLoadGame);
+
+		// Call OnSavableSetup for SavableActor once we set it up
+		SavableActor->OnSavableSetup(this);
+	}
 }
 
 void ASaveGameManager::SaveGame()

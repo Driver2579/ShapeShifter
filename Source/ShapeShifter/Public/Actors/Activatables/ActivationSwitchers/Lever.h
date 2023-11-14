@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "ActivationSwitcher.h"
 #include "Interfaces/Activatable.h"
+#include "Interfaces/Savable.h"
 #include "Lever.generated.h"
 
 class UBoxComponent;
 class UShapeShifterSaveGame;
 
 UCLASS()
-class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable
+class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable, public ISavable
 {
 	GENERATED_BODY()
 
@@ -45,13 +46,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	void SetupSaveLoadDelegates();
-
-	UFUNCTION()
-	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
-
-	UFUNCTION()
-	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
 	UFUNCTION()
 	virtual void OnLeverMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
@@ -64,10 +60,11 @@ private:
 	// Set LeverMesh rotation to active/inactive state immediately without animation 
 	void SetLeverMeshRotationByActive() const;
 
+	// Called on Activate and Deactivate functions success
 	void OnActiveSwitch();
 
 	// Velocity needed for physics component to activate or deactivate the lever
-	UPROPERTY(EditDefaultsOnly, Category = "Activation")
+	UPROPERTY(EditDefaultsOnly, Category = "Activation", meta = (ClampMin = 0))
 	float VelocityToSwitchActivation = 10;
 
 	bool bRotateLeverMesh = false;
@@ -78,6 +75,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
 	FRotator LeverMeshInactiveRotation = FRotator(0, 0, 70);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
+	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation", meta = (ClampMin = 0))
 	float RotationSpeed = 25;
 };

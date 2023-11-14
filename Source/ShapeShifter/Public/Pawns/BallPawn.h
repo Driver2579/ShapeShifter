@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Interfaces/Savable.h"
 #include "BuoyancyTypes.h"
 #include "BallPawn.generated.h"
 
@@ -15,7 +16,7 @@ struct FInputActionValue;
 enum class EBallPawnForm;
 
 UCLASS()
-class SHAPESHIFTER_API ABallPawn : public APawn
+class SHAPESHIFTER_API ABallPawn : public APawn, public ISavable
 {
 	GENERATED_BODY()
 
@@ -67,14 +68,6 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	void SetupSaveLoadDelegates();
-
-	UFUNCTION()
-	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
-
-	UFUNCTION()
-	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
-
 	// Call AddMappingContext to LocalPlayerSubsystem if it was not added before
 	void InitDefaultMappingContext() const;
 
@@ -111,6 +104,11 @@ protected:
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
 	void SpawnClone();
+
+	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
+
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
 	void SaveGame();
 	void LoadGame();
@@ -205,7 +203,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
 
-	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
+	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")

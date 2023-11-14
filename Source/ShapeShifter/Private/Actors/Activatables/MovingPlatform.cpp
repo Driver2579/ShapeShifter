@@ -1,9 +1,7 @@
 #include "Actors/Activatables/MovingPlatform.h"
 
-#include "Actors/SaveGameManager.h"
 #include "Common/Structs/SaveData/MovingPlatformSaveData.h"
 #include "Components/SplineComponent.h"
-#include "GameModes/ShapeShifterGameMode.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
 AMovingPlatform::AMovingPlatform()
@@ -22,8 +20,6 @@ AMovingPlatform::AMovingPlatform()
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetupSaveLoadDelegates();
 
 	if (!IsValid(MovementCurve))
 	{
@@ -82,30 +78,6 @@ void AMovingPlatform::Tick(float DeltaTime)
 	{
 		MovementTimeline.TickTimeline(DeltaTime);	
 	}
-}
-
-void AMovingPlatform::SetupSaveLoadDelegates()
-{
-	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(GameMode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::SetupSaveLoadDelegates: Failed to get GameMode!"));
-
-		return;
-	}
-
-	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
-
-	if (!IsValid(SaveGameManager))
-	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::SetupSaveLoadDelegates: SaveGameManager is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager->OnSaveGame.AddDynamic(this, &AMovingPlatform::OnSaveGame);
-	SaveGameManager->OnLoadGame.AddDynamic(this, &AMovingPlatform::OnLoadGame);
 }
 
 void AMovingPlatform::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)

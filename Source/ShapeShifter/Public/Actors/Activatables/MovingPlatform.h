@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interfaces/Activatable.h"
+#include "Interfaces/Savable.h"
 #include "Components/TimelineComponent.h"
 #include "MovingPlatform.generated.h"
 
 class UShapeShifterSaveGame;
 
 UCLASS()
-class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable
+class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable, public ISavable
 {
 	GENERATED_BODY()
 	
@@ -35,13 +36,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	void SetupSaveLoadDelegates();
-
-	UFUNCTION()
-	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject);
-
-	UFUNCTION()
-	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject);
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
 	/**
 	 * Handles the movement of the platform along the spline.

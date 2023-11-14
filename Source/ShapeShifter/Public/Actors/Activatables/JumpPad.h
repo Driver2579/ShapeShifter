@@ -19,7 +19,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-
 	UStaticMeshComponent* GetMesh() const;
 
 protected:
@@ -77,5 +76,6 @@ private:
 	void ProgressAnimateTimeline(const float Value) const;
 	void OnEndAnimation();
 
+	// Throws an object on ThrowVelocity
 	void ThrowObject(UPrimitiveComponent* Object);
 };

@@ -3,6 +3,7 @@
 #include "Actors/Activatables/ActivationSwitchers/Lever.h"
 
 #include "Components/BoxComponent.h"
+#include "Objects/ShapeShifterSaveGame.h"
 
 ALever::ALever()
 {
@@ -17,37 +18,28 @@ ALever::ALever()
 	LeverMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Lever Mesh"));
 	LeverMeshComponent->SetupAttachment(RootComponent);
 
-	ActivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activation Zone"));
-	ActivationZoneComponent->SetupAttachment(LeverMeshComponent);
+	// Enable Hit Events
+	LeverMeshComponent->SetNotifyRigidBodyCollision(true);
 
-	DeactivationZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivation Zone"));
-    DeactivationZoneComponent->SetupAttachment(LeverMeshComponent);
+	ActivateZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Activate Zone"));
+	ActivateZoneComponent->SetupAttachment(LeverMeshComponent);
 
-	ActivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
-	DeactivationZoneComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	DeactivateZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivate Zone"));
+	DeactivateZoneComponent->SetupAttachment(LeverMeshComponent);
 }
 
 void ALever::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	if (bActive)
-	{
-		LeverMeshComponent->SetRelativeRotation(LeverMeshActiveRotation);
-	}
-	else
-	{
-		LeverMeshComponent->SetRelativeRotation(LeverMeshInactiveRotation);
-	}
+	SetLeverMeshRotationByActive();
 }
 
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ActivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this, &ALever::OnActivationZoneComponentBeginOverlap);
-	DeactivationZoneComponent->OnComponentBeginOverlap.AddDynamic(this,
-		&ALever::OnDeactivationZoneComponentBeginOverlap);
+	LeverMeshComponent->OnComponentHit.AddDynamic(this, &ALever::OnLeverMeshHit);
 }
 
 void ALever::Tick(float DeltaTime)
@@ -77,19 +69,62 @@ void ALever::Tick(float DeltaTime)
 	}
 }
 
-void ALever::OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 {
-	SetActiveIfHaveTo(OtherComp, true);
+	/**
+	 * Save Lever unique name and bActive. Add() will also replace bActive value instead of adding a key duplicate if
+	 * key with save name was already unique before.
+	 */
+	if (IsValid(SaveGameObject))
+	{
+		SaveGameObject->LeverSaveData.Add(GetName(), bActive);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
+	}
 }
 
-void ALever::OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 {
-	SetActiveIfHaveTo(OtherComp, false);
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
+
+		return;
+	}
+
+	// Load saved bActive by Lever unique name
+	const bool* SavedActive = SaveGameObject->LeverSaveData.Find(GetName());
+
+	if (SavedActive == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ALever::OnLoadGame: SavedActive is invalid for %s!"), *GetName());
+
+		return;
+	}
+
+	// SetActive using SavedActive
+	SetActive(*SavedActive);
+
+	// Skip rotation animation
+	SetLeverMeshRotationByActive();
 }
 
-void ALever::SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive)
+void ALever::SetLeverMeshRotationByActive() const
+{
+	if (bActive)
+	{
+		LeverMeshComponent->SetRelativeRotation(LeverMeshActiveRotation);
+	}
+	else
+	{
+		LeverMeshComponent->SetRelativeRotation(LeverMeshInactiveRotation);
+	}
+}
+
+void ALever::OnLeverMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// We don't need to handle OtherComps without physics
 	if (!IsValid(OtherComp) || !OtherComp->IsSimulatingPhysics())
@@ -100,13 +135,13 @@ void ALever::SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool 
 	// Get ZVelocity of OtherComp
 	const float ZVelocity = OtherComp->GetComponentVelocity().Z;
 
-	// Activate the Lever if OtherComp overlap the top of it
-	if (bNewActive && ZVelocity > VelocityToSwitchActivation)
+	// Activate the Lever if OtherComp hit the top of it
+	if (ZVelocity > VelocityToSwitchActivation && OtherComp->IsOverlappingComponent(ActivateZoneComponent))
 	{
 		Activate();
 	}
-	// Deactivate the Lever if OtherComp overlap the bottom of it
-	else if (!bNewActive && ZVelocity < -VelocityToSwitchActivation)
+	// Deactivate the Lever if OtherComp hit the bottom of it
+	else if (ZVelocity < -VelocityToSwitchActivation && OtherComp->IsOverlappingComponent(DeactivateZoneComponent))
 	{
 		Deactivate();
 	}

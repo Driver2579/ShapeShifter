@@ -23,8 +23,8 @@ void AFloorButton::SetupComponents()
 	ButtonTriggerComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Button Trigger"));
 	ButtonTriggerComponent->SetupAttachment(ButtonMeshComponent);
 
-	// Set ButtonTriggerComponent collision profile to OverlapAllDynamic
-	ButtonTriggerComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	// Set ButtonTriggerComponent collision profile to OverlapOnlyPawn
+	ButtonTriggerComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 
 	// Enable ButtonTriggerComponent MultiBodyOverlap
 	ButtonTriggerComponent->bMultiBodyOverlap = true;

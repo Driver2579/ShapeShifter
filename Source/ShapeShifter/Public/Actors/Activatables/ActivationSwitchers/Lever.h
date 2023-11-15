@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "ActivationSwitcher.h"
 #include "Interfaces/Activatable.h"
+#include "Interfaces/Savable.h"
 #include "Lever.generated.h"
 
 class UBoxComponent;
+class UShapeShifterSaveGame;
 
 UCLASS()
-class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable
+class SHAPESHIFTER_API ALever : public AActivationSwitcher, public IActivatable, public ISavable
 {
 	GENERATED_BODY()
 
@@ -31,39 +33,39 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* BaseMeshComponent;
-
+	
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* LeverMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* ActivationZoneComponent;
+	UBoxComponent* ActivateZoneComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* DeactivationZoneComponent;
+	UBoxComponent* DeactivateZoneComponent;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-	virtual void OnActivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
 	UFUNCTION()
-	virtual void OnDeactivationZoneComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnLeverMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
+	// Set LeverMesh rotation to active/inactive state immediately without animation 
+	void SetLeverMeshRotationByActive() const;
+
+	// Called on Activate and Deactivate functions success
 	void OnActiveSwitch();
 
 	// Velocity needed for physics component to activate or deactivate the lever
-	UPROPERTY(EditDefaultsOnly, Category = "Activation")
+	UPROPERTY(EditDefaultsOnly, Category = "Activation", meta = (ClampMin = 0))
 	float VelocityToSwitchActivation = 10;
-
-	// Call Activate or Deactivate only if OtherComp is simulating physics and its velocity match bNewActive 
-	void SetActiveIfHaveTo(const UPrimitiveComponent* OtherComp, const bool bNewActive);
 
 	bool bRotateLeverMesh = false;
 
@@ -73,6 +75,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
 	FRotator LeverMeshInactiveRotation = FRotator(0, 0, 70);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation")
+	UPROPERTY(EditDefaultsOnly, Category = "Lever Rotation", meta = (ClampMin = 0))
 	float RotationSpeed = 25;
 };

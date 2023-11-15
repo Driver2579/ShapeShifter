@@ -3,7 +3,6 @@
 #include "Actors/Activatables/Teleporter.h"
 
 #include "NiagaraComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "Pawns/BallPawn.h"
 
 ATeleporter::ATeleporter()
@@ -13,14 +12,24 @@ ATeleporter::ATeleporter()
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(RootComponent);
 
-	TeleportTrigger = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Teleport Trigger"));
-	TeleportTrigger->SetupAttachment(RootComponent);
+	TeleportTriggerComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Teleport Trigger"));
+	TeleportTriggerComponent->SetupAttachment(RootComponent);
 
-	NiagaraParticles = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Particles"));
-	NiagaraParticles->SetupAttachment(RootComponent);
+	// Set TeleportTriggerComponent collision profile to OverlapOnlyPawn
+	TeleportTriggerComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 
-	TeleportPoint = CreateDefaultSubobject<USceneComponent>(TEXT("TeleportPoint"));
-	TeleportPoint->SetupAttachment(RootComponent);
+	// Enable TeleportTriggerComponent MultiBodyOverlap
+	TeleportTriggerComponent->bMultiBodyOverlap = true;
+
+	// Make TeleportTriggerComponent invisible in editor and game
+	TeleportTriggerComponent->SetVisibility(false);
+	TeleportTriggerComponent->SetHiddenInGame(true);
+
+	NiagaraParticlesComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Particles"));
+	NiagaraParticlesComponent->SetupAttachment(RootComponent);
+
+	TeleportPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Teleport Point"));
+	TeleportPointComponent->SetupAttachment(RootComponent);
 }
 
 void ATeleporter::BeginPlay()
@@ -30,8 +39,8 @@ void ATeleporter::BeginPlay()
 	// Set default Active state
 	SetActive(bActive);
 
-	TeleportTrigger->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerBeginOverlap);
-	TeleportTrigger->OnComponentEndOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerEndOverlap);
+	TeleportTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerBeginOverlap);
+	TeleportTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ATeleporter::OnTeleportTriggerEndOverlap);
 }
 
 void ATeleporter::OnTeleportTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -58,8 +67,8 @@ void ATeleporter::OnTeleportTriggerBeginOverlap(UPrimitiveComponent* OverlappedC
 	// Clear BallPawn velocity
 	BallPawn->GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
 
-	// Teleport BallPawn to TeleportPoint of OtherTeleporter
-	BallPawn->SetActorLocation(OtherTeleporter->TeleportPoint->GetComponentLocation());
+	// Teleport BallPawn to TeleportPointComponent of OtherTeleporter
+	BallPawn->SetActorLocation(OtherTeleporter->TeleportPointComponent->GetComponentLocation());
 }
 
 void ATeleporter::OnTeleportTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -94,18 +103,23 @@ bool ATeleporter::IsOtherTeleporterValid() const
 	return true;
 }
 
+bool ATeleporter::IsActive() const
+{
+	return bActive;
+}
+
 void ATeleporter::Activate()
 {
 	bActive = true;
 
-	// Activate NiagaraParticles
-	NiagaraParticles->SetVisibility(true);
+	// Activate NiagaraParticlesComponent
+	NiagaraParticlesComponent->SetVisibility(true);
 
-	// Get ChildrenComponents of NiagaraParticles
+	// Get ChildrenComponents of NiagaraParticlesComponent
 	TArray<USceneComponent*> ChildrenComponents;
-	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
+	NiagaraParticlesComponent->GetChildrenComponents(true, ChildrenComponents);
 
-	// Activate ChildrenComponents of NiagaraParticles
+	// Activate ChildrenComponents of NiagaraParticlesComponent
 	for (USceneComponent* It : ChildrenComponents)
 	{
 		if (IsValid(It) && It->IsA<UNiagaraComponent>())
@@ -119,14 +133,14 @@ void ATeleporter::Deactivate()
 {
 	bActive = false;
 
-	// Deactivate NiagaraParticles
-	NiagaraParticles->SetVisibility(false);
+	// Deactivate NiagaraParticlesComponent
+	NiagaraParticlesComponent->SetVisibility(false);
 
-	// Get ChildrenComponents of NiagaraParticles
+	// Get ChildrenComponents of NiagaraParticlesComponent
 	TArray<USceneComponent*> ChildrenComponents;
-	NiagaraParticles->GetChildrenComponents(true, ChildrenComponents);
+	NiagaraParticlesComponent->GetChildrenComponents(true, ChildrenComponents);
 
-	// Deactivate ChildrenComponents of NiagaraParticles
+	// Deactivate ChildrenComponents of NiagaraParticlesComponent
 	for (USceneComponent* It : ChildrenComponents)
 	{
 		if (IsValid(It) && It->IsA<UNiagaraComponent>())
@@ -134,9 +148,4 @@ void ATeleporter::Deactivate()
 			It->SetVisibility(false);
 		}
 	}
-}
-
-bool ATeleporter::IsActive() const
-{
-	return bActive;
 }

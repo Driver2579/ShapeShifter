@@ -5,11 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interfaces/Activatable.h"
+#include "Interfaces/Savable.h"
 #include "Components/TimelineComponent.h"
 #include "MovingPlatform.generated.h"
 
+class UShapeShifterSaveGame;
+
 UCLASS()
-class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable
+class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable, public ISavable
 {
 	GENERATED_BODY()
 	
@@ -22,52 +25,58 @@ public:
 
 	virtual void Activate() override;
 	virtual void Deactivate() override;
-	
+
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class USplineComponent* MovementDirectionSplineComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UStaticMeshComponent* MeshComponent;
+
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class USplineComponent* MovementDirectionSplineComponent;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* MeshComponent;
-	
-	// Should display the time dependence of the location on the route
-	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
-	UCurveFloat* MovementCurve;
-
-	// Time it takes the platform to complete the route
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.01))
-	float MoveTime = 1;
-
-	// Delay before starting to move
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
-	float StartDelay = 0;
-
-	// Delay before starting to move backwards
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
-	float EndDelay = 0;
-
-	// Whether the platform will turn towards the route or not
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bRotate = false;
-
-	// Infinite movement when activated and stop in place when deactivated
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bLoop = false;
+	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
+	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
 	/**
 	 * Handles the movement of the platform along the spline.
 	 * @param Value Position of the platform on the spline (from 0 to 1).
 	 */
 	UFUNCTION()
-	void ProcessMovementTimeline(const float Value);
+	void ProcessMovementTimeline(const float Value) const;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
-	
+
+	bool bHasEverSwitchedActivation = false;
+
+	// Time it takes the platform to complete the route
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))
+	float MoveTime = 1;
+
+	// Delay before starting to move
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
+	float StartDelay = 0;
+
+	// Delay before starting to move backwards
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
+	float EndDelay = 0;
+
+	// Whether the platform will turn towards the route or not
+	UPROPERTY(EditAnywhere)
+	bool bRotate = false;
+
+	// Infinite movement when activated and stop in place when deactivated
+	UPROPERTY(EditAnywhere)
+	bool bLoop = false;
+
+	// Should display the time dependence of the location on the route
+	UPROPERTY(EditInstanceOnly)
+	UCurveFloat* MovementCurve;
+
 	FTimeline MovementTimeline;
+
 	FTimerHandle MoveTimer;
 };

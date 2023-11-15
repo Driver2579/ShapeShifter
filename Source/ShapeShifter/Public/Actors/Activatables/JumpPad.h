@@ -19,6 +19,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	// Get the base mesh
 	UStaticMeshComponent* GetMesh() const;
 
 protected:

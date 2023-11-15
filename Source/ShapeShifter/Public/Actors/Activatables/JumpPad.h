@@ -33,7 +33,7 @@ protected:
 	UStaticMeshComponent* PadMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* AxisOfRotationComponent;
+	USceneComponent* RotationAxisComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
@@ -47,6 +47,9 @@ private:
 
 	FTimerHandle JumpTimer;
 
+	FRotator StartRotation;
+	FRotator TargetRotation;
+
 	// The velocity that will be added to the required jump 
 	FVector ThrowVelocity;
 
@@ -58,9 +61,8 @@ private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
 	float JumpHeight = 200;
 
-	// Maximum angle during animation
-	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
-	float RotationOffset = 20;
+	UPROPERTY(EditAnywhere)
+	FRotator RotationOffset;
 
 	// Should display the time dependence of the location on the route
 	UPROPERTY(EditAnywhere)

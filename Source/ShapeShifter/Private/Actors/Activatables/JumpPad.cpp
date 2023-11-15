@@ -17,11 +17,11 @@ AJumpPad::AJumpPad()
 	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
 	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
 
-	AxisOfRotationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Axis of rotation"));
-	AxisOfRotationComponent->SetupAttachment(BaseMeshComponent);
+	RotationAxisComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Axis of rotation"));
+	RotationAxisComponent->SetupAttachment(BaseMeshComponent);
 
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
-	PadMeshComponent->SetupAttachment(AxisOfRotationComponent);
+	PadMeshComponent->SetupAttachment(RotationAxisComponent);
 
 	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
@@ -48,6 +48,12 @@ void AJumpPad::BeginPlay()
 
 		return;
 	}
+
+	// Save the initial axis rotation
+	StartRotation = RotationAxisComponent->GetRelativeRotation();
+
+	// Save the final axis rotation
+	TargetRotation = RotationAxisComponent->GetRelativeRotation() + RotationOffset;
 
 	// Bind event to handle value changes on the timeline
 	FOnTimelineFloatStatic ProgressAnimation;
@@ -141,8 +147,8 @@ void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
 
 void AJumpPad::ProgressAnimateTimeline(const float Value) const
 {
-	const FRotator& Rotation = AxisOfRotationComponent->GetRelativeRotation();
-	AxisOfRotationComponent->SetRelativeRotation(FRotator(Rotation.Pitch, Rotation.Yaw, Value * RotationOffset));
+	const FRotator& NewRotation = FMath::Lerp(StartRotation, TargetRotation, Value);
+	RotationAxisComponent->SetRelativeRotation(NewRotation);
 }
 
 void AJumpPad::OnEndAnimation()

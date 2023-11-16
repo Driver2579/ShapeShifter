@@ -111,6 +111,7 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+	// Remove old Clone and spawn the new one if it won't collide anything
 	void SpawnClone();
 
 	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
@@ -204,6 +205,13 @@ private:
 	 * @return True if not colliding.
 	 */
 	bool CanSpawnClone() const;
+
+	/**
+	 * Spawn the Clone without any checks.
+	 * @note Be careful with calling that because it will spawn the Clone even it's already exists or if it will collide
+	 * something when spawned.
+	 */
+	void SpawnCloneObject();
 
 	/**
 	 * You must set your own custom Collision Trace Channel which will Block only pawn to make Clone spawning work

@@ -195,7 +195,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	// Spawn Clone in another case and if wasn't spawned before  
 	if (!Clone.IsValid())
 	{
-		SpawnClone();
+		SpawnCloneObject();
 
 		// Return if failed to spawn Clone
 		if (!Clone.IsValid())
@@ -621,6 +621,12 @@ void ABallPawn::ChangeForm()
 
 void ABallPawn::CreateClone()
 {
+	// Only a player can create clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
 	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
@@ -654,22 +660,7 @@ void ABallPawn::SpawnClone()
 		return;
 	}
 
-	FActorSpawnParameters SpawnParameters;
-
-	// We have to set Clone scale same as players instead of multiplying them by each other
-	SpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
-
-	// We have to always spawn clone because we have own check for colliding
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	// Spawn Clone
-	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
-
-	// Set same Form to NewClone as ours but check if Clone is valid just in case
-	if (Clone.IsValid())
-	{
-		Clone->SetForm(CurrentForm);
-	}
+	SpawnCloneObject();
 }
 
 bool ABallPawn::CanSpawnClone() const
@@ -686,6 +677,26 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+void ABallPawn::SpawnCloneObject()
+{
+	FActorSpawnParameters SpawnParameters;
+
+	// We have to set Clone scale same as players instead of multiplying them by each other
+	SpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
+
+	// We have to always spawn clone because we have own check for colliding
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// Spawn Clone
+	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
+
+	// Set same Form to NewClone as ours but check if Clone is valid just in case
+	if (Clone.IsValid())
+	{
+		Clone->SetForm(CurrentForm);
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

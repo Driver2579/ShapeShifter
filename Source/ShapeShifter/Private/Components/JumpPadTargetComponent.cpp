@@ -14,7 +14,7 @@ void UJumpPadTargetComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTran
 {
 	Super::OnUpdateTransform(UpdateTransformFlags, Teleport);
 
-	AJumpPad* OwningJumpPad = GetOwner<AJumpPad>();
+	const AJumpPad* OwningJumpPad = GetOwner<AJumpPad>();
 
 	if (!OwningJumpPad)
 	{

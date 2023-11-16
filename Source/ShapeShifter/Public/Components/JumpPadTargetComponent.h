@@ -15,7 +15,6 @@ public:
 	UJumpPadTargetComponent();
 
 protected:
-
 #if WITH_EDITOR
 	virtual void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None) override;
 #endif

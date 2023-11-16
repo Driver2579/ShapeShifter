@@ -7,8 +7,6 @@
 #include "Components/TimelineComponent.h"
 #include "JumpPad.generated.h"
 
-class UJumpPadTargetComponent;
-
 UCLASS()
 class SHAPESHIFTER_API AJumpPad : public AActor
 {
@@ -40,7 +38,7 @@ protected:
 
 	// Indicates where the player should land in the level.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UJumpPadTargetComponent* TargetLocationComponent;
+	class UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
 	FTimeline AnimationTimeline;
@@ -81,4 +79,11 @@ private:
 
 	// Throws an object on ThrowVelocity
 	void ThrowObject(UPrimitiveComponent* Object);
+
+	void SetRrotation();
+
+	// Initialization functions
+	void InitializingRotation();
+	void InitializingAnimationTimeline();
+	void InitializingThrowVelocity();
 };

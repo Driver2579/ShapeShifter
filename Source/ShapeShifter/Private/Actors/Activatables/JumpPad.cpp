@@ -17,7 +17,7 @@ AJumpPad::AJumpPad()
 	JumpTriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Trigger"));
 	JumpTriggerComponent->SetupAttachment(BaseMeshComponent);
 
-	RotationAxisComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Axis of rotation"));
+	RotationAxisComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Rotation Axis"));
 	RotationAxisComponent->SetupAttachment(BaseMeshComponent);
 
 	PadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad Mesh"));
@@ -31,13 +31,11 @@ void AJumpPad::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const FVector& Target = TargetLocationComponent->GetRelativeLocation();
-
-	// The player cannot jump onto a platform if the jump is below the platform
-	if (Target.Z > JumpHeight)
+	// The player cannot jump onto a platform if the JumpHeight is below the platform
+	if (TargetLocationComponent->GetRelativeLocation().Z > JumpHeight)
 	{
 		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: JumpHeight is lower than TargetLocationComponent height"));
-		
+
 		return;
 	}
 
@@ -49,59 +47,12 @@ void AJumpPad::BeginPlay()
 		return;
 	}
 
-	// Save the initial axis rotation
-	StartRotation = RotationAxisComponent->GetRelativeRotation();
+	// JumpPad initializing
+	InitializingRotation();
+	InitializingAnimationTimeline();
+	InitializingThrowVelocity();
 
-	// Save the final axis rotation
-	TargetRotation = RotationAxisComponent->GetRelativeRotation() + RotationOffset;
-
-	// Bind event to handle value changes on the timeline
-	FOnTimelineFloatStatic ProgressAnimation;
-	ProgressAnimation.BindUObject(this, &AJumpPad::ProgressAnimateTimeline);
-	AnimationTimeline.AddInterpFloat(AnimationCurve, ProgressAnimation);
-
-	// Bind event to handle the end of the timeline
-	FOnTimelineEventStatic OnAnimationFinished;
-	OnAnimationFinished.BindUObject(this, &AJumpPad::OnEndAnimation);
-	AnimationTimeline.SetTimelineFinishedFunc(OnAnimationFinished);
-
-	// Set the timeline length mode based on the last key point of the curve
-	AnimationTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
-
-	// Normal in the direction of where to turn the JumpPad
-	const FVector NewJumpPadDirection = Target.GetSafeNormal();
-
-	// The angle at which the JumpPad should be turned
-	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
-
-	// Removing a negative angle
-	if (Angle < 0.0f)
-	{
-		Angle += 360.0f;
-	}
-
-	// Set JumpPad Mesh rotation using Angle
-	BaseMeshComponent->SetWorldRotation(FRotator(0.0f, Angle, 0.0f));
-
-	// Acceleration of gravity
-	const float Gravity = 981.0f;
-
-	// Velocity to achieve jumping heights
-	const float VerticalVelocity = FMath::Sqrt(2 * Gravity * JumpHeight);
-
-	// The time the object will spend in the air
-	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(2 * (JumpHeight - Target.Z) / Gravity);
-
-	// Path to target locations in XY plane
-	FVector HorizontalPath = Target;
-	HorizontalPath.Z = 0;
-
-	// Velocity to the TargetLocation
-	const float HorizontalVelocity = HorizontalPath.Length() / FlightTime;
-
-	// Set the throwing force
-	ThrowVelocity = HorizontalPath.GetSafeNormal() * HorizontalVelocity;
-	ThrowVelocity.Z += VerticalVelocity;
+	SetRrotation();
 
 	JumpTriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerBeginOverlap);
 	JumpTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerEndOverlap);
@@ -125,6 +76,11 @@ void AJumpPad::Tick(float DeltaTime)
 	}
 } 
 
+UStaticMeshComponent* AJumpPad::GetMesh() const
+{
+	return BaseMeshComponent;
+}
+
 void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -132,11 +88,6 @@ void AJumpPad::OnJumpTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AA
 	{
 		ThrowObject(OtherComp);
 	}
-}
-
-UStaticMeshComponent* AJumpPad::GetMesh() const
-{
-	return BaseMeshComponent;
 }
 
 void AJumpPad::OnJumpTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -174,10 +125,77 @@ void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
 	// Throw the OtherComp with delay
 	else
 	{
-		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object]
-			{
+		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object] {
 				Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
 				AnimationTimeline.PlayFromStart();
 			}, JumpDelay, false);
 	}
+}
+
+void AJumpPad::SetRrotation()
+{
+	// Normal in the direction of where to turn the JumpPad
+	const FVector NewJumpPadDirection = TargetLocationComponent->GetRelativeLocation().GetSafeNormal();
+
+	// The angle at which the JumpPad should be turned
+	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
+
+	// Removing a negative angle
+	if (Angle < 0.0f)
+	{
+		Angle += 360.0f;
+	}
+
+	// Set JumpPad mesh rotation using Angle
+	BaseMeshComponent->SetWorldRotation(FRotator(0.0f, Angle, 0.0f));
+}
+
+void AJumpPad::InitializingRotation()
+{
+	// Save the initial axis rotation
+	StartRotation = RotationAxisComponent->GetRelativeRotation();
+
+	// Save the final axis rotation
+	TargetRotation = RotationAxisComponent->GetRelativeRotation() + RotationOffset;
+}
+
+void AJumpPad::InitializingAnimationTimeline()
+{
+	// Bind event to handle value changes on the timeline
+	FOnTimelineFloatStatic ProgressAnimation;
+	ProgressAnimation.BindUObject(this, &AJumpPad::ProgressAnimateTimeline);
+	AnimationTimeline.AddInterpFloat(AnimationCurve, ProgressAnimation);
+
+	// Bind event to handle the end of the timeline
+	FOnTimelineEventStatic OnAnimationFinished;
+	OnAnimationFinished.BindUObject(this, &AJumpPad::OnEndAnimation);
+	AnimationTimeline.SetTimelineFinishedFunc(OnAnimationFinished);
+
+	// Set the timeline length mode based on the last key point of the curve
+	AnimationTimeline.SetTimelineLengthMode(TL_LastKeyFrame);
+}
+
+void AJumpPad::InitializingThrowVelocity()
+{
+	const FVector& TargetLocation = TargetLocationComponent->GetRelativeLocation();
+
+	// Acceleration of gravity
+	const float Gravity = 981.0f;
+
+	// Velocity to achieve jumping heights
+	const float VerticalVelocity = FMath::Sqrt(2 * Gravity * JumpHeight);
+
+	// The time the object will spend in the air
+	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(2 * (JumpHeight - TargetLocation.Z) / Gravity);
+
+	// Path to TargetLocationComponent in XY plane
+	FVector HorizontalPath = TargetLocation;
+	HorizontalPath.Z = 0;
+
+	// Velocity to the TargetLocationComponent
+	const float HorizontalVelocity = HorizontalPath.Length() / FlightTime;
+
+	// Set the throwing force
+	ThrowVelocity = HorizontalPath.GetSafeNormal() * HorizontalVelocity;
+	ThrowVelocity.Z += VerticalVelocity;
 }

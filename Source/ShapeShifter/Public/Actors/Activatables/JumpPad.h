@@ -41,6 +41,11 @@ protected:
 	class UJumpPadTargetComponent* TargetLocationComponent;
 
 private:
+	// Initialize functions
+	void InitializeRotation();
+	void InitializeAnimationTimeline();
+	void InitializeThrowVelocity();
+
 	FTimeline AnimationTimeline;
 
 	FTimerHandle JumpTimer;
@@ -79,11 +84,4 @@ private:
 
 	// Throws an object on ThrowVelocity
 	void ThrowObject(UPrimitiveComponent* Object);
-
-	void SetRrotation();
-
-	// Initialization functions
-	void InitializingRotation();
-	void InitializingAnimationTimeline();
-	void InitializingThrowVelocity();
 };

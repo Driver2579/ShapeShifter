@@ -84,8 +84,10 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
+	// Clear all timers
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 	GetWorldTimerManager().ClearTimer(JumpOnWaterSurfaceTimer);
+	GetWorldTimerManager().ClearTimer(LoadAfterDeathTimer);
 }
 
 void ABallPawn::Tick(float DeltaSeconds)

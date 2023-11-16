@@ -21,6 +21,12 @@ ALaser::ALaser()
 	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser spawn point"));
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
 
+	/**
+	 * We need it for a proper render when interacting with physics object.
+	 * For some reason it's starting to work properly only with this component...
+	 */
+	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);
+
 	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser direction"));
 	LaserDirectionComponent->SetupAttachment(LaserSpawnPointComponent);
 }

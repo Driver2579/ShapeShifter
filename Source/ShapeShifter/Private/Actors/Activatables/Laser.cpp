@@ -6,6 +6,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Pawns/BallPawn.h"
 
 ALaser::ALaser()
 {
@@ -222,7 +223,13 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 
 void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 {
-	// Nothing here...
+	ABallPawn* BallPawn = Cast<ABallPawn>(HitActor);
+
+	// Kill BallPawn if it don't reflects or ignores the Laser
+	if (IsValid(BallPawn) && !BallPawn->ActorHasTag(ReflectActorTagName) && !BallPawn->ActorHasTag(IgnoreActorTagName))
+	{
+		BallPawn->Die();
+	}
 }
 
 void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)

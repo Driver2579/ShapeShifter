@@ -47,6 +47,14 @@ public:
 
 	void SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone);
 
+	/**
+	 * Destroy the BallPawn if it's a clone. Kills the BallPawn if it's a player. On kill the camera will be faded to
+	 * black and last save will be loaded.
+	 * @note This BallPawn will be destroyed after calling this function if it's a clone. So make sure you don't use
+	 * this BallPawn instance after calling this function.
+	 */
+	void Die();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
@@ -120,6 +128,11 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
+
+	/**
+	 * Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
+	 */
+	void Revive();
 
 private:
 	void SetupComponents();
@@ -209,6 +222,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Laser")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
 
+	// This tag will work only if BallPawn is dead
+	UPROPERTY(EditAnywhere, Category = "Laser")
+	FName IgnoreLaserTagName = TEXT("IgnoreLaser");
+
 	/**
 	 * BuoyancyData assigned to different BallPawnForms to swim on water.
 	 * The default values are same, so they all must be changed in BP except Pontoons.
@@ -221,4 +238,11 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
 	float WaterFluidForceStrength = 1;
+
+	bool bDead = false;
+
+	UPROPERTY(EditAnywhere, Category = "Death")
+	float DeathCameraFadeDuration = 2;
+
+	FTimerHandle LoadAfterDeathTimer;
 };

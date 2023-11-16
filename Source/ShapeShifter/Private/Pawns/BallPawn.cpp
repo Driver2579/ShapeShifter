@@ -151,6 +151,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		return;
 	}
 
+	// Revive the player if he was dead before loading
+	if (bDead)
+	{
+		Revive();
+	}
+
 	APlayerController* PlayerController = GetController<APlayerController>();
 
 	// Load CameraRotation if PlayerController is valid
@@ -169,8 +175,9 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load other player variables
 	SetActorTransform(PlayerTransform);
-	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
+	MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
+	PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
 
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
 	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
@@ -199,7 +206,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load Clone variables
 	Clone->SetActorTransform(SaveGameObject->BallPawnSaveData.CloneTransform);
-	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
+	Clone->MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -745,4 +752,114 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 	{
 		EnableJumpIfSwimmingWithDelay();
 	}
+}
+
+void ABallPawn::Die()
+{
+	// Destroy BallPawn if it called for clone
+	if (!IsPlayerControlled())
+	{
+		Destroy();
+
+		return;
+	}
+
+	// We can't die twice
+	if (bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Disable ANY player input
+	DisableInput(PlayerController);
+	PlayerController->DisableInput(PlayerController);
+
+	// Instead of destroying Actor we will hide the mesh
+	MeshComponent->SetHiddenInGame(true);
+
+	// Disable physics to stop any movement
+	MeshComponent->SetSimulatePhysics(false);
+
+	// Ignore the Laser while the player is dead
+	Tags.Add(IgnoreLaserTagName);
+
+	// Fade the camera to black
+	PlayerCameraManager->StartCameraFade(0, 1, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Remember that player is dead
+	bDead = true;
+
+	// Start async loading to last save once the screen became fully black
+	GetWorldTimerManager().SetTimer(LoadAfterDeathTimer, [this]()
+	{
+		LoadGame();
+	}, DeathCameraFadeDuration, false);
+}
+
+void ABallPawn::Revive()
+{
+	// We can't revive if we're not dead
+	if (!bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Enable player input back
+	EnableInput(PlayerController);
+	PlayerController->EnableInput(PlayerController);
+
+	// Show the mesh back
+	MeshComponent->SetHiddenInGame(false);
+
+	// Enable physics back
+	MeshComponent->SetSimulatePhysics(true);
+
+	// Stop ignoring the Laser
+	Tags.Remove(IgnoreLaserTagName);
+
+	// Fade the camera back from black
+	PlayerCameraManager->StartCameraFade(1, 0, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Remember that player isn't dead anymore
+	bDead = false;
 }

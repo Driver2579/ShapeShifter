@@ -10,7 +10,7 @@
 
 ALaser::ALaser()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this actor to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
@@ -33,6 +33,13 @@ void ALaser::BeginPlay()
 
 	// Set default Active state
 	SetActive(bActive);
+}
+
+void ALaser::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(KillBallPawnTimer);
 }
 
 void ALaser::SpawnLaserBeams()
@@ -225,10 +232,22 @@ void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 {
 	ABallPawn* BallPawn = Cast<ABallPawn>(HitActor);
 
-	// Kill BallPawn if it don't reflects or ignores the Laser
-	if (IsValid(BallPawn) && !BallPawn->ActorHasTag(ReflectActorTagName) && !BallPawn->ActorHasTag(IgnoreActorTagName))
+	// Kill BallPawn only if it don't reflects or ignores the Laser
+	if (!IsValid(BallPawn) || BallPawn->ActorHasTag(ReflectActorTagName) || BallPawn->ActorHasTag(IgnoreActorTagName))
+	{
+		return;
+	}
+
+	// Kill BallPawn immediately if delay is 0
+	if (KillBallPawnTime == 0)
 	{
 		BallPawn->Die();
+	}
+	// Kill BallPawn with delay in another case
+	else if (!GetWorldTimerManager().IsTimerActive(KillBallPawnTimer))
+	{
+		GetWorldTimerManager().SetTimer(KillBallPawnTimer, BallPawn, &ABallPawn::Die, KillBallPawnTime,
+			false);
 	}
 }
 
@@ -274,4 +293,12 @@ void ALaser::Deactivate()
 	bActive = false;
 
 	SetBeamsActive(bActive);
+}
+
+void ALaser::KillBallPawn(ABallPawn* BallPawnToKill)
+{
+	if (IsValid(BallPawnToKill))
+	{
+		BallPawnToKill->Die();
+	}
 }

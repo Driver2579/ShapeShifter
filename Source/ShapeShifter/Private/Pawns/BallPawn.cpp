@@ -812,10 +812,15 @@ void ABallPawn::Die()
 	bDead = true;
 
 	// Start async loading to last save once the screen became fully black
-	GetWorldTimerManager().SetTimer(LoadAfterDeathTimer, [this]()
+	if (DeathCameraFadeDuration == 0)
 	{
 		LoadGame();
-	}, DeathCameraFadeDuration, false);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(LoadAfterDeathTimer, this, &ABallPawn::LoadGame,
+			DeathCameraFadeDuration, false);
+	}
 }
 
 void ABallPawn::Revive()

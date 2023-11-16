@@ -241,7 +241,7 @@ private:
 
 	bool bDead = false;
 
-	UPROPERTY(EditAnywhere, Category = "Death")
+	UPROPERTY(EditAnywhere, Category = "Death", meta = (ClampMin = 0))
 	float DeathCameraFadeDuration = 2;
 
 	FTimerHandle LoadAfterDeathTimer;

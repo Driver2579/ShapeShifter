@@ -15,11 +15,24 @@ void ASaveGameManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Initial SaveGameObject initializing
 	CreateSaveGameObjectIfNotExists();
 
 	BindAllSavables();
 
 	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &ASaveGameManager::OnAsyncLoadGameFinished);
+
+	// Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all 
+	GetWorld()->OnWorldBeginPlay.AddUObject(this, &ASaveGameManager::OnWorldBeginPlay);
+}
+
+void ASaveGameManager::OnWorldBeginPlay()
+{
+	/**
+	 * We always save the game on level load. We call it after BeginPlay to be able to load the game on BeginPlay if
+	 * needed.
+	 */
+	SaveGame();
 }
 
 UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const

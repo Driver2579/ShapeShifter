@@ -37,6 +37,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Celled after all Actors have begun play
+	virtual void OnWorldBeginPlay();
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UShapeShifterSaveGame> SaveGameClass;

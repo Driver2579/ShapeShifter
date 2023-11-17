@@ -19,12 +19,7 @@ void ASaveGameManager::BeginPlay()
 
 	BindAllSavables();
 
-	// Broadcast OnLoadGame to all subscribed Actors to load their variables once OnAsyncLoadGameFinished was executed
-	OnAsyncLoadGameFinished.BindLambda([this](const FString& SlotName, const int32 UserIndex,
-		USaveGame* SaveGameObject)
-	{
-		OnLoadGame.Broadcast(CastChecked<UShapeShifterSaveGame>(SaveGameObject));
-	});
+	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &ASaveGameManager::OnAsyncLoadGameFinished);
 }
 
 UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const
@@ -91,6 +86,9 @@ void ASaveGameManager::SaveGame()
 		return;
 	}
 
+	// Save current level name
+	SaveGameObject->LevelName = UGameplayStatics::GetCurrentLevelName(this);
+
 	// Broadcast OnSaveGame to all subscribed Actors to save their variables
 	OnSaveGame.Broadcast(SaveGameObject.Get());
 
@@ -103,6 +101,28 @@ void ASaveGameManager::LoadGame() const
 	// Load the game if save game slot exists
 	if (UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
 	{
-		UGameplayStatics::AsyncLoadGameFromSlot(SaveGameSlotName, 0, OnAsyncLoadGameFinished);
+		UGameplayStatics::AsyncLoadGameFromSlot(SaveGameSlotName, 0, OnAsyncLoadGameFinishedDelegate);
+	}
+}
+
+void ASaveGameManager::OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex,
+	USaveGame* SaveGameObjectPtr) const
+{
+	const FString& CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+
+	UShapeShifterSaveGame* ShapeShifterSaveGameObject = CastChecked<UShapeShifterSaveGame>(SaveGameObjectPtr);
+
+	/**
+	 * Broadcast OnLoadGame to all subscribed Actors to load their variables but only if CurrentLevelName is same as
+	 * saved LevelName
+	 */
+	if (CurrentLevelName == ShapeShifterSaveGameObject->LevelName)
+	{
+		OnLoadGame.Broadcast(ShapeShifterSaveGameObject);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ASaveGameManager::LoadGame: Unable to load the save from another level! "
+			"Current level: %s Saved level: %s"), *CurrentLevelName, *ShapeShifterSaveGameObject->LevelName);
 	}
 }

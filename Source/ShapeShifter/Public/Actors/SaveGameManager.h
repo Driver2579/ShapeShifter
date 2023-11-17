@@ -56,5 +56,7 @@ private:
 	// Collect all Actors with Savable interface and bind their functions to OnSaveGame and OnLoadGame delegates
 	void BindAllSavables();
 
-	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinished;
+	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinishedDelegate;
+
+	void OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex, USaveGame* SaveGameObjectPtr) const;
 };

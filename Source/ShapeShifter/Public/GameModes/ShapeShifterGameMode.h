@@ -17,7 +17,7 @@ public:
 	ASaveGameManager* GetSaveGameManager() const;
 
 protected:
-	virtual void PostInitializeComponents() override;
+	virtual void StartPlay() override;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Save Game")

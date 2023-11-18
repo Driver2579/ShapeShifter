@@ -56,6 +56,24 @@ void AJumpPad::BeginPlay()
 	JumpTriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AJumpPad::OnJumpTriggerEndOverlap);
 }
 
+void AJumpPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(JumpTimer);
+}
+
+void AJumpPad::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Update animation frame
+	if (AnimationTimeline.IsPlaying())
+	{
+		AnimationTimeline.TickTimeline(DeltaTime);
+	}
+} 
+
 void AJumpPad::InitializeRotation()
 {
 	// Save the initial axis rotation
@@ -106,24 +124,6 @@ void AJumpPad::InitializeThrowVelocity()
 	ThrowVelocity.Z += VerticalVelocity;
 }
 
-void AJumpPad::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	GetWorldTimerManager().ClearTimer(JumpTimer);
-}
-
-void AJumpPad::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	// Update animation frame
-	if (AnimationTimeline.IsPlaying())
-	{
-		AnimationTimeline.TickTimeline(DeltaTime);
-	}
-} 
-
 UStaticMeshComponent* AJumpPad::GetMesh() const
 {
 	return BaseMeshComponent;
@@ -173,7 +173,8 @@ void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
 	// Throw the OtherComp with delay
 	else
 	{
-		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object] {
+		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object]
+			{
 				Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
 				AnimationTimeline.PlayFromStart();
 			}, JumpDelay, false);

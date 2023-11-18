@@ -36,7 +36,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
 
-	// Indicates where the player should land in the level.
+	// Indicates where the player should land in the level
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UJumpPadTargetComponent* TargetLocationComponent;
 

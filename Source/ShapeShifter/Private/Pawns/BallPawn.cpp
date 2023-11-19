@@ -510,7 +510,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	 * Find Material associated with NewForm in FormMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
-	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
+	UMaterialInterface* FormMaterial = FormMaterials.FindRef(NewForm);
 
 	// Set FormMaterial as MeshComponent Material if it's valid
 	if (IsValid(FormMaterial))

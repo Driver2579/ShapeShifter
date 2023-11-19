@@ -178,7 +178,7 @@ private:
 	EBallPawnForm CurrentForm;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
-	TMap<EBallPawnForm, UMaterial*> FormMaterials;
+	TMap<EBallPawnForm, UMaterialInterface*> FormMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;

@@ -1,6 +1,6 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/Activatables/JumpPad.h"
+#include "Actors/JumpPad.h"
 
 #include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
@@ -47,7 +47,7 @@ void AJumpPad::BeginPlay()
 		return;
 	}
 
-	// JumpPad Initialize
+	// JumpPad initializing
 	InitializeRotation();
 	InitializeAnimationTimeline();
 	InitializeThrowVelocity();
@@ -155,8 +155,8 @@ void AJumpPad::OnEndAnimation()
 	TArray<UPrimitiveComponent*> OverlappingComponents;
 	JumpTriggerComponent->GetOverlappingComponents(OverlappingComponents);
 
-	// Throw all objects that are on the jumppad
-	for (auto It : OverlappingComponents)
+	// Throw all objects that are on the JumpPad
+	for (UPrimitiveComponent* It : OverlappingComponents)
 	{
 		ThrowObject(It);
 	}
@@ -174,9 +174,9 @@ void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
 	else
 	{
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object]
-			{
-				Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
-				AnimationTimeline.PlayFromStart();
-			}, JumpDelay, false);
+		{
+			Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
+			AnimationTimeline.PlayFromStart();
+		}, JumpDelay, false);
 	}
 }

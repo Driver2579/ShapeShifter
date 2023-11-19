@@ -2,7 +2,7 @@
 
 #include "Components/JumpPadTargetComponent.h"
 
-#include "Actors/Activatables/Jumppad.h"
+#include "Actors/Jumppad.h"
 
 UJumpPadTargetComponent::UJumpPadTargetComponent()
 {
@@ -23,10 +23,10 @@ void UJumpPadTargetComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTran
 		return;
 	}
 
-	// Normal in the direction of where to turn the jumppad
+	// Normal in the direction of where to turn the JumpPad
 	const FVector NewJumpPadDirection = GetRelativeLocation().GetSafeNormal();
 
-	// The angle at which the jumppad should be turned
+	// The angle at which the JumpPad should be turned
 	float Angle = FMath::Atan2(NewJumpPadDirection.Y, NewJumpPadDirection.X) * (180.0f / PI);
 
 	// Removing a negative angle

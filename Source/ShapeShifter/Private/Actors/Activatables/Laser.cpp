@@ -259,6 +259,11 @@ void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 
 void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
 {
+	if (!HasActorBegunPlay())
+	{
+		return;
+	}
+
 	if (!Beams.IsValidIndex(FirstBeamIndex))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ALaser::SetBeamsActive: FirstBeamIndex isn't valid!"));

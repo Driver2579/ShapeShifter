@@ -68,8 +68,11 @@ void ATeleporter::OnTeleportTriggerEndOverlap(UPrimitiveComponent* OverlappedCom
 
 void ATeleporter::TeleportBallPawn(ABallPawn* BallPawnToTeleport) const
 {
-	// Return if BallPawn isn't valid or if BallPawn was just teleported here
-	if (!IsValid(BallPawnToTeleport) || JustTeleportedBallPawns.Contains(BallPawnToTeleport) || !IsOtherTeleporterValid())
+	// BallPawn is valid for teleportation only if it's not null and wasn't just teleported
+	const bool bBallPawnValid = IsValid(BallPawnToTeleport) && !JustTeleportedBallPawns.Contains(BallPawnToTeleport);
+
+	// Return if BallPawn or OtherTeleporter are not valid
+	if (!bBallPawnValid || !IsOtherTeleporterValid())
 	{
 		return;
 	}

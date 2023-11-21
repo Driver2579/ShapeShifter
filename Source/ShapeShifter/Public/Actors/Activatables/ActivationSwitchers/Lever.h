@@ -25,7 +25,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual bool IsActive() const override;
+	virtual bool IsActive() const override final;
 
 	virtual void Activate() override;
 	virtual void Deactivate() override;

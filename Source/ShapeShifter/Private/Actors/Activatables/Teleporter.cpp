@@ -46,29 +46,11 @@ void ATeleporter::BeginPlay()
 void ATeleporter::OnTeleportTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// We can't teleport if Teleporter isn't active
-	if (!IsActive())
+	// We can teleport only if Teleporter is active
+	if (bActive)
 	{
-		return;
+		TeleportBallPawn(Cast<ABallPawn>(OtherActor));
 	}
-
-	// Cast OtherActor to ABallPawn
-	ABallPawn* BallPawn = Cast<ABallPawn>(OtherActor);
-
-	// Return if BallPawn isn't valid or if BallPawn was just teleported here
-	if (!IsValid(BallPawn) || JustTeleportedBallPawns.Contains(BallPawn) || !IsOtherTeleporterValid())
-	{
-		return;
-	}
-
-	// Add BallPawn to JustTeleportedBallPawns in OtherTeleporter to avoid infinite teleporting
-	OtherTeleporter->JustTeleportedBallPawns.Add(BallPawn);
-
-	// Clear BallPawn velocity
-	BallPawn->GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
-
-	// Teleport BallPawn to TeleportPointComponent of OtherTeleporter
-	BallPawn->SetActorLocation(OtherTeleporter->TeleportPointComponent->GetComponentLocation());
 }
 
 void ATeleporter::OnTeleportTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -82,6 +64,27 @@ void ATeleporter::OnTeleportTriggerEndOverlap(UPrimitiveComponent* OverlappedCom
 	{
 		JustTeleportedBallPawns.Remove(BallPawn);
 	}
+}
+
+void ATeleporter::TeleportBallPawn(ABallPawn* BallPawnToTeleport) const
+{
+	// BallPawn is valid for teleportation only if it's not null and wasn't just teleported
+	const bool bBallPawnValid = IsValid(BallPawnToTeleport) && !JustTeleportedBallPawns.Contains(BallPawnToTeleport);
+
+	// Return if BallPawn or OtherTeleporter are not valid
+	if (!bBallPawnValid || !IsOtherTeleporterValid())
+	{
+		return;
+	}
+
+	// Add BallPawn to JustTeleportedBallPawns in OtherTeleporter to avoid infinite teleporting
+	OtherTeleporter->JustTeleportedBallPawns.Add(BallPawnToTeleport);
+
+	// Clear BallPawn velocity
+	BallPawnToTeleport->GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
+
+	// Teleport BallPawn to TeleportPointComponent of OtherTeleporter
+	BallPawnToTeleport->SetActorLocation(OtherTeleporter->TeleportPointComponent->GetComponentLocation());
 }
 
 bool ATeleporter::IsOtherTeleporterValid() const
@@ -126,6 +129,17 @@ void ATeleporter::Activate()
 		{
 			It->SetVisibility(true);
 		}
+	}
+
+	// Get OverlappingBallPawns
+	TArray<AActor*> OverlappingBallPawns;
+	GetOverlappingActors(OverlappingBallPawns, ABallPawn::StaticClass());
+
+	// Teleport all OverlappingBallPawns
+	for (AActor* BallPawn : OverlappingBallPawns)
+	{
+		// We use CastChecked here because we're sure that OverlappingBallPawns contains only Actors with BallPawn class
+		TeleportBallPawn(CastChecked<ABallPawn>(BallPawn));
 	}
 }
 

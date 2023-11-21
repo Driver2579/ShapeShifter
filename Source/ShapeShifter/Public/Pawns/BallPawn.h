@@ -47,6 +47,14 @@ public:
 
 	void SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone);
 
+	/**
+	 * Destroy the BallPawn if it's a clone. Kills the BallPawn if it's a player. On kill the camera will be faded to
+	 * black and last save will be loaded.
+	 * @note This BallPawn will be destroyed after calling this function if it's a clone. So make sure you don't use
+	 * this BallPawn instance after calling this function.
+	 */
+	void Die();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
@@ -103,6 +111,7 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+	// Remove old Clone and spawn the new one if it won't collide anything
 	void SpawnClone();
 
 	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
@@ -120,6 +129,11 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
+
+	/**
+	 * Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
+	 */
+	void Revive();
 
 private:
 	void SetupComponents();
@@ -164,7 +178,7 @@ private:
 	EBallPawnForm CurrentForm;
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
-	TMap<EBallPawnForm, UMaterial*> FormMaterials;
+	TMap<EBallPawnForm, UMaterialInterface*> FormMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;
@@ -193,6 +207,13 @@ private:
 	bool CanSpawnClone() const;
 
 	/**
+	 * Spawn the Clone without any checks.
+	 * @note Be careful with calling that because it will spawn the Clone even it's already exists or if it will collide
+	 * something when spawned.
+	 */
+	void SpawnCloneObject();
+
+	/**
 	 * You must set your own custom Collision Trace Channel which will Block only pawn to make Clone spawning work
 	 * properly!
 	 */
@@ -209,6 +230,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Laser")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
 
+	// This tag will work only if BallPawn is dead
+	UPROPERTY(EditAnywhere, Category = "Laser")
+	FName IgnoreLaserTagName = TEXT("IgnoreLaser");
+
 	/**
 	 * BuoyancyData assigned to different BallPawnForms to swim on water.
 	 * The default values are same, so they all must be changed in BP except Pontoons.
@@ -221,4 +246,11 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
 	float WaterFluidForceStrength = 1;
+
+	bool bDead = false;
+
+	UPROPERTY(EditAnywhere, Category = "Death", meta = (ClampMin = 0))
+	float DeathCameraFadeDuration = 2;
+
+	FTimerHandle LoadAfterDeathTimer;
 };

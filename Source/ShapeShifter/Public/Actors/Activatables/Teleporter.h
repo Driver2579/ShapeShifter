@@ -7,6 +7,8 @@
 #include "Interfaces/Activatable.h"
 #include "Teleporter.generated.h"
 
+class ABallPawn;
+
 UCLASS()
 class SHAPESHIFTER_API ATeleporter : public AActor, public IActivatable
 {
@@ -54,7 +56,9 @@ private:
 	UPROPERTY(EditInstanceOnly)
 	ATeleporter* OtherTeleporter;
 
-	TArray<class ABallPawn*> JustTeleportedBallPawns;
+	void TeleportBallPawn(ABallPawn* BallPawnToTeleport) const;
+
+	TArray<ABallPawn*> JustTeleportedBallPawns;
 
 	// Check if we can use OtherTeleporter for teleportation
 	bool IsOtherTeleporterValid() const;

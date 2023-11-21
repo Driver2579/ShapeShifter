@@ -84,8 +84,10 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
+	// Clear all timers
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 	GetWorldTimerManager().ClearTimer(JumpOnWaterSurfaceTimer);
+	GetWorldTimerManager().ClearTimer(LoadAfterDeathTimer);
 }
 
 void ABallPawn::Tick(float DeltaSeconds)
@@ -151,6 +153,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		return;
 	}
 
+	// Revive the player if he was dead before loading
+	if (bDead)
+	{
+		Revive();
+	}
+
 	APlayerController* PlayerController = GetController<APlayerController>();
 
 	// Load CameraRotation if PlayerController is valid
@@ -169,8 +177,9 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load other player variables
 	SetActorTransform(PlayerTransform);
-	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
+	MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
+	PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
 
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
 	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
@@ -186,7 +195,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	// Spawn Clone in another case and if wasn't spawned before  
 	if (!Clone.IsValid())
 	{
-		SpawnClone();
+		SpawnCloneObject();
 
 		// Return if failed to spawn Clone
 		if (!Clone.IsValid())
@@ -199,7 +208,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load Clone variables
 	Clone->SetActorTransform(SaveGameObject->BallPawnSaveData.CloneTransform);
-	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
+	Clone->MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -501,7 +510,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	 * Find Material associated with NewForm in FormMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
-	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
+	UMaterialInterface* FormMaterial = FormMaterials.FindRef(NewForm);
 
 	// Set FormMaterial as MeshComponent Material if it's valid
 	if (IsValid(FormMaterial))
@@ -612,6 +621,12 @@ void ABallPawn::ChangeForm()
 
 void ABallPawn::CreateClone()
 {
+	// Only a player can create clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
 	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
@@ -645,22 +660,7 @@ void ABallPawn::SpawnClone()
 		return;
 	}
 
-	FActorSpawnParameters SpawnParameters;
-
-	// We have to set Clone scale same as players instead of multiplying them by each other
-	SpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
-
-	// We have to always spawn clone because we have own check for colliding
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	// Spawn Clone
-	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
-
-	// Set same Form to NewClone as ours but check if Clone is valid just in case
-	if (Clone.IsValid())
-	{
-		Clone->SetForm(CurrentForm);
-	}
+	SpawnCloneObject();
 }
 
 bool ABallPawn::CanSpawnClone() const
@@ -677,6 +677,26 @@ bool ABallPawn::CanSpawnClone() const
 	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
 	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
 		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+void ABallPawn::SpawnCloneObject()
+{
+	FActorSpawnParameters SpawnParameters;
+
+	// We have to set Clone scale same as players instead of multiplying them by each other
+	SpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
+
+	// We have to always spawn clone because we have own check for colliding
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// Spawn Clone
+	Clone = GetWorld()->SpawnActor<ABallPawn>(GetClass(), CloneSpawnTransform, SpawnParameters);
+
+	// Set same Form to NewClone as ours but check if Clone is valid just in case
+	if (Clone.IsValid())
+	{
+		Clone->SetForm(CurrentForm);
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -745,4 +765,119 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 	{
 		EnableJumpIfSwimmingWithDelay();
 	}
+}
+
+void ABallPawn::Die()
+{
+	// Destroy BallPawn if it called for clone
+	if (!IsPlayerControlled())
+	{
+		Destroy();
+
+		return;
+	}
+
+	// We can't die twice
+	if (bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Disable ANY player input
+	DisableInput(PlayerController);
+	PlayerController->DisableInput(PlayerController);
+
+	// Instead of destroying Actor we will hide the mesh
+	MeshComponent->SetHiddenInGame(true);
+
+	// Disable physics to stop any movement
+	MeshComponent->SetSimulatePhysics(false);
+
+	// Ignore the Laser while the player is dead
+	Tags.Add(IgnoreLaserTagName);
+
+	// Fade the camera to black
+	PlayerCameraManager->StartCameraFade(0, 1, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Remember that player is dead
+	bDead = true;
+
+	// Start async loading to last save once the screen became fully black
+	if (DeathCameraFadeDuration == 0)
+	{
+		LoadGame();
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(LoadAfterDeathTimer, this, &ABallPawn::LoadGame,
+			DeathCameraFadeDuration, false);
+	}
+}
+
+void ABallPawn::Revive()
+{
+	// We can't revive if we're not dead
+	if (!bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Enable player input back
+	EnableInput(PlayerController);
+	PlayerController->EnableInput(PlayerController);
+
+	// Show the mesh back
+	MeshComponent->SetHiddenInGame(false);
+
+	// Enable physics back
+	MeshComponent->SetSimulatePhysics(true);
+
+	// Stop ignoring the Laser
+	Tags.Remove(IgnoreLaserTagName);
+
+	// Fade the camera back from black
+	PlayerCameraManager->StartCameraFade(1, 0, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Remember that player isn't dead anymore
+	bDead = false;
 }

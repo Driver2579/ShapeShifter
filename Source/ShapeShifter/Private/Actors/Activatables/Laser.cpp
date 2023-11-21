@@ -37,6 +37,9 @@ void ALaser::BeginPlay()
 
 	SpawnLaserBeams();
 
+	// DrawLaserBeams for the first time to initialize Beams location
+	DrawLaserBeams();
+
 	// Set default Active state
 	SetActive(bActive);
 }
@@ -236,6 +239,12 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 
 void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 {
+	// We can't hit anything if Laser isn't active or HitActor isn't valid
+	if (!bActive || !IsValid(HitActor))
+	{
+		return;
+	}
+
 	ABallPawn* BallPawn = Cast<ABallPawn>(HitActor);
 
 	// Kill BallPawn only if it don't reflects or ignores the Laser

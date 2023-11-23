@@ -3,6 +3,7 @@
 #include "Common/Structs/SaveData/MovingPlatformSaveData.h"
 #include "Components/SplineComponent.h"
 #include "Objects/ShapeShifterSaveGame.h"
+#include "Pawns/BallPawn.h"
 
 AMovingPlatform::AMovingPlatform()
 {
@@ -12,14 +13,19 @@ AMovingPlatform::AMovingPlatform()
 	
 	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
 	MovementDirectionSplineComponent->SetupAttachment(RootComponent);
-	
+
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(MovementDirectionSplineComponent);
+
+	CollisionAttachPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Collision Attach Point"));
+	CollisionAttachPointComponent->SetupAttachment(MeshComponent);
 }
 
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetupCollisionComponents();
 
 	if (!IsValid(MovementCurve))
 	{
@@ -77,6 +83,35 @@ void AMovingPlatform::Tick(float DeltaTime)
 	if (MovementTimeline.IsPlaying())
 	{
 		MovementTimeline.TickTimeline(DeltaTime);	
+	}
+}
+
+void AMovingPlatform::SetupCollisionComponents() const
+{
+	TArray<USceneComponent*> AttachedComponents;
+	CollisionAttachPointComponent->GetChildrenComponents(true, AttachedComponents);
+
+	for (USceneComponent* AttachedComponent : AttachedComponents)
+	{
+		UPrimitiveComponent* CollisionComponent = Cast<UPrimitiveComponent>(AttachedComponent);
+
+		if (IsValid(CollisionComponent))
+		{
+			CollisionComponent->OnComponentBeginOverlap.AddDynamic(this,
+				&AMovingPlatform::OnCollisionComponentsBeginOverlap);
+		}
+	}
+}
+
+void AMovingPlatform::OnCollisionComponentsBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ABallPawn* BallPawn = Cast<ABallPawn>(OtherActor);
+
+	// Kill BallPawn if it's in MovingPlatform
+	if (IsValid(BallPawn))
+	{
+		BallPawn->Die();
 	}
 }
 
@@ -183,7 +218,8 @@ void AMovingPlatform::Activate()
 	// Start movement with delay in another case
 	else
 	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]() {
+		GetWorldTimerManager().SetTimer(MoveTimer, [this]()
+		{
 			MovementTimeline.Play();
 		}, StartDelay, false);
 	}
@@ -211,7 +247,8 @@ void AMovingPlatform::Deactivate()
 	// Start reversing with delay in another case
 	else
 	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this] {
+		GetWorldTimerManager().SetTimer(MoveTimer, [this]
+		{
 			MovementTimeline.Reverse();
 		}, EndDelay, false);
 	}

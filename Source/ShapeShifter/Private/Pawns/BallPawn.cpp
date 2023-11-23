@@ -181,6 +181,9 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
 	PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
 
+	// Forget about creating clone on timer which has started before loading
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
 	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
 	{
@@ -818,6 +821,9 @@ void ABallPawn::Die()
 	// Fade the camera to black
 	PlayerCameraManager->StartCameraFade(0, 1, DeathCameraFadeDuration, FLinearColor::Black,
 		true, true);
+
+	// Player can't create Clone while dead
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
 	// Remember that player is dead
 	bDead = true;

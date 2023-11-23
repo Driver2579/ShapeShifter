@@ -37,9 +37,6 @@ void ALaser::BeginPlay()
 
 	SpawnLaserBeams();
 
-	// DrawLaserBeams for the first time to initialize Beams location
-	DrawLaserBeams();
-
 	// Set default Active state
 	SetActive(bActive);
 }
@@ -293,6 +290,12 @@ void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
 		// Set new active state to current beam
 		Beams[i]->SetVariableBool(SpawnBeamVariableName, bNewActive);
 		Beams[i]->SetVariableBool(SpawnBeamEndVariableName, bNewActive);
+	}
+
+	// Call DrawLaserBeams for the first time after activation to initialize Beams location
+	if (bNewActive)
+	{
+		DrawLaserBeams();
 	}
 }
 

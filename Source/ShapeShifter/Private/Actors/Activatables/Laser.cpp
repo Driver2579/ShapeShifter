@@ -23,7 +23,7 @@ ALaser::ALaser()
 
 	/**
 	 * We need it for a proper render when interacting with physics object.
-	 * For some reason it's starting to work properly only with this component...
+	 * For some reason it works properly only with this component...
 	 */
 	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);
 
@@ -78,7 +78,7 @@ void ALaser::SpawnLaserBeams()
 			continue;
 		}
 
-		// Initialize beam custom colors
+		// Initialize Beam custom colors
 		Beam->SetVariableLinearColor(BeamColorVariableName, BeamColor);
 		Beam->SetVariableLinearColor(FireColorVariableName, FireColor);
 		Beam->SetVariableLinearColor(RingsColorVariableName, RingsColor);

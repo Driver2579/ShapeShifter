@@ -18,7 +18,7 @@ ALaser::ALaser()
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(RootComponent);
 
-	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser spawn point"));
+	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Spawn Point"));
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
 
 	/**
@@ -27,7 +27,7 @@ ALaser::ALaser()
 	 */
 	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);
 
-	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser direction"));
+	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser Direction"));
 	LaserDirectionComponent->SetupAttachment(LaserSpawnPointComponent);
 }
 

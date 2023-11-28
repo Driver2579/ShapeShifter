@@ -483,18 +483,8 @@ EBallPawnForm ABallPawn::GetForm() const
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
-	// Destroy clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true
-	if (CurrentForm != NewForm && bDestroyCloneOnChangeForm)
-	{
-		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
-		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
-
-		// Destroy Clone if it was created
-		if (Clone.IsValid())
-		{
-			Clone->Destroy();
-		}
-	}
+	// Remember OldForm before changing it to compare a new one with the old one when needed 
+	const EBallPawnForm OldForm = CurrentForm;
 
 	CurrentForm = NewForm;
 
@@ -507,6 +497,22 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	else
 	{
 		Tags.Remove(ReflectLaserTagName);
+	}
+
+	/**
+	 * Destroy Clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true. We're doing it only
+	 * after managing the ReflectionLaserTagName to avoid BallPawn death when changing to Metal form.
+	 */
+	if (NewForm != OldForm && bDestroyCloneOnChangeForm)
+	{
+		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
+		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+		// Destroy Clone if it was created
+		if (Clone.IsValid())
+		{
+			Clone->Destroy();
+		}
 	}
 
 	/*

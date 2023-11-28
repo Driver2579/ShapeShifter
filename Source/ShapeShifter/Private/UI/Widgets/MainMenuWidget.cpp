@@ -66,16 +66,14 @@ void UMainMenuWidget::OnExitGameButtonClicked()
 
 void UMainMenuWidget::NewGame()
 {
-	UGameplayStatics::OpenLevelBySoftObjectPtr(this, FirstLevel);
-
-	//if (FirstLevel.IsValid())
-	//{
-	//	UGameplayStatics::OpenLevelBySoftObjectPtr(this, FirstLevel);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::NewGame: FirstLevel is invalid!"));
-	//}
+	if (FirstLevel.IsValid())
+	{
+		UGameplayStatics::OpenLevelBySoftObjectPtr(this, FirstLevel);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::NewGame: FirstLevel is invalid!"));
+	}
 }
 
 void UMainMenuWidget::ExitGame()

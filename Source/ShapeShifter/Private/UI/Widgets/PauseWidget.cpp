@@ -167,16 +167,14 @@ void UPauseWidget::Restart()
 
 void UPauseWidget::Exit()
 {
-	UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
-
-	//if (MainMenuLevel.IsValid())
-	//{
-	//	UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Exit: MainMenuLevel is invalid!"));
-	//}
+	if (MainMenuLevel.IsValid())
+	{
+		UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Exit: MainMenuLevel is invalid!"));
+	}
 }
 
 void UPauseWidget::Close()

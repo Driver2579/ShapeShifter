@@ -16,6 +16,10 @@ class SHAPESHIFTER_API UPauseWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 
+	// Widget that will be used as a warning
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UWarningWidget> WarningWidgetClass;
+
 	UPROPERTY(meta = (BindWidget))
 	UButton* ContinueButton;
 
@@ -32,18 +36,34 @@ protected:
 	UButton* ExitButton;
 
 private:
-	UFUNCTION()
-	void OnContinue();
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> MainMenuLevel;
 
 	UFUNCTION()
-	void OnLoad();
+	void OnContinueButtonClicked();
 
 	UFUNCTION()
-	void OnSave();
+	void OnLoadButtonClicked();
 
 	UFUNCTION()
-	void OnRestart();
+	void OnSaveButtonClicked();
 
 	UFUNCTION()
-	void OnExit();
+	void OnRestartButtonClicked();
+
+	UFUNCTION()
+	void OnExitButtonClicked();
+
+	UFUNCTION()
+	void Load();
+
+	UFUNCTION()
+	void Restart();
+
+	UFUNCTION()
+	void Exit();
+
+	void Close();
+
+	UWarningWidget* const CreateWarningWidget();
 };

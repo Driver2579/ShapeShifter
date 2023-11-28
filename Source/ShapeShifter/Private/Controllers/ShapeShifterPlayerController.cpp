@@ -37,6 +37,8 @@ void AShapeShifterPlayerController::BeginPlay()
 	{
 		LocalPlayerSubsystem->AddMappingContext(ShapeShifterMappingContext, 0);
 	}
+
+	SetInputMode(FInputModeGameOnly());
 }
 
 void AShapeShifterPlayerController::SetupInputComponent()

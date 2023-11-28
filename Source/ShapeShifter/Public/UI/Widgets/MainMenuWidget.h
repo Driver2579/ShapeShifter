@@ -15,7 +15,8 @@ class SHAPESHIFTER_API UMainMenuWidget : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
-
+	
+	// Widget that will be used as a warning
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UWarningWidget> WarningWidgetClass;
 
@@ -29,12 +30,23 @@ protected:
 	UButton* ExitGameButton;
 
 private:
-	UFUNCTION()
-	void OnNewGame();
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> FirstLevel;
 
 	UFUNCTION()
-	void OnContinueGame();
+	void OnNewGameButtonClicked();
 
 	UFUNCTION()
-	void OnExitGame();
+	void OnContinueGameButtonClicked();
+
+	UFUNCTION()
+	void OnExitGameButtonClicked();
+
+	UFUNCTION()
+	void NewGame();
+
+	UFUNCTION()
+	void ExitGame();
+
+	UWarningWidget* const CreateWarningWidget();
 };

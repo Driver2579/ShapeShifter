@@ -2,8 +2,6 @@
 
 #pragma once
 
-
-
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "WarningWidget.generated.h"
@@ -27,15 +25,12 @@ protected:
 	class UTextBlock* MessageTextBlock;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* OKButton;
+	UButton* OkButton;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* CancelButton;
 
 private:
 	UFUNCTION()
-	void OnOK();
-
-	UFUNCTION()
-	void OnCancel();
+	void Close();
 };

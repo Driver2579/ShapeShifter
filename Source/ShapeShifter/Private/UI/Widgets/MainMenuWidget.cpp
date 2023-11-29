@@ -66,7 +66,7 @@ void UMainMenuWidget::OnExitGameButtonClicked()
 
 void UMainMenuWidget::NewGame()
 {
-	if (FirstLevel.IsValid())
+	if (!FirstLevel.IsNull())
 	{
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, FirstLevel);
 	}

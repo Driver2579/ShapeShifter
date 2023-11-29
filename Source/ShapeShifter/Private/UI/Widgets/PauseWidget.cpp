@@ -167,7 +167,7 @@ void UPauseWidget::Restart()
 
 void UPauseWidget::Exit()
 {
-	if (MainMenuLevel.IsValid())
+	if (!MainMenuLevel.IsNull())
 	{
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
 	}

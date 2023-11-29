@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
@@ -508,10 +510,10 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
 		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
-		// Destroy Clone if it was created
+		// Kill Clone if it was created
 		if (Clone.IsValid())
 		{
-			Clone->Destroy();
+			Clone->Die();
 		}
 	}
 
@@ -778,6 +780,15 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 
 void ABallPawn::Die()
 {
+	// Spawn DeathNiagaraSystem
+	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		DeathNiagaraSystemTemplate, GetActorLocation());
+
+	if (!IsValid(DeathNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: Failed to spawn DeathNiagaraSystem!"));
+	}
+
 	// Destroy BallPawn if it called for clone
 	if (!IsPlayerControlled())
 	{

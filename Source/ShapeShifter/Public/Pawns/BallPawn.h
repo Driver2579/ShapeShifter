@@ -253,4 +253,7 @@ private:
 	float DeathCameraFadeDuration = 2;
 
 	FTimerHandle LoadAfterDeathTimer;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	class UNiagaraSystem* DeathNiagaraSystemTemplate;
 };

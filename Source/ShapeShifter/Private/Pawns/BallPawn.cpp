@@ -507,8 +507,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	 */
 	if (NewForm != OldForm && bDestroyCloneOnChangeForm)
 	{
-		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
-		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+		CancelCloneCreation();
 
 		// Kill Clone if it was created
 		if (Clone.IsValid())
@@ -638,14 +637,38 @@ void ABallPawn::CreateClone()
 		return;
 	}
 
-	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
-	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+	CancelCloneCreation();
+
+	// Spawn CreateCloneNiagaraComponent
+	CreateCloneNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		CreateCloneNiagaraSystemTemplate.Get(), GetActorLocation());
+
+	if (!CreateCloneNiagaraComponent.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CreateClone: Failed to spawn CreateCloneNiagaraComponent!"));
+	}
 
 	// Remember current Actor Transform where clone will be spawned
 	CloneSpawnTransform = GetActorTransform();
 
 	// Call SpawnClone in CreateCloneRate seconds
 	GetWorldTimerManager().SetTimer(CreateCloneTimer, this, &ABallPawn::SpawnClone, CreateCloneRate);
+}
+
+void ABallPawn::CancelCloneCreation()
+{
+	// There is nothing to cancel if CreateCloneTimer isn't active
+	if (!GetWorldTimerManager().IsTimerActive(CreateCloneTimer))
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+	if (CreateCloneNiagaraComponent.IsValid())
+	{
+		CreateCloneNiagaraComponent->SetCustomTimeDilation(CreateCloneVfxSpeedOnCancel);
+	}
 }
 
 void ABallPawn::SpawnClone()
@@ -656,10 +679,10 @@ void ABallPawn::SpawnClone()
 		return;
 	}
 
-	// Destroy old Clone if it was created before
+	// Kill old Clone if it was created before
 	if (Clone.IsValid())
 	{
-		Clone->Destroy();
+		Clone->Die();
 	}
 
 	// Check if we can spawn Clone and return if not
@@ -692,6 +715,16 @@ bool ABallPawn::CanSpawnClone() const
 
 void ABallPawn::SpawnCloneObject()
 {
+	// Spawn SpawnCloneNiagaraSystem
+	const UNiagaraComponent* SpawnCloneNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		this, SpawnCloneNiagaraSystemTemplate.Get(),
+		CloneSpawnTransform.GetLocation());
+
+	if (!IsValid(SpawnCloneNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: Failed to spawn SpawnCloneNiagaraSystem!"));
+	}
+
 	FActorSpawnParameters SpawnParameters;
 
 	// We have to set Clone scale same as players instead of multiplying them by each other
@@ -782,7 +815,7 @@ void ABallPawn::Die()
 {
 	// Spawn DeathNiagaraSystem
 	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
-		DeathNiagaraSystemTemplate, GetActorLocation());
+		DeathNiagaraSystemTemplate.Get(), GetActorLocation());
 
 	if (!IsValid(DeathNiagaraSystem))
 	{

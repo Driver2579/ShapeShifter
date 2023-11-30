@@ -10,6 +10,7 @@
 
 class UShapeShifterSaveGame;
 class UInputAction;
+class UNiagaraSystem;
 
 struct FInputActionValue;
 
@@ -37,11 +38,14 @@ public:
 	// Change form to the next one. Usually called from ChangeFormAction InputAction.
 	void ChangeForm();
 
-	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
+	// Spawn Clone in CreateCloneRate seconds and kill old clone if it exists
 	void CreateClone();
 
+	// Cancel CreateCloneTimer and speed up CreateCloneNiagaraComponent in CreateCloneVfxSpeedOnCancel times
+	void CancelCloneCreation();
+
 	/**
-	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber
+	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber.
 	 */
 	bool IsSwimmingOnWaterSurface() const;
 
@@ -224,6 +228,20 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
 
+	// Niagara VFX which will be spawned on Clone creation start
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
+	TWeakObjectPtr<UNiagaraSystem> CreateCloneNiagaraSystemTemplate;
+
+	TWeakObjectPtr<class UNiagaraComponent> CreateCloneNiagaraComponent;
+
+	// How much faster compared with the default speed CreateCloneNiagaraComponent will be on Clone creation cancel 
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (ClampMin = 1, EditCondition = "bCanEverCreateClone"))
+	float CreateCloneVfxSpeedOnCancel = 10;
+
+	// Niagara VFX which will be spawned on Clone creation end
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
+	TWeakObjectPtr<UNiagaraSystem> SpawnCloneNiagaraSystemTemplate;
+
 	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
@@ -254,6 +272,7 @@ private:
 
 	FTimerHandle LoadAfterDeathTimer;
 
+	// Niagara VFX which will be spawned on BallPawn death
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
-	class UNiagaraSystem* DeathNiagaraSystemTemplate;
+	TWeakObjectPtr<UNiagaraSystem> DeathNiagaraSystemTemplate;
 };

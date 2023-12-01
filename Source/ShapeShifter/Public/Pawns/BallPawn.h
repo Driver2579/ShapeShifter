@@ -183,7 +183,7 @@ private:
 
 	// Niagara VFX which will be spawned on form changing
 	UPROPERTY(EditDefaultsOnly, Category = "Form")
-	TWeakObjectPtr<UNiagaraSystem> ChangeFormNiagaraSystemTemplate; 
+	UNiagaraSystem* ChangeFormNiagaraSystemTemplate; 
 
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterialInterface*> FormMaterials;
@@ -234,7 +234,7 @@ private:
 
 	// Niagara VFX which will be spawned on Clone creation start
 	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
-	TWeakObjectPtr<UNiagaraSystem> CreateCloneNiagaraSystemTemplate;
+	UNiagaraSystem* CreateCloneNiagaraSystemTemplate;
 
 	TWeakObjectPtr<class UNiagaraComponent> CreateCloneNiagaraComponent;
 
@@ -244,7 +244,7 @@ private:
 
 	// Niagara VFX which will be spawned on Clone creation end
 	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
-	TWeakObjectPtr<UNiagaraSystem> SpawnCloneNiagaraSystemTemplate;
+	UNiagaraSystem* SpawnCloneNiagaraSystemTemplate;
 
 	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
@@ -278,5 +278,5 @@ private:
 
 	// Niagara VFX which will be spawned on BallPawn death
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
-	TWeakObjectPtr<UNiagaraSystem> DeathNiagaraSystemTemplate;
+	UNiagaraSystem* DeathNiagaraSystemTemplate;
 };

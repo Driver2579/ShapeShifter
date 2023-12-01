@@ -488,16 +488,9 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// We have to spawn ChangeFormNiagaraComponent only if form was changed
 	if (NewForm != CurrentForm)
 	{
-		FFXSystemSpawnParameters NiagaraSpawnParameters;
-
-		// Initialize NiagaraSpawnParameters
-		NiagaraSpawnParameters.SystemTemplate = ChangeFormNiagaraSystemTemplate.Get();
-		NiagaraSpawnParameters.AttachToComponent = RootComponent;
-		NiagaraSpawnParameters.LocationType = EAttachLocation::SnapToTarget;
-
 		// Spawn ChangeFormNiagaraComponent
-		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(
-			NiagaraSpawnParameters);
+		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this, ChangeFormNiagaraSystemTemplate, GetActorLocation());
 
 		if (!IsValid(ChangeFormNiagaraComponent))
 		{
@@ -661,7 +654,7 @@ void ABallPawn::CreateClone()
 
 	// Spawn CreateCloneNiagaraComponent
 	CreateCloneNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
-		CreateCloneNiagaraSystemTemplate.Get(), GetActorLocation());
+		CreateCloneNiagaraSystemTemplate, GetActorLocation());
 
 	if (!CreateCloneNiagaraComponent.IsValid())
 	{
@@ -737,7 +730,7 @@ void ABallPawn::SpawnCloneObject()
 {
 	// Spawn SpawnCloneNiagaraSystem
 	const UNiagaraComponent* SpawnCloneNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-		this, SpawnCloneNiagaraSystemTemplate.Get(),
+		this, SpawnCloneNiagaraSystemTemplate,
 		CloneSpawnTransform.GetLocation());
 
 	if (!IsValid(SpawnCloneNiagaraSystem))
@@ -835,7 +828,7 @@ void ABallPawn::Die()
 {
 	// Spawn DeathNiagaraSystem
 	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
-		DeathNiagaraSystemTemplate.Get(), GetActorLocation());
+		DeathNiagaraSystemTemplate, GetActorLocation());
 
 	if (!IsValid(DeathNiagaraSystem))
 	{

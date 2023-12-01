@@ -18,5 +18,5 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UUserWidget* MainMenuWidget;
+	TWeakObjectPtr<UUserWidget> MainMenuWidget;
 };

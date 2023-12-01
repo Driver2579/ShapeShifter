@@ -47,6 +47,4 @@ private:
 
 	UFUNCTION()
 	void ExitGame();
-
-	UWarningWidget* const CreateWarningWidget();
 };

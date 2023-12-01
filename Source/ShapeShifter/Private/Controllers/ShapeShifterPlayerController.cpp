@@ -16,18 +16,18 @@ void AShapeShifterPlayerController::BeginPlay()
 
 	if (!IsValid(LocalPlayer))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetupInputComponent: LocalPlayer is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: LocalPlayer is invalid!"));
 
 		return;
 	}
 
-	// Get LocalPlayerSubsystem
+	// Get LocalPlayerSubsystem to add DefaultMappingContext
 	UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<
 		UEnhancedInputLocalPlayerSubsystem>();
 
 	if (!IsValid(LocalPlayerSubsystem))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetupInputComponent: Subsystem is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: Subsystem is invalid!"));
 
 		return;
 	}
@@ -39,6 +39,46 @@ void AShapeShifterPlayerController::BeginPlay()
 	}
 
 	SetInputMode(FInputModeGameOnly());
+
+	if (!IsValid(GetLocalPlayer()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: LocalPlayer is invalid!"));
+
+		return;
+	}
+
+	// Get GameViewportClient to get GameInstance
+	const UGameViewportClient* GameViewportClient = GetLocalPlayer()->ViewportClient;
+
+	if (!IsValid(GameViewportClient))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameViewportClient is invalid!"));
+
+		return;
+	}
+
+	// Get GameInstance to get PrimaryPlayerController
+	const UGameInstance* GameInstance = GameViewportClient->GetGameInstance();
+
+	if (!IsValid(GameInstance))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameInstance is invalid!"));
+
+		return;
+	}
+
+	// Get PrimaryPlayerController to get CurrentHUD
+	const APlayerController* PrimaryPlayerController = GameInstance->GetPrimaryPlayerController();
+
+	if (!IsValid(PrimaryPlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: PrimaryPlayerController is invalid!"));
+
+		return;
+	}
+
+	// Save CurrentHUD
+	CurrentHUD = Cast<AShapeShifterHUD>(PrimaryPlayerController->GetHUD());
 }
 
 void AShapeShifterPlayerController::SetupInputComponent()
@@ -49,6 +89,9 @@ void AShapeShifterPlayerController::SetupInputComponent()
 
 	if (!IsValid(EnhancedInputComponent))
 	{
+		UE_LOG(LogTemp, Error, TEXT(
+			"AShapeShifterPlayerController::SetupInputComponent: EnhancedInputComponent is invalid!"));
+
 		return;
 	}
 
@@ -65,44 +108,46 @@ void AShapeShifterPlayerController::SetupInputComponent()
 
 void AShapeShifterPlayerController::OnPause()
 {
-	OnSetPause(true);
+	SetPause(true);
 }
 
 void AShapeShifterPlayerController::OnUnpause()
 {
-	OnSetPause(false);
+	SetPause(false);
 }
 
-void AShapeShifterPlayerController::OnSetPause(bool bPaused)
+void AShapeShifterPlayerController::SetPause(bool bPaused)
 {
-	if (!GetWorld() || !GetWorld()->GetAuthGameMode())
+	if (!CurrentHUD.IsValid())
 	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: CurrentHUD is invalid!"));
+
 		return;
 	}
 
-	bShowMouseCursor = bPaused;
+	// Open or close menu
+	bPaused ? CurrentHUD->OpenPauseMenu() : CurrentHUD->ClosePauseMenu();
 
-	UGameViewportClient* GameViewportClient = GetLocalPlayer()->ViewportClient;
-
-	if (GameViewportClient)
+	if (!IsValid(GetWorld()->GetAuthGameMode()))
 	{
-		AShapeShifterHUD* CurrentHUD = Cast<AShapeShifterHUD>(GameViewportClient->GetGameInstance()
-			->GetPrimaryPlayerController()->GetHUD());
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameMode is invalid!"));
 
-		if (CurrentHUD)
-		{
-			bPaused ? CurrentHUD->OpenPauseMenu() : CurrentHUD->ClosePauseMenu();
-		}
+		return;
 	}
 
+	// Pause game
 	if (bPaused)
 	{
 		SetInputMode(FInputModeUIOnly());
 		GetWorld()->GetAuthGameMode()->SetPause(this);
 	}
+	// Unpause game
 	else
 	{
 		SetInputMode(FInputModeGameOnly());
 		GetWorld()->GetAuthGameMode()->ClearPause();
 	}
+
+	// Show cursor if menu is open or hide if it is close
+	bShowMouseCursor = bPaused;
 }

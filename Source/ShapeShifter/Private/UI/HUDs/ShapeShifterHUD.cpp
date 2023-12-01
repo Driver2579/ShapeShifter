@@ -16,7 +16,11 @@ void AShapeShifterHUD::ClosePauseMenu()
 
 void AShapeShifterHUD::BeginPlay()
 {
-    if (!PauseWidgetClass)
+    Super::BeginPlay();
+
+    // Create MainMenuWidget
+
+    if (!IsValid(PauseWidgetClass))
     {
         UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidgetClass is NONE!"));
 
@@ -25,7 +29,7 @@ void AShapeShifterHUD::BeginPlay()
 
     PauseWidget = CreateWidget<UUserWidget>(GetWorld(), PauseWidgetClass);
 
-    if (!PauseWidget)
+    if (!PauseWidget.IsValid())
     {
         UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidget is invalid!"));
 

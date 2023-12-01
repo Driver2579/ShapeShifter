@@ -5,7 +5,6 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Widgets/WarningWidget.h"
-#include "Blueprint/WidgetTree.h"
 
 void UMainMenuWidget::NativeConstruct()
 {
@@ -41,12 +40,10 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnNewGameButtonClicked()
 {
-	UWarningWidget* const WarningWidget = CreateWarningWidget();
+	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessenge("Start a new game?");
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::NewGame);
-
-	GetRootWidget()->SetIsEnabled(false);
 }
 
 void UMainMenuWidget::OnContinueGameButtonClicked()
@@ -56,12 +53,10 @@ void UMainMenuWidget::OnContinueGameButtonClicked()
 
 void UMainMenuWidget::OnExitGameButtonClicked()
 {
-	UWarningWidget* const WarningWidget = CreateWarningWidget();
+	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessenge("Leave the game?");
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::ExitGame);
-
-	GetRootWidget()->SetIsEnabled(false);
 }
 
 void UMainMenuWidget::NewGame()
@@ -88,27 +83,4 @@ void UMainMenuWidget::ExitGame()
 	}
 
 	PlayerController->ConsoleCommand("quit");
-}
-
-UWarningWidget* const UMainMenuWidget::CreateWarningWidget()
-{
-	if (!WarningWidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::CreateWarningWidget: WarningWidgetClass is NONE!"));
-
-		return nullptr;
-	}
-
-	UWarningWidget* const WarningWidget = CreateWidget<UWarningWidget>(this, WarningWidgetClass);
-
-	if (!WarningWidget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::CreateWarningWidget: WarningWidget is invalid!"));
-
-		return nullptr;
-	}
-
-	WarningWidget->AddToViewport();
-
-	return WarningWidget;
 }

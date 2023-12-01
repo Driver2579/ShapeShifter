@@ -14,6 +14,9 @@ class SHAPESHIFTER_API UWarningWidget : public UUserWidget
 	GENERATED_BODY()
 
 public: 
+	static UWarningWidget* const Show(UUserWidget* const Parent, TSubclassOf<UWarningWidget> WarningWidgetClass);
+
+	// Set message to display
 	void SetMessenge(const FString& Messenge);
 
 	UButton* GetOkButton();
@@ -31,6 +34,7 @@ protected:
 	UButton* CancelButton;
 
 private:
+	// Close this menu
 	UFUNCTION()
 	void Close();
 };

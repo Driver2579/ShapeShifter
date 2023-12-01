@@ -7,6 +7,23 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetTree.h"
 
+UWarningWidget* const UWarningWidget::Show(UUserWidget* const Parent, TSubclassOf<UWarningWidget> WarningWidgetClass)
+{
+	UWarningWidget* const WarningWidget = CreateWidget<UWarningWidget>(Parent, WarningWidgetClass);
+
+	if (!IsValid(WarningWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Create: WarningWidget is invalid!"));
+
+		return nullptr;
+	}
+
+	Parent->GetRootWidget()->SetIsEnabled(false);
+	WarningWidget->AddToViewport();
+
+	return WarningWidget;
+}
+
 void UWarningWidget::SetMessenge(const FString& Messenge)
 {
 	MessageTextBlock->SetText(FText::FromString(Messenge));
@@ -42,7 +59,7 @@ void UWarningWidget::NativeConstruct()
 
 void UWarningWidget::Close()
 {
-	// Set Enabled to true for the root widget of the parent widget
+	// Enables the root widget of the parent widget
 	Cast<UWidgetTree>(GetOuter())->RootWidget->SetIsEnabled(true);
 
 	RemoveFromParent();

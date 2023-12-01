@@ -8,19 +8,15 @@
 #include "Actors/SaveGameManager.h"
 #include "UI/Widgets/WarningWidget.h"
 
-#include "Components/Button.h"
-#include "Kismet/GameplayStatics.h"
-#include "UI/Widgets/WarningWidget.h"
-#include "Blueprint/WidgetTree.h"
-
-
 void UPauseWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	// Bind buttons to functions
+
 	if (IsValid(ContinueButton))
 	{
-		ContinueButton->OnClicked.AddDynamic(this, &UPauseWidget::OnContinueButtonClicked);
+		ContinueButton->OnClicked.AddDynamic(this, &UPauseWidget::Close);
 	}
 	else
 	{
@@ -62,37 +58,32 @@ void UPauseWidget::NativeConstruct()
 	{
 		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: ExitButton is invalid!"));
 	}
-}
 
-void UPauseWidget::OnContinueButtonClicked()
-{
-	Close();
-}
+	// Get SaveGameManager to save it
 
-void UPauseWidget::OnLoadButtonClicked()
-{
-	UWarningWidget* const WarningWidget = CreateWarningWidget();
-
-	WarningWidget->SetMessenge("Load save?");
-	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Load);
-
-	GetRootWidget()->SetIsEnabled(false);
-}
-
-void UPauseWidget::OnSaveButtonClicked()
-{
-	AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+	AShapeShifterGameMode* const GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
 
 	if (!IsValid(GameMode))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnSaveButtonClicked: GameMode is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnLoadButtonClicked: GameMode is invalid!"));
 
 		return;
 	}
 
-	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
+	SaveGameManager = GameMode->GetSaveGameManager();
+}
 
-	if (!IsValid(SaveGameManager))
+void UPauseWidget::OnLoadButtonClicked()
+{
+	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessenge("Load save?");
+	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Load);
+}
+
+void UPauseWidget::OnSaveButtonClicked()
+{
+	if (!SaveGameManager.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnSaveButtonClicked: SaveGameManager is invalid!"));
 
@@ -106,40 +97,25 @@ void UPauseWidget::OnSaveButtonClicked()
 
 void UPauseWidget::OnRestartButtonClicked()
 {
-	UWarningWidget* const WarningWidget = CreateWarningWidget();
+	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessenge("Restart level?");
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Restart);
-
-	GetRootWidget()->SetIsEnabled(false);
 }
 
 void UPauseWidget::OnExitButtonClicked()
 {
-	UWarningWidget* const WarningWidget = CreateWarningWidget();
+	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessenge("Exit to menu?");
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Exit);
-
-	GetRootWidget()->SetIsEnabled(false);
 }
 
 void UPauseWidget::Load()
 {
-	AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(GameMode))
+	if (!SaveGameManager.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnLoadButtonClicked: GameMode is invalid!"));
-
-		return;
-	}
-
-	ASaveGameManager* SaveGameManager = GameMode->GetSaveGameManager();
-
-	if (!IsValid(SaveGameManager))
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnLoadButtonClicked: SaveGameManager is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Load: SaveGameManager is invalid!"));
 
 		return;
 	}
@@ -167,6 +143,7 @@ void UPauseWidget::Restart()
 
 void UPauseWidget::Exit()
 {
+	// Open main menu if is valid
 	if (!MainMenuLevel.IsNull())
 	{
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
@@ -179,37 +156,15 @@ void UPauseWidget::Exit()
 
 void UPauseWidget::Close()
 {
+	// Get PlayerController to OnUnpause
 	AShapeShifterPlayerController* PlayerController = Cast<AShapeShifterPlayerController>(GetWorld()->GetFirstPlayerController());
 
 	if (!IsValid(PlayerController))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnContinueButtonClicked: PlayerController is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Close: PlayerController is invalid!"));
 
 		return;
 	}
 
 	PlayerController->OnUnpause();
-}
-
-UWarningWidget* const UPauseWidget::CreateWarningWidget()
-{
-	if (!WarningWidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::CreateWarningWidget: WarningWidgetClass is NONE!"));
-
-		return nullptr;
-	}
-
-	UWarningWidget* const WarningWidget = CreateWidget<UWarningWidget>(this, WarningWidgetClass);
-
-	if (!WarningWidget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::CreateWarningWidget: WarningWidget is invalid!"));
-
-		return nullptr;
-	}
-
-	WarningWidget->AddToViewport();
-
-	return WarningWidget;
 }

@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputActionValue.h"
-#include "GameFramework/PlayerController.h"
+#include "UI/HUDs/ShapeShifterHUD.h"
 #include "ShapeShifterPlayerController.generated.h"
 
 UCLASS()
@@ -13,6 +12,7 @@ class SHAPESHIFTER_API AShapeShifterPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	// Pause seters
 	void OnPause();
 	void OnUnpause();
 
@@ -28,5 +28,8 @@ protected:
 	class UInputAction* PauseAction;
 
 private:
-	void OnSetPause(bool bPaused);
+	TWeakObjectPtr<AShapeShifterHUD> CurrentHUD;
+
+	// Pause or unpause game and open pause menu
+	void SetPause(bool bPaused);
 };

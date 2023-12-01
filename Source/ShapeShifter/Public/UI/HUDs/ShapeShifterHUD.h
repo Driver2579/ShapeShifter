@@ -12,7 +12,10 @@ class SHAPESHIFTER_API AShapeShifterHUD : public AHUD
 	GENERATED_BODY()
 
 public:
+	// Make visible PauseWidget
 	void OpenPauseMenu();
+
+	// Make hidden PauseWidget
 	void ClosePauseMenu();
 
 protected:
@@ -22,5 +25,5 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UUserWidget* PauseWidget;
+	TWeakObjectPtr<UUserWidget> PauseWidget;
 };

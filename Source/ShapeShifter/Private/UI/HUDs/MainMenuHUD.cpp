@@ -3,10 +3,15 @@
 #include "UI/HUDs/MainMenuHUD.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 void AMainMenuHUD::BeginPlay()
 {
-    if (!MainMenuWidgetClass)
+    Super::BeginPlay();
+
+    // Create MainMenuWidget
+
+    if (!IsValid(MainMenuWidgetClass))
     {
         UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: MainMenuWidgetClass is NONE!"));
 
@@ -15,7 +20,7 @@ void AMainMenuHUD::BeginPlay()
 
     MainMenuWidget = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetClass);
 
-    if (!MainMenuWidget)
+    if (!MainMenuWidget.IsValid())
     {
         UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: MainMenuWidget is invalid!"));
 
@@ -23,4 +28,18 @@ void AMainMenuHUD::BeginPlay()
     }
 
     MainMenuWidget->AddToViewport();
+
+    // Change controls
+
+    APlayerController* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+    if (!IsValid(Controller))
+    {
+        UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: Controller is invalid!"));
+
+        return;
+    }
+
+    Controller->bShowMouseCursor = true;
+    Controller->SetInputMode(FInputModeUIOnly());
 }

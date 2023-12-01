@@ -22,7 +22,7 @@ void ASaveGameManager::BeginPlay()
 
 	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &ASaveGameManager::OnAsyncLoadGameFinished);
 
-	// Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all 
+	// Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all Actors called their BeginPlay
 	GetWorld()->OnWorldBeginPlay.AddUObject(this, &ASaveGameManager::OnWorldBeginPlay);
 }
 

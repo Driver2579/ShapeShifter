@@ -181,6 +181,10 @@ private:
 
 	EBallPawnForm CurrentForm;
 
+	// Niagara VFX which will be spawned on form changing
+	UPROPERTY(EditDefaultsOnly, Category = "Form")
+	TWeakObjectPtr<UNiagaraSystem> ChangeFormNiagaraSystemTemplate; 
+
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TMap<EBallPawnForm, UMaterialInterface*> FormMaterials;
 

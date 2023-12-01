@@ -485,6 +485,26 @@ EBallPawnForm ABallPawn::GetForm() const
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
+	// We have to spawn ChangeFormNiagaraComponent only if form was changed
+	if (NewForm != CurrentForm)
+	{
+		FFXSystemSpawnParameters NiagaraSpawnParameters;
+
+		// Initialize NiagaraSpawnParameters
+		NiagaraSpawnParameters.SystemTemplate = ChangeFormNiagaraSystemTemplate.Get();
+		NiagaraSpawnParameters.AttachToComponent = RootComponent;
+		NiagaraSpawnParameters.LocationType = EAttachLocation::SnapToTarget;
+
+		// Spawn ChangeFormNiagaraComponent
+		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(
+			NiagaraSpawnParameters);
+
+		if (!IsValid(ChangeFormNiagaraComponent))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to spawn ChangeFormNiagaraComponent!"));
+		}
+	}
+
 	// Remember OldForm before changing it to compare a new one with the old one when needed 
 	const EBallPawnForm OldForm = CurrentForm;
 

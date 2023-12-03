@@ -16,6 +16,12 @@ void ASaveGameManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// We don't need to bind any functionality of this class if it's not active
+	if (!bActive)
+	{
+		return;
+	}
+
 	// Initial SaveGameObject initializing
 	CreateSaveGameObjectIfNotExists();
 
@@ -160,4 +166,9 @@ void ASaveGameManager::OnAsyncLoadGameFinished(const FString& SlotName, const in
 		UE_LOG(LogTemp, Warning, TEXT("ASaveGameManager::LoadGame: Unable to load the save from another level! "
 			"Current level: %s Saved level: %s"), *CurrentLevelName, *ShapeShifterSaveGameObject->LevelName);
 	}
+}
+
+FString ASaveGameManager::GetSaveGameSlotName() const
+{
+	return SaveGameSlotName;
 }

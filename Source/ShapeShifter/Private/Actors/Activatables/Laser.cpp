@@ -13,7 +13,7 @@ ALaser::ALaser()
  	// Set this actor to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
 
-	// We need it for a proper render when interacting with physics object.
+	// We need it for a proper render when interacting with physics object
 	PrimaryActorTick.TickGroup = TG_PostUpdateWork;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));

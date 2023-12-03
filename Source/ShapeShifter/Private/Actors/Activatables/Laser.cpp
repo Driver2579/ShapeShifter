@@ -13,6 +13,9 @@ ALaser::ALaser()
  	// Set this actor to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
 
+	// We need it for a proper render when interacting with physics object.
+	PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
@@ -22,7 +25,7 @@ ALaser::ALaser()
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
 
 	/**
-	 * We need it for a proper render when interacting with physics object.
+	 * We need it for a proper render when interacting with physics object too.
 	 * For some reason it works properly only with this component...
 	 */
 	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);

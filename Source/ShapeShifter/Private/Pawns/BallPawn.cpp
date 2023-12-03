@@ -488,9 +488,16 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	// We have to spawn ChangeFormNiagaraComponent only if form was changed
 	if (NewForm != CurrentForm)
 	{
+		FFXSystemSpawnParameters NiagaraSpawnParameters;
+
+		// Initialize NiagaraSpawnParameters
+		NiagaraSpawnParameters.SystemTemplate = ChangeFormNiagaraSystemTemplate;
+		NiagaraSpawnParameters.AttachToComponent = RootComponent;
+		NiagaraSpawnParameters.LocationType = EAttachLocation::SnapToTarget;
+
 		// Spawn ChangeFormNiagaraComponent
-		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			this, ChangeFormNiagaraSystemTemplate, GetActorLocation());
+		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(
+			NiagaraSpawnParameters);
 
 		if (!IsValid(ChangeFormNiagaraComponent))
 		{

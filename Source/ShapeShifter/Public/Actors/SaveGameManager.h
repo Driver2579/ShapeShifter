@@ -55,6 +55,8 @@ private:
 	 */
 	bool CreateSaveGameObjectIfNotExists();
 
+	void LoadSaveGameObject();
+
 	UPROPERTY(EditDefaultsOnly)
 	FString SaveGameSlotName = TEXT("SaveGame");
 

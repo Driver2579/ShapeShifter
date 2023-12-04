@@ -11,3 +11,13 @@ void UShapeShifterGameInstance::SetAllowAutoSave(const bool bNewAllowAutoSave)
 {
 	bAllowAutoSave = bNewAllowAutoSave;
 }
+
+bool UShapeShifterGameInstance::WillEnableAllowAutoSaveOnOpenLevel() const
+{
+	return bEnableAllowAutoSaveOnOpenLevel;
+}
+
+void UShapeShifterGameInstance::SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel)
+{
+	bEnableAllowAutoSaveOnOpenLevel = bNewEnableAllowAutoSaveOnOpenLevel;
+}

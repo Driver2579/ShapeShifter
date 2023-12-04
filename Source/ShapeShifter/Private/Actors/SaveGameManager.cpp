@@ -16,14 +16,14 @@ void ASaveGameManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Initial SaveGameObject initializing
+	CreateSaveGameObjectIfNotExists();
+
 	// We don't need to bind any functionality of this class if it's not active
 	if (!bActive)
 	{
 		return;
 	}
-
-	// Initial SaveGameObject initializing
-	CreateSaveGameObjectIfNotExists();
 
 	BindAllSavables();
 
@@ -38,8 +38,7 @@ void ASaveGameManager::BeginPlay()
 
 void ASaveGameManager::OnWorldBeginPlay()
 {
-	const UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<
-		UShapeShifterGameInstance>();
+	UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<UShapeShifterGameInstance>();
 
 	if (!IsValid(ShapeShifterGameInstance))
 	{
@@ -55,11 +54,17 @@ void ASaveGameManager::OnWorldBeginPlay()
 	if (ShapeShifterGameInstance->IsAutoSaveAllowed())
 	{
 		SaveGame();
+
+		return;
 	}
+
 	// Load the game in another case as bAllowAutoSave documentation in the ShapeShifterGameInstance says
-	else
+	LoadGame();
+
+	// Enable AllowAutoSave if ShapeShifterGameInstance says so
+	if (ShapeShifterGameInstance->WillEnableAllowAutoSaveOnOpenLevel())
 	{
-		LoadGame();
+		ShapeShifterGameInstance->SetAllowAutoSave(true);
 	}
 }
 
@@ -95,7 +100,27 @@ bool ASaveGameManager::CreateSaveGameObjectIfNotExists()
 		return false;
 	}
 
+	LoadSaveGameObject();
+
 	return true;
+}
+
+void ASaveGameManager::LoadSaveGameObject()
+{
+	FAsyncLoadGameFromSlotDelegate OnLoadFinished;
+
+	// Load SaveGameObject on OnLoadFinished
+	OnLoadFinished.BindLambda([this](const FString& SlotName, const int32 UserIndex,
+		USaveGame* SaveGameObjectPtr)
+	{
+		SaveGameObject = CastChecked<UShapeShifterSaveGame>(SaveGameObjectPtr);
+	});
+
+	// Load SaveGameObject values if save game slot exists
+	if (UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
+	{
+		UGameplayStatics::AsyncLoadGameFromSlot(SaveGameSlotName, 0, OnLoadFinished);
+	}
 }
 
 void ASaveGameManager::BindAllSavables()

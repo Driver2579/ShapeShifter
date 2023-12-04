@@ -4,21 +4,9 @@
 
 #include "Blueprint/UserWidget.h"
 
-void AShapeShifterHUD::OpenPauseMenu()
-{
-    PauseWidget->SetVisibility(ESlateVisibility::Visible);
-}
-
-void AShapeShifterHUD::ClosePauseMenu()
-{
-    PauseWidget->SetVisibility(ESlateVisibility::Hidden);
-}
-
 void AShapeShifterHUD::BeginPlay()
 {
     Super::BeginPlay();
-
-    // Create MainMenuWidget
 
     if (!IsValid(PauseWidgetClass))
     {
@@ -37,5 +25,17 @@ void AShapeShifterHUD::BeginPlay()
     }
 
     PauseWidget->AddToViewport();
+
+    // The pause menu should initially be hidden
+    PauseWidget->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void AShapeShifterHUD::OpenPauseMenu()
+{
+    PauseWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
+void AShapeShifterHUD::ClosePauseMenu()
+{
     PauseWidget->SetVisibility(ESlateVisibility::Hidden);
 }

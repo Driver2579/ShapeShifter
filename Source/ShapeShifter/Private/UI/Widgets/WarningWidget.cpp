@@ -7,29 +7,69 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetTree.h"
 
-UWarningWidget* const UWarningWidget::Show(UUserWidget* const Parent, TSubclassOf<UWarningWidget> WarningWidgetClass)
+const UWarningWidget* UWarningWidget::Show(TWeakObjectPtr<UUserWidget> Parent, TSubclassOf<UWarningWidget> WarningWidgetClass)
 {
-	UWarningWidget* const WarningWidget = CreateWidget<UWarningWidget>(Parent, WarningWidgetClass);
-
-	if (!IsValid(WarningWidget))
+	if (!Parent.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Create: WarningWidget is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: Parent is invalid!"));
 
 		return nullptr;
 	}
 
-	Parent->GetRootWidget()->SetIsEnabled(false);
+	if (!IsValid(WarningWidgetClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: WarningWidgetClass is invalid!"));
+
+		return nullptr;
+	}
+
+	UWarningWidget* WarningWidget = CreateWidget<UWarningWidget>(Parent.Get(), WarningWidgetClass);
+
+	if (!IsValid(WarningWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: WarningWidget is invalid!"));
+
+		return nullptr;
+	}
+
+	const UWidgetTree* ParentWidgetTree = Cast<UWidgetTree>(Parent->WidgetTree);
+
+	if (!IsValid(ParentWidgetTree))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: ParentWidgetTree is invalid!"));
+
+		return nullptr;
+	}
+
+	TObjectPtr<UWidget> ParentRootWidget = ParentWidgetTree->RootWidget;
+
+	if (!IsValid(ParentRootWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: ParentRootWidget is invalid!"));
+
+		return nullptr;
+	}
+
+	ParentRootWidget->SetIsEnabled(false);
+
 	WarningWidget->AddToViewport();
 
 	return WarningWidget;
 }
 
-void UWarningWidget::SetMessenge(const FString& Messenge)
+void UWarningWidget::SetMessange(const FString& Messenge) const
 {
+	if (!Messenge.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::SetMessenge: Messenge is invalid!"));
+
+		return;
+	}
+
 	MessageTextBlock->SetText(FText::FromString(Messenge));
 }
 
-UButton* UWarningWidget::GetOkButton()
+UButton* UWarningWidget::GetOkButton() const 
 {
 	return OkButton;
 }
@@ -40,7 +80,7 @@ void UWarningWidget::NativeConstruct()
 
 	if (IsValid(OkButton))
 	{
-		OkButton->OnClicked.AddDynamic(this, &UWarningWidget::Close);
+		OkButton->OnClicked.AddDynamic(this, &UWarningWidget::CloseWidget);
 	}
 	else
 	{
@@ -49,7 +89,7 @@ void UWarningWidget::NativeConstruct()
 
 	if (IsValid(CancelButton))
 	{
-		CancelButton->OnClicked.AddDynamic(this, &UWarningWidget::Close);
+		CancelButton->OnClicked.AddDynamic(this, &UWarningWidget::CloseWidget);
 	}
 	else
 	{
@@ -57,10 +97,28 @@ void UWarningWidget::NativeConstruct()
 	}
 }
 
-void UWarningWidget::Close()
+void UWarningWidget::CloseWidget()
 {
-	// Enables the root widget of the parent widget
-	Cast<UWidgetTree>(GetOuter())->RootWidget->SetIsEnabled(true);
+	const UWidgetTree* OuterWidgetTree = Cast<UWidgetTree>(GetOuter());
+
+	if (!IsValid(OuterWidgetTree))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::CloseWidget: OuterWidgetTree is invalid!"));
+
+		return;
+	}
+
+	TObjectPtr<UWidget> OuterRootWidget = OuterWidgetTree->RootWidget;
+
+	if (!IsValid(OuterRootWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::CloseWidget: OuterRootWidget is invalid!"));
+
+		return;
+	}
+
+	// Enable root widget of the parent widget
+	OuterRootWidget->SetIsEnabled(true);
 
 	RemoveFromParent();
 }

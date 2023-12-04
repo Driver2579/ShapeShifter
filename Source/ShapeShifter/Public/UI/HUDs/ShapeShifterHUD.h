@@ -12,17 +12,17 @@ class SHAPESHIFTER_API AShapeShifterHUD : public AHUD
 	GENERATED_BODY()
 
 public:
-	// Make visible PauseWidget
+	// Make PauseWIdget visible
 	void OpenPauseMenu();
 
-	// Make hidden PauseWidget
+	// Make PauseWidget hidden
 	void ClosePauseMenu();
 
 protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> PauseWidgetClass;
-
-	virtual void BeginPlay() override;
 
 private:
 	TWeakObjectPtr<UUserWidget> PauseWidget;

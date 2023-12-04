@@ -9,11 +9,9 @@ void AMainMenuHUD::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Create MainMenuWidget
-
     if (!IsValid(MainMenuWidgetClass))
     {
-        UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: MainMenuWidgetClass is NONE!"));
+        UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: MainMenuWidgetClass is invalid!"));
 
         return;
     }
@@ -29,9 +27,8 @@ void AMainMenuHUD::BeginPlay()
 
     MainMenuWidget->AddToViewport();
 
-    // Change controls
-
-    APlayerController* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    // Get PlayerController to change controls
+    APlayerController* Controller = GetOwningPlayerController(); //UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
     if (!IsValid(Controller))
     {

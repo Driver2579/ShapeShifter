@@ -12,20 +12,22 @@ class SHAPESHIFTER_API AShapeShifterPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	// Pause seters
-	void OnPause();
-	void OnUnpause();
+	// Set pause true
+	void Pause();
+
+	// Set pause false
+	void Unpause();
 
 protected:
 	virtual void BeginPlay() override;
 
-	virtual void SetupInputComponent() override;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
 	class UInputMappingContext* ShapeShifterMappingContext;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
 	class UInputAction* PauseAction;
+
+	virtual void SetupInputComponent() override;
 
 private:
 	TWeakObjectPtr<AShapeShifterHUD> CurrentHUD;

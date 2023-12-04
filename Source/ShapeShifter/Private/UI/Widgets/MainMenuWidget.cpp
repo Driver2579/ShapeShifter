@@ -40,10 +40,17 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnNewGameButtonClicked()
 {
-	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+	if (!IsValid(WarningWidgetClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnNewGameButtonClicked: WarningWidgetClass is invalid!"));
 
-	WarningWidget->SetMessenge("Start a new game?");
-	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::NewGame);
+		return;
+	}
+
+	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessange(MessageBeforeStart);
+	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::OpenFirstLevel);
 }
 
 void UMainMenuWidget::OnContinueGameButtonClicked()
@@ -53,13 +60,20 @@ void UMainMenuWidget::OnContinueGameButtonClicked()
 
 void UMainMenuWidget::OnExitGameButtonClicked()
 {
-	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+	if (!IsValid(WarningWidgetClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnExitGameButtonClicked: WarningWidgetClass is invalid!"));
 
-	WarningWidget->SetMessenge("Leave the game?");
+		return;
+	}
+
+	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessange(MessageBeforeLeave);
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::ExitGame);
 }
 
-void UMainMenuWidget::NewGame()
+void UMainMenuWidget::OpenFirstLevel()
 {
 	if (!FirstLevel.IsNull())
 	{
@@ -67,20 +81,18 @@ void UMainMenuWidget::NewGame()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::NewGame: FirstLevel is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OpenFirstLevel: FirstLevel is invalid!"));
 	}
 }
 
 void UMainMenuWidget::ExitGame()
 {
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	if (!IsValid(PlayerController))
+	if (!IsValid(GetOwningPlayer()))
 	{
 		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::ExitGame: PlayerController is invalid!"));
 
 		return;
 	}
 
-	PlayerController->ConsoleCommand("quit");
+	GetOwningPlayer()->ConsoleCommand("quit");
 }

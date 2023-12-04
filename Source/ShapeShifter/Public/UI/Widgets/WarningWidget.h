@@ -14,12 +14,12 @@ class SHAPESHIFTER_API UWarningWidget : public UUserWidget
 	GENERATED_BODY()
 
 public: 
-	static UWarningWidget* const Show(UUserWidget* const Parent, TSubclassOf<UWarningWidget> WarningWidgetClass);
+	static const UWarningWidget* Show(TWeakObjectPtr<UUserWidget> Parent, TSubclassOf<UWarningWidget> WarningWidgetClass);
 
 	// Set message to display
-	void SetMessenge(const FString& Messenge);
+	void SetMessange(const FString& Messenge) const;
 
-	UButton* GetOkButton();
+	UButton* GetOkButton() const;
 
 protected:
 	virtual void NativeConstruct() override;
@@ -36,5 +36,5 @@ protected:
 private:
 	// Close this menu
 	UFUNCTION()
-	void Close();
+	void CloseWidget();
 };

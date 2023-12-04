@@ -38,11 +38,15 @@ void AShapeShifterPlayerController::BeginPlay()
 		LocalPlayerSubsystem->AddMappingContext(ShapeShifterMappingContext, 0);
 	}
 
+	/**
+	* When entering from the level where there was control through the cursor, 
+	* it will remain visible. To fix this, you need this line.
+	*/
 	SetInputMode(FInputModeGameOnly());
 
 	if (!IsValid(GetLocalPlayer()))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: LocalPlayer is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: LocalPlayer is invalid!"));
 
 		return;
 	}
@@ -52,7 +56,7 @@ void AShapeShifterPlayerController::BeginPlay()
 
 	if (!IsValid(GameViewportClient))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameViewportClient is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: GameViewportClient is invalid!"));
 
 		return;
 	}
@@ -62,7 +66,7 @@ void AShapeShifterPlayerController::BeginPlay()
 
 	if (!IsValid(GameInstance))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameInstance is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: GameInstance is invalid!"));
 
 		return;
 	}
@@ -72,7 +76,7 @@ void AShapeShifterPlayerController::BeginPlay()
 
 	if (!IsValid(PrimaryPlayerController))
 	{
-		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: PrimaryPlayerController is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::BeginPlay: PrimaryPlayerController is invalid!"));
 
 		return;
 	}
@@ -98,7 +102,7 @@ void AShapeShifterPlayerController::SetupInputComponent()
 	if (IsValid(PauseAction))
 	{
 		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Triggered, this, 
-			&AShapeShifterPlayerController::OnPause);
+			&AShapeShifterPlayerController::Pause);
 	}
 	else
 	{
@@ -106,12 +110,12 @@ void AShapeShifterPlayerController::SetupInputComponent()
 	}
 }
 
-void AShapeShifterPlayerController::OnPause()
+void AShapeShifterPlayerController::Pause()
 {
 	SetPause(true);
 }
 
-void AShapeShifterPlayerController::OnUnpause()
+void AShapeShifterPlayerController::Unpause()
 {
 	SetPause(false);
 }
@@ -125,7 +129,7 @@ void AShapeShifterPlayerController::SetPause(bool bPaused)
 		return;
 	}
 
-	// Open or close menu
+	// Open or close pause menu
 	bPaused ? CurrentHUD->OpenPauseMenu() : CurrentHUD->ClosePauseMenu();
 
 	if (!IsValid(GetWorld()->GetAuthGameMode()))
@@ -148,6 +152,6 @@ void AShapeShifterPlayerController::SetPause(bool bPaused)
 		GetWorld()->GetAuthGameMode()->ClearPause();
 	}
 
-	// Show cursor if menu is open or hide if it is close
+	// Show cursor if pause menu is opened or hide if it's closed
 	bShowMouseCursor = bPaused;
 }

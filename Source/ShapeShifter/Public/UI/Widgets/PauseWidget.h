@@ -32,7 +32,7 @@ protected:
 	UButton* ExitButton;
 
 private:
-	// Widget that will be used as a warning
+	// Widget that will be used as a warning for some actions
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UWarningWidget> WarningWidgetClass;
 
@@ -41,6 +41,10 @@ private:
 	TSoftObjectPtr<UWorld> MainMenuLevel;
 
 	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
+
+	FString MessageBeforeLoad = "Load save?";
+	FString MessageBeforeRestart = "Restart level?";
+	FString MessageBeforeExit = "Exit to menu?";
 
 	UFUNCTION()
 	void OnLoadButtonClicked();
@@ -68,5 +72,5 @@ private:
 
 	// Close this menu
 	UFUNCTION()
-	void Close();
+	void CloseWidget();
 };

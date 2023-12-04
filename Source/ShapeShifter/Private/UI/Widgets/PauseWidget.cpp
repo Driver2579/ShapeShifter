@@ -12,11 +12,9 @@ void UPauseWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Bind buttons to functions
-
 	if (IsValid(ContinueButton))
 	{
-		ContinueButton->OnClicked.AddDynamic(this, &UPauseWidget::Close);
+		ContinueButton->OnClicked.AddDynamic(this, &UPauseWidget::CloseWidget);
 	}
 	else
 	{
@@ -59,13 +57,11 @@ void UPauseWidget::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: ExitButton is invalid!"));
 	}
 
-	// Get SaveGameManager to save it
-
-	AShapeShifterGameMode* const GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
 
 	if (!IsValid(GameMode))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnLoadButtonClicked: GameMode is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: GameMode is invalid!"));
 
 		return;
 	}
@@ -75,9 +71,16 @@ void UPauseWidget::NativeConstruct()
 
 void UPauseWidget::OnLoadButtonClicked()
 {
-	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+	if (!IsValid(WarningWidgetClass)) 
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnLoadButtonClicked: WarningWidgetClass is invalid!"));
 
-	WarningWidget->SetMessenge("Load save?");
+		return;
+	}
+
+	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessange(MessageBeforeLoad);
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Load);
 }
 
@@ -92,22 +95,36 @@ void UPauseWidget::OnSaveButtonClicked()
 
 	SaveGameManager->SaveGame();
 
-	Close();
+	CloseWidget();
 }
 
 void UPauseWidget::OnRestartButtonClicked()
 {
-	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+	if (!IsValid(WarningWidgetClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnRestartButtonClicked: WarningWidgetClass is invalid!"));
 
-	WarningWidget->SetMessenge("Restart level?");
+		return;
+	}
+
+	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessange(MessageBeforeRestart);
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Restart);
 }
 
 void UPauseWidget::OnExitButtonClicked()
 {
-	UWarningWidget* const WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+	if (!IsValid(WarningWidgetClass))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnExitButtonClicked: WarningWidgetClass is invalid!"));
 
-	WarningWidget->SetMessenge("Exit to menu?");
+		return;
+	}
+
+	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
+
+	WarningWidget->SetMessange(MessageBeforeExit);
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UPauseWidget::Exit);
 }
 
@@ -122,12 +139,11 @@ void UPauseWidget::Load()
 
 	SaveGameManager->LoadGame();
 
-	Close();
+	CloseWidget();
 }
 
 void UPauseWidget::Restart()
 {
-	// Get the current level name
 	FString CurrentLevelName = *UGameplayStatics::GetCurrentLevelName(this, true);
 
 	if (CurrentLevelName.IsEmpty())
@@ -137,13 +153,13 @@ void UPauseWidget::Restart()
 		return;
 	}
 	
-	// Reload a level
+	// Restart the level
 	UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName), true);
 }
 
 void UPauseWidget::Exit()
 {
-	// Open main menu if is valid
+	// Open MainMenuLevel if it's valid
 	if (!MainMenuLevel.IsNull())
 	{
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
@@ -154,17 +170,17 @@ void UPauseWidget::Exit()
 	}
 }
 
-void UPauseWidget::Close()
+void UPauseWidget::CloseWidget()
 {
-	// Get PlayerController to OnUnpause
-	AShapeShifterPlayerController* PlayerController = Cast<AShapeShifterPlayerController>(GetWorld()->GetFirstPlayerController());
+	// Get PlayerController to call OnUnpause
+	AShapeShifterPlayerController* PlayerController = GetOwningPlayer<AShapeShifterPlayerController>();
 
 	if (!IsValid(PlayerController))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Close: PlayerController is invalid!"));
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::CloseWidget: PlayerController is invalid!"));
 
 		return;
 	}
 
-	PlayerController->OnUnpause();
+	PlayerController->Unpause();
 }

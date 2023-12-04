@@ -18,16 +18,16 @@ ALaser::ALaser()
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(RootComponent);
 
-	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser spawn point"));
+	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Spawn Point"));
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
 
 	/**
 	 * We need it for a proper render when interacting with physics object.
-	 * For some reason it's starting to work properly only with this component...
+	 * For some reason it works properly only with this component...
 	 */
 	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);
 
-	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser direction"));
+	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser Direction"));
 	LaserDirectionComponent->SetupAttachment(LaserSpawnPointComponent);
 }
 
@@ -36,9 +36,6 @@ void ALaser::BeginPlay()
 	Super::BeginPlay();
 
 	SpawnLaserBeams();
-
-	// DrawLaserBeams for the first time to initialize Beams location
-	DrawLaserBeams();
 
 	// Set default Active state
 	SetActive(bActive);
@@ -81,7 +78,7 @@ void ALaser::SpawnLaserBeams()
 			continue;
 		}
 
-		// Initialize beam custom colors
+		// Initialize Beam custom colors
 		Beam->SetVariableLinearColor(BeamColorVariableName, BeamColor);
 		Beam->SetVariableLinearColor(FireColorVariableName, FireColor);
 		Beam->SetVariableLinearColor(RingsColorVariableName, RingsColor);
@@ -278,6 +275,12 @@ void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
 		UE_LOG(LogTemp, Error, TEXT("ALaser::SetBeamsActive: FirstBeamIndex isn't valid!"));
 
 		return;
+	}
+
+	// Call DrawLaserBeams for the first time after activation to initialize Beams location
+	if (bNewActive)
+	{
+		DrawLaserBeams();
 	}
 
 	for (int i = FirstBeamIndex; i < Beams.Num(); ++i)

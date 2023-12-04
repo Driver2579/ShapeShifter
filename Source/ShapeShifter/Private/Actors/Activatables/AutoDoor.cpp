@@ -27,5 +27,15 @@ void AAutoDoor::OnOpenTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, A
 void AAutoDoor::OnOpenTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	Deactivate();
+	TArray<AActor*> OverlappingActors;
+	GetOverlappingActors(OverlappingActors);
+
+	// Don't count self overlapping
+	OverlappingActors.Remove(this);
+
+	// Deactivate only if nothing overlapping this Door anymore
+	if (OverlappingActors.IsEmpty())
+	{
+		Deactivate();
+	}
 }

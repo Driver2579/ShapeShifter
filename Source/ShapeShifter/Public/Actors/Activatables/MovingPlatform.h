@@ -27,14 +27,26 @@ public:
 	virtual void Deactivate() override;
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USplineComponent* MovementDirectionSplineComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
+
+	/**
+	 * Attach collision components to this one. They have to repeat collision of MeshComponent but a little smaller than
+	 * the original one. This is needed to check if BallPawn is colliding with MovingPlatform, and if yes than an
+	 * overlapping BallPawn will be killed. You can attach to this component as many collisions as you want.
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* CollisionAttachPointComponent;
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UFUNCTION()
+	virtual void OnCollisionComponentsBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
 	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
@@ -47,6 +59,9 @@ protected:
 	void ProcessMovementTimeline(const float Value) const;
 
 private:
+	// Add OnComponentBeginOverlap delegate subscription to all attached components of CollisionAttachPointComponent
+	void SetupCollisionComponents() const;
+
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 

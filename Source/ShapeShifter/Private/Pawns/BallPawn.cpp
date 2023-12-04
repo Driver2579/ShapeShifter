@@ -181,6 +181,9 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
 	PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
 
+	// Forget about creating clone on timer which has started before loading
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
 	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
 	{
@@ -480,18 +483,8 @@ EBallPawnForm ABallPawn::GetForm() const
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
-	// Destroy clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true
-	if (CurrentForm != NewForm && bDestroyCloneOnChangeForm)
-	{
-		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
-		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
-
-		// Destroy Clone if it was created
-		if (Clone.IsValid())
-		{
-			Clone->Destroy();
-		}
-	}
+	// Remember OldForm before changing it to compare a new one with the old one when needed 
+	const EBallPawnForm OldForm = CurrentForm;
 
 	CurrentForm = NewForm;
 
@@ -504,6 +497,22 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	else
 	{
 		Tags.Remove(ReflectLaserTagName);
+	}
+
+	/**
+	 * Destroy Clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true. We're doing it only
+	 * after managing the ReflectionLaserTagName to avoid BallPawn death when changing to Metal form.
+	 */
+	if (NewForm != OldForm && bDestroyCloneOnChangeForm)
+	{
+		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
+		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+		// Destroy Clone if it was created
+		if (Clone.IsValid())
+		{
+			Clone->Destroy();
+		}
 	}
 
 	/*
@@ -818,6 +827,9 @@ void ABallPawn::Die()
 	// Fade the camera to black
 	PlayerCameraManager->StartCameraFade(0, 1, DeathCameraFadeDuration, FLinearColor::Black,
 		true, true);
+
+	// Player can't create Clone while dead
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
 	// Remember that player is dead
 	bDead = true;

@@ -12,6 +12,8 @@
 #include "BuoyancyComponent.h"
 #include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
+#include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
 
 ABallPawn::ABallPawn()
 {
@@ -51,6 +53,9 @@ void ABallPawn::SetupComponents()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 
 	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
+
+	CurrentRollingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Current Rolling Audio"));
+	CurrentRollingAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ABallPawn::OnConstruction(const FTransform& Transform)
@@ -78,6 +83,8 @@ void ABallPawn::BeginPlay()
 
 	// Call SetForm with CurrentForm to apply everything related to it
 	SetForm(CurrentForm);
+
+	CurrentRollingAudioComponent->Play();
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -93,6 +100,19 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
+
+	if (IsFalling())
+	{
+		CurrentRollingAudioComponent->SetVolumeMultiplier(0);
+
+		return;
+	}
+
+	CurrentRollingAudioComponent->SetVolumeMultiplier(FMath::Min(GetVelocity().Length() / MaxVelocityRollingSound,
+		MaxVelocityRollingSound));
+
+	CurrentRollingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound,
+		GetVelocity().Length() / MaxVelocityRollingSound));
 }
 
 void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
@@ -444,6 +464,15 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 	{
 		bCanJump = true;
 	}
+
+	if (AngelSound < FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitNormal, GetVelocity().GetSafeNormal())))
+		|| MinVelocityHitSound > GetVelocity().Length())
+	{
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), CurrentHitSound.Get(), GetActorLocation(),
+		FMath::Min(GetVelocity().Length() / (MaxVelocityHitSound - MinVelocityHitSound), MaxVelocityHitSound));
 }
 
 void ABallPawn::EnableJumpIfSwimmingWithDelay()
@@ -583,6 +612,17 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	{
 		UE_LOG(LogTemp, Warning,
 			TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
+	}
+	
+	if (CurrentForm == EBallPawnForm::Rubber)
+	{
+		CurrentHitSound = RubberHitSound;
+		CurrentRollingAudioComponent->SetSound(RubberRollingSound);
+	}
+	else if (CurrentForm == EBallPawnForm::Metal)
+	{
+		CurrentHitSound = MetalHitSound;
+		CurrentRollingAudioComponent->SetSound(MetalRollingSound);
 	}
 }
 

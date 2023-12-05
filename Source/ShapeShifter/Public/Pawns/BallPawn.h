@@ -10,6 +10,7 @@
 
 class UShapeShifterSaveGame;
 class UInputAction;
+class USoundCue;
 
 struct FInputActionValue;
 
@@ -94,6 +95,36 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* LoadGameAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float AngelSound = 80;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float MinVelocityHitSound = 40;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float MaxVelocityHitSound = 900;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	USoundCue* RubberHitSound;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	USoundCue* MetalHitSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	USoundCue* RubberRollingSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	USoundCue* MetalRollingSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float MaxVelocityRollingSound = 500;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float MinPitchRollingSound = 0.75;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	float MaxPitchRollingSound = 1.25;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -221,4 +252,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
 	float WaterFluidForceStrength = 1;
+
+	TWeakObjectPtr<USoundCue> CurrentHitSound;
+	class UAudioComponent* CurrentRollingAudioComponent;
 };

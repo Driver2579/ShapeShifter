@@ -19,7 +19,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual bool IsActive() const override;
+	virtual bool IsActive() const override final;
 
 	virtual void Activate() override;
 	virtual void Deactivate() override;
@@ -27,6 +27,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
@@ -150,4 +152,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
 	FName BeamsBisectorDirectionVariableName = TEXT("BeamsBisectorDirection");
+
+	// The time it takes to kill hit BallPawn
+	UPROPERTY(EditAnywhere, Category = "Death", meta = (ClampMin = 0, ClampMax = 0.2))
+	float KillBallPawnTime = 0.2;
+
+	FTimerHandle KillBallPawnTimer;
+
+	static void KillBallPawn(class ABallPawn* BallPawnToKill);
 };

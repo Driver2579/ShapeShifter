@@ -8,8 +8,22 @@ void AShapeShifterGameMode::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	if (!SaveGameManagerClass)
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("AShapeShifterGameMode::PostInitializeComponents: SaveGameManagerClass is invalid!"));
+
+		return;
+	}
+
 	// We spawn SaveGameManager in PostInitializeComponents to make sure it spawned before all Actors called BeginPlay
-	SaveGameManager = GetWorld()->SpawnActor<ASaveGameManager>();
+	SaveGameManager = GetWorld()->SpawnActor<ASaveGameManager>(SaveGameManagerClass);
+
+	if (!SaveGameManager.IsValid())
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("AShapeShifterGameMode::PostInitializeComponents: Failed to spawn SaveGameManager!"));
+	}
 }
 
 ASaveGameManager* AShapeShifterGameMode::GetSaveGameManager() const

@@ -33,9 +33,14 @@ public:
 	// Called right after loading game. Use it to load data for a specific class from the SaveGameObject.
 	FOnSaveLoadGameSignature OnLoadGame;
 
+	FString GetSaveGameSlotName() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Celled after all Actors have begun play
+	virtual void OnWorldBeginPlay();
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -50,11 +55,23 @@ private:
 	 */
 	bool CreateSaveGameObjectIfNotExists();
 
+	void LoadSaveGameObject();
+
 	UPROPERTY(EditDefaultsOnly)
 	FString SaveGameSlotName = TEXT("SaveGame");
 
 	// Collect all Actors with Savable interface and bind their functions to OnSaveGame and OnLoadGame delegates
 	void BindAllSavables();
 
-	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinished;
+	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinishedDelegate;
+
+	void OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex, USaveGame* SaveGameObjectPtr) const;
+
+	/**
+	 * Whether save/load game will work or not. You should deactivate it if you don't need saves to work on this level.
+	 * This will also deactivate auto saves and any other functionality of this class except GetSaveGameSlotName
+	 * function.
+	 */
+	UPROPERTY(EditDefaultsOnly)
+	bool bActive = true;
 };

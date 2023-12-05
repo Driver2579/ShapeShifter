@@ -2,8 +2,12 @@
 
 #include "UI/Widgets/MainMenuWidget.h"
 
+#include "Actors/SaveGameManager.h"
 #include "Components/Button.h"
+#include "GameInstances/ShapeShifterGameInstance.h"
+#include "GameModes/ShapeShifterGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "Objects/ShapeShifterSaveGame.h"
 #include "UI/Widgets/WarningWidget.h"
 
 void UMainMenuWidget::NativeConstruct()
@@ -55,7 +59,54 @@ void UMainMenuWidget::OnNewGameButtonClicked()
 
 void UMainMenuWidget::OnContinueGameButtonClicked()
 {
-	// Will be done in the future ;)
+	UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<UShapeShifterGameInstance>();
+
+	if (!IsValid(ShapeShifterGameInstance))
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("UMainMenuWidget::OnContinueGameButtonClicked: ShapeShifterGameInstance is invalid!"));
+
+		return;
+	}
+
+	const AShapeShifterGameMode* ShapeShifterGameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
+
+	if (!IsValid(ShapeShifterGameMode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnContinueGameButtonClicked: ShapeShifterGameMode is invalid!"));
+
+		return;
+	}
+
+	const ASaveGameManager* SaveGameManager = ShapeShifterGameMode->GetSaveGameManager();
+
+	if (!IsValid(SaveGameManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnContinueGameButtonClicked: Failed to get SaveGameManager from "
+			"the ShapeShifterGameMode!"));
+
+		return;
+	}
+
+	const UShapeShifterSaveGame* SaveGameObject = SaveGameManager->GetSaveGameObject();
+
+	if (!IsValid(SaveGameObject))
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("UMainMenuWidget::OnContinueGameButtonClicked: Failed to get SaveGameObject from the "
+				"SaveGameManager!"));
+
+		return;
+	}
+
+	// Disable auto save to load a saved game on level load instead of saving it
+	ShapeShifterGameInstance->SetAllowAutoSave(false);
+
+	// Enable auto save back after loading the level and saved game
+	ShapeShifterGameInstance->SetDisableAllowAutoSaveOnOpenLevel(true);
+
+	// Open saved level
+	UGameplayStatics::OpenLevel(this, *SaveGameObject->LevelName);
 }
 
 void UMainMenuWidget::OnExitGameButtonClicked()

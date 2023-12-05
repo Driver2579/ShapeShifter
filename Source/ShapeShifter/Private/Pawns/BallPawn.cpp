@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Sound/SoundCue.h"
@@ -91,8 +93,10 @@ void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
+	// Clear all timers
 	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 	GetWorldTimerManager().ClearTimer(JumpOnWaterSurfaceTimer);
+	GetWorldTimerManager().ClearTimer(LoadAfterDeathTimer);
 }
 
 void ABallPawn::Tick(float DeltaSeconds)
@@ -171,6 +175,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 		return;
 	}
 
+	// Revive the player if he was dead before loading
+	if (bDead)
+	{
+		Revive();
+	}
+
 	APlayerController* PlayerController = GetController<APlayerController>();
 
 	// Load CameraRotation if PlayerController is valid
@@ -189,8 +199,12 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load other player variables
 	SetActorTransform(PlayerTransform);
-	MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
+	MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.PlayerVelocity);
 	SetForm(SaveGameObject->BallPawnSaveData.PlayerForm);
+	PlayerController->SetControlRotation(SaveGameObject->BallPawnSaveData.CameraRotation);
+
+	// Forget about creating clone on timer which has started before loading
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
 
 	// Don't load Clone variables if bHasPlayerClone is false and destroy it if it's already exists
 	if (!SaveGameObject->BallPawnSaveData.bHasPlayerClone)
@@ -206,7 +220,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	// Spawn Clone in another case and if wasn't spawned before  
 	if (!Clone.IsValid())
 	{
-		SpawnClone();
+		SpawnCloneObject();
 
 		// Return if failed to spawn Clone
 		if (!Clone.IsValid())
@@ -219,7 +233,7 @@ void ABallPawn::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	// Load Clone variables
 	Clone->SetActorTransform(SaveGameObject->BallPawnSaveData.CloneTransform);
-	Clone->MeshComponent->SetAllPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
+	Clone->MeshComponent->SetPhysicsLinearVelocity(SaveGameObject->BallPawnSaveData.CloneVelocity);
 }
 
 void ABallPawn::InitDefaultMappingContext() const
@@ -500,18 +514,28 @@ EBallPawnForm ABallPawn::GetForm() const
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
-	// Destroy clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true
-	if (CurrentForm != NewForm && bDestroyCloneOnChangeForm)
+	// We have to spawn ChangeFormNiagaraComponent only if form was changed
+	if (NewForm != CurrentForm)
 	{
-		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
-		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+		FFXSystemSpawnParameters NiagaraSpawnParameters;
 
-		// Destroy Clone if it was created
-		if (Clone.IsValid())
+		// Initialize NiagaraSpawnParameters
+		NiagaraSpawnParameters.SystemTemplate = ChangeFormNiagaraSystemTemplate;
+		NiagaraSpawnParameters.AttachToComponent = RootComponent;
+		NiagaraSpawnParameters.LocationType = EAttachLocation::SnapToTarget;
+
+		// Spawn ChangeFormNiagaraComponent
+		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(
+			NiagaraSpawnParameters);
+
+		if (!IsValid(ChangeFormNiagaraComponent))
 		{
-			Clone->Destroy();
+			UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to spawn ChangeFormNiagaraComponent!"));
 		}
 	}
+
+	// Remember OldForm before changing it to compare a new one with the old one when needed 
+	const EBallPawnForm OldForm = CurrentForm;
 
 	CurrentForm = NewForm;
 
@@ -526,11 +550,26 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		Tags.Remove(ReflectLaserTagName);
 	}
 
+	/**
+	 * Destroy Clone if NewForm isn't same as previous one and bDestroyCloneOnChangeForm is true. We're doing it only
+	 * after managing the ReflectionLaserTagName to avoid BallPawn death when changing to Metal form.
+	 */
+	if (NewForm != OldForm && bDestroyCloneOnChangeForm)
+	{
+		CancelCloneCreation();
+
+		// Kill Clone if it was created
+		if (Clone.IsValid())
+		{
+			Clone->Die();
+		}
+	}
+
 	/*
 	 * Find Material associated with NewForm in FormMaterials.
 	 * We call FindRef instead of Find to avoid pointer to pointer.
 	 */
-	UMaterial* FormMaterial = FormMaterials.FindRef(NewForm);
+	UMaterialInterface* FormMaterial = FormMaterials.FindRef(NewForm);
 
 	// Set FormMaterial as MeshComponent Material if it's valid
 	if (IsValid(FormMaterial))
@@ -652,14 +691,44 @@ void ABallPawn::ChangeForm()
 
 void ABallPawn::CreateClone()
 {
-	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
-	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+	// Only a player can create clone
+	if (!IsPlayerControlled())
+	{
+		return;
+	}
+
+	CancelCloneCreation();
+
+	// Spawn CreateCloneNiagaraComponent
+	CreateCloneNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		CreateCloneNiagaraSystemTemplate, GetActorLocation());
+
+	if (!CreateCloneNiagaraComponent.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CreateClone: Failed to spawn CreateCloneNiagaraComponent!"));
+	}
 
 	// Remember current Actor Transform where clone will be spawned
 	CloneSpawnTransform = GetActorTransform();
 
 	// Call SpawnClone in CreateCloneRate seconds
 	GetWorldTimerManager().SetTimer(CreateCloneTimer, this, &ABallPawn::SpawnClone, CreateCloneRate);
+}
+
+void ABallPawn::CancelCloneCreation()
+{
+	// There is nothing to cancel if CreateCloneTimer isn't active
+	if (!GetWorldTimerManager().IsTimerActive(CreateCloneTimer))
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+	if (CreateCloneNiagaraComponent.IsValid())
+	{
+		CreateCloneNiagaraComponent->SetCustomTimeDilation(CreateCloneVfxSpeedOnCancel);
+	}
 }
 
 void ABallPawn::SpawnClone()
@@ -670,10 +739,10 @@ void ABallPawn::SpawnClone()
 		return;
 	}
 
-	// Destroy old Clone if it was created before
+	// Kill old Clone if it was created before
 	if (Clone.IsValid())
 	{
-		Clone->Destroy();
+		Clone->Die();
 	}
 
 	// Check if we can spawn Clone and return if not
@@ -683,6 +752,37 @@ void ABallPawn::SpawnClone()
 			TEXT("ABallPawn::SpawnClone: Unable to spawn Clone. Clone is colliding with player."));
 
 		return;
+	}
+
+	SpawnCloneObject();
+}
+
+bool ABallPawn::CanSpawnClone() const
+{
+	// Get CloneLocation from CloneSpawnTransform
+	const FVector CloneLocation = CloneSpawnTransform.GetLocation();
+
+	// Get CloneRadius from MeshComponent Bounds
+	const float CloneRadius = MeshComponent->Bounds.SphereRadius;
+
+	// Unused HitResult for sphere trace
+	FHitResult HitResult;
+
+	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
+	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
+		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
+}
+
+void ABallPawn::SpawnCloneObject()
+{
+	// Spawn SpawnCloneNiagaraSystem
+	const UNiagaraComponent* SpawnCloneNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		this, SpawnCloneNiagaraSystemTemplate,
+		CloneSpawnTransform.GetLocation());
+
+	if (!IsValid(SpawnCloneNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: Failed to spawn SpawnCloneNiagaraSystem!"));
 	}
 
 	FActorSpawnParameters SpawnParameters;
@@ -701,22 +801,6 @@ void ABallPawn::SpawnClone()
 	{
 		Clone->SetForm(CurrentForm);
 	}
-}
-
-bool ABallPawn::CanSpawnClone() const
-{
-	// Get CloneLocation from CloneSpawnTransform
-	const FVector CloneLocation = CloneSpawnTransform.GetLocation();
-
-	// Get CloneRadius from MeshComponent Bounds
-	const float CloneRadius = MeshComponent->Bounds.SphereRadius;
-
-	// Unused HitResult for sphere trace
-	FHitResult HitResult;
-
-	// Do sphere trace by Pawn collision channel to check if Clone will collide player. Return false if colliding.
-	return !GetWorld()->SweepSingleByChannel(HitResult, CloneLocation, CloneLocation,
-		CloneSpawnTransform.GetRotation(), SpawnCloneCheckTraceChanel, FCollisionShape::MakeSphere(CloneRadius));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -785,4 +869,131 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 	{
 		EnableJumpIfSwimmingWithDelay();
 	}
+}
+
+void ABallPawn::Die()
+{
+	// Spawn DeathNiagaraSystem
+	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		DeathNiagaraSystemTemplate, GetActorLocation());
+
+	if (!IsValid(DeathNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: Failed to spawn DeathNiagaraSystem!"));
+	}
+
+	// Destroy BallPawn if it called for clone
+	if (!IsPlayerControlled())
+	{
+		Destroy();
+
+		return;
+	}
+
+	// We can't die twice
+	if (bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Die: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Disable ANY player input
+	DisableInput(PlayerController);
+	PlayerController->DisableInput(PlayerController);
+
+	// Instead of destroying Actor we will hide the mesh
+	MeshComponent->SetHiddenInGame(true);
+
+	// Disable physics to stop any movement
+	MeshComponent->SetSimulatePhysics(false);
+
+	// Ignore the Laser while the player is dead
+	Tags.Add(IgnoreLaserTagName);
+
+	// Fade the camera to black
+	PlayerCameraManager->StartCameraFade(0, 1, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Player can't create Clone while dead
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+	// Remember that player is dead
+	bDead = true;
+
+	// Start async loading to last save once the screen became fully black
+	if (DeathCameraFadeDuration == 0)
+	{
+		LoadGame();
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(LoadAfterDeathTimer, this, &ABallPawn::LoadGame,
+			DeathCameraFadeDuration, false);
+	}
+}
+
+void ABallPawn::Revive()
+{
+	// We can't revive if we're not dead
+	if (!bDead)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (!IsValid(PlayerController))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerController is invalid!"));
+
+		return;
+	}
+
+	APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
+
+	// Don't do anything until we will make sure PlayerCameraManager is valid
+	if (!IsValid(PlayerCameraManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABallPawn::Revive: PlayerCameraManager is invalid!"));
+
+		return;
+	}
+
+	// Enable player input back
+	EnableInput(PlayerController);
+	PlayerController->EnableInput(PlayerController);
+
+	// Show the mesh back
+	MeshComponent->SetHiddenInGame(false);
+
+	// Enable physics back
+	MeshComponent->SetSimulatePhysics(true);
+
+	// Stop ignoring the Laser
+	Tags.Remove(IgnoreLaserTagName);
+
+	// Fade the camera back from black
+	PlayerCameraManager->StartCameraFade(1, 0, DeathCameraFadeDuration, FLinearColor::Black,
+		true, true);
+
+	// Remember that player isn't dead anymore
+	bDead = false;
 }

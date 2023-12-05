@@ -16,6 +16,9 @@ class SHAPESHIFTER_API UShapeShifterSaveGame : public USaveGame
 
 public:
 	UPROPERTY()
+	FString LevelName;
+
+	UPROPERTY()
 	FBallPawnSaveData BallPawnSaveData;
 
 	// Lever instance unique name (use GetName) and Active state

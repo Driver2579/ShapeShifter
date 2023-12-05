@@ -11,6 +11,7 @@
 class UShapeShifterSaveGame;
 class UInputAction;
 class USoundCue;
+class UNiagaraSystem;
 
 struct FInputActionValue;
 
@@ -38,15 +39,26 @@ public:
 	// Change form to the next one. Usually called from ChangeFormAction InputAction.
 	void ChangeForm();
 
-	// Spawn Clone in CreateCloneRate seconds and destroy old clone if it exists
+	// Spawn Clone in CreateCloneRate seconds and kill old clone if it exists
 	void CreateClone();
 
+	// Cancel CreateCloneTimer and speed up CreateCloneNiagaraComponent in CreateCloneVfxSpeedOnCancel times
+	void CancelCloneCreation();
+
 	/**
-	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber
+	 * @return true if bOverlappingWaterJumpZone is true and CurrentForm is Rubber.
 	 */
 	bool IsSwimmingOnWaterSurface() const;
 
 	void SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZone);
+
+	/**
+	 * Destroy the BallPawn if it's a clone. Kills the BallPawn if it's a player. On kill the camera will be faded to
+	 * black and last save will be loaded.
+	 * @note This BallPawn will be destroyed after calling this function if it's a clone. So make sure you don't use
+	 * this BallPawn instance after calling this function.
+	 */
+	void Die();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -134,6 +146,7 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+	// Remove old Clone and spawn the new one if it won't collide anything
 	void SpawnClone();
 
 	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
@@ -151,6 +164,11 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Water Fluid Simulation")
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
+
+	/**
+	 * Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
+	 */
+	void Revive();
 
 private:
 	void SetupComponents();
@@ -194,8 +212,12 @@ private:
 
 	EBallPawnForm CurrentForm;
 
+	// Niagara VFX which will be spawned on form changing
+	UPROPERTY(EditDefaultsOnly, Category = "Form")
+	UNiagaraSystem* ChangeFormNiagaraSystemTemplate; 
+
 	UPROPERTY(EditAnywhere, Category = "Materials")
-	TMap<EBallPawnForm, UMaterial*> FormMaterials;
+	TMap<EBallPawnForm, UMaterialInterface*> FormMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TMap<EBallPawnForm, UPhysicalMaterial*> FormPhysicalMaterials;
@@ -224,6 +246,13 @@ private:
 	bool CanSpawnClone() const;
 
 	/**
+	 * Spawn the Clone without any checks.
+	 * @note Be careful with calling that because it will spawn the Clone even it's already exists or if it will collide
+	 * something when spawned.
+	 */
+	void SpawnCloneObject();
+
+	/**
 	 * You must set your own custom Collision Trace Channel which will Block only pawn to make Clone spawning work
 	 * properly!
 	 */
@@ -234,11 +263,29 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	bool bDestroyCloneOnChangeForm = true;
 
+	// Niagara VFX which will be spawned on Clone creation start
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
+	UNiagaraSystem* CreateCloneNiagaraSystemTemplate;
+
+	TWeakObjectPtr<class UNiagaraComponent> CreateCloneNiagaraComponent;
+
+	// How much faster compared with the default speed CreateCloneNiagaraComponent will be on Clone creation cancel 
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (ClampMin = 1, EditCondition = "bCanEverCreateClone"))
+	float CreateCloneVfxSpeedOnCancel = 10;
+
+	// Niagara VFX which will be spawned on Clone creation end
+	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
+	UNiagaraSystem* SpawnCloneNiagaraSystemTemplate;
+
 	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")
 	FName ReflectLaserTagName = TEXT("ReflectLaser");
+
+	// This tag will work only if BallPawn is dead
+	UPROPERTY(EditAnywhere, Category = "Laser")
+	FName IgnoreLaserTagName = TEXT("IgnoreLaser");
 
 	/**
 	 * BuoyancyData assigned to different BallPawnForms to swim on water.
@@ -253,6 +300,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Water Fluid Simulation", meta = (ClampMin = 0))
 	float WaterFluidForceStrength = 1;
 
+	bool bDead = false;
+
+	UPROPERTY(EditAnywhere, Category = "Death", meta = (ClampMin = 0))
+	float DeathCameraFadeDuration = 2;
+
+	FTimerHandle LoadAfterDeathTimer;
+
+	// Niagara VFX which will be spawned on BallPawn death
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	UNiagaraSystem* DeathNiagaraSystemTemplate;
+
 	TWeakObjectPtr<USoundCue> CurrentHitSound;
+
+	UPROPERTY();
 	class UAudioComponent* CurrentRollingAudioComponent;
 };

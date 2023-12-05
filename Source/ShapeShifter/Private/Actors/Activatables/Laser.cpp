@@ -6,21 +6,31 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Pawns/BallPawn.h"
 
 ALaser::ALaser()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this actor to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
+
+	// We need it for a proper render when interacting with physics object
+	PrimaryActorTick.TickGroup = TG_PostUpdateWork;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(RootComponent);
 
-	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser spawn point"));
+	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Spawn Point"));
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
 
-	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser direction"));
+	/**
+	 * We need it for a proper render when interacting with physics object too.
+	 * For some reason it works properly only with this component...
+	 */
+	LaserSpawnPointComponent->SetTickGroup(TG_PostUpdateWork);
+
+	LaserDirectionComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Laser Direction"));
 	LaserDirectionComponent->SetupAttachment(LaserSpawnPointComponent);
 }
 
@@ -32,6 +42,13 @@ void ALaser::BeginPlay()
 
 	// Set default Active state
 	SetActive(bActive);
+}
+
+void ALaser::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(KillBallPawnTimer);
 }
 
 void ALaser::SpawnLaserBeams()
@@ -64,7 +81,7 @@ void ALaser::SpawnLaserBeams()
 			continue;
 		}
 
-		// Initialize beam custom colors
+		// Initialize Beam custom colors
 		Beam->SetVariableLinearColor(BeamColorVariableName, BeamColor);
 		Beam->SetVariableLinearColor(FireColorVariableName, FireColor);
 		Beam->SetVariableLinearColor(RingsColorVariableName, RingsColor);
@@ -222,16 +239,51 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 
 void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 {
-	// Nothing here...
+	// We can't hit anything if Laser isn't active or HitActor isn't valid
+	if (!bActive || !IsValid(HitActor))
+	{
+		return;
+	}
+
+	ABallPawn* BallPawn = Cast<ABallPawn>(HitActor);
+
+	// Kill BallPawn only if it don't reflects or ignores the Laser
+	if (!IsValid(BallPawn) || BallPawn->ActorHasTag(ReflectActorTagName) || BallPawn->ActorHasTag(IgnoreActorTagName))
+	{
+		return;
+	}
+
+	// Kill BallPawn immediately if delay is 0
+	if (KillBallPawnTime == 0)
+	{
+		BallPawn->Die();
+	}
+	// Kill BallPawn with delay in another case
+	else if (!GetWorldTimerManager().IsTimerActive(KillBallPawnTimer))
+	{
+		GetWorldTimerManager().SetTimer(KillBallPawnTimer, BallPawn, &ABallPawn::Die, KillBallPawnTime,
+			false);
+	}
 }
 
 void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
 {
+	if (!HasActorBegunPlay())
+	{
+		return;
+	}
+
 	if (!Beams.IsValidIndex(FirstBeamIndex))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ALaser::SetBeamsActive: FirstBeamIndex isn't valid!"));
 
 		return;
+	}
+
+	// Call DrawLaserBeams for the first time after activation to initialize Beams location
+	if (bNewActive)
+	{
+		DrawLaserBeams();
 	}
 
 	for (int i = FirstBeamIndex; i < Beams.Num(); ++i)
@@ -267,4 +319,12 @@ void ALaser::Deactivate()
 	bActive = false;
 
 	SetBeamsActive(bActive);
+}
+
+void ALaser::KillBallPawn(ABallPawn* BallPawnToKill)
+{
+	if (IsValid(BallPawnToKill))
+	{
+		BallPawnToKill->Die();
+	}
 }

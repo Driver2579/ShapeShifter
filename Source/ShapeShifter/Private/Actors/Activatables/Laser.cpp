@@ -7,6 +7,7 @@
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawns/BallPawn.h"
+#include "Components/AudioComponent.h"
 
 ALaser::ALaser()
 {
@@ -23,6 +24,15 @@ ALaser::ALaser()
 
 	LaserSpawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Spawn Point"));
 	LaserSpawnPointComponent->SetupAttachment(RootComponent);
+
+	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
+	ActivateAudioComponent->SetupAttachment(RootComponent);
+
+	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
+	DeactivateAudioComponent->SetupAttachment(RootComponent);
+
+	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
+	AmbientAudioComponent->SetupAttachment(RootComponent);
 
 	/**
 	 * We need it for a proper render when interacting with physics object too.
@@ -311,6 +321,10 @@ void ALaser::Activate()
 {
 	bActive = true;
 
+	ActivateAudioComponent->Play();
+	DeactivateAudioComponent->Stop();
+	AmbientAudioComponent->Play();
+	
 	SetBeamsActive(bActive);
 }
 
@@ -318,6 +332,10 @@ void ALaser::Deactivate()
 {
 	bActive = false;
 
+	ActivateAudioComponent->Stop();
+	DeactivateAudioComponent->Play();
+	AmbientAudioComponent->Stop();
+	
 	SetBeamsActive(bActive);
 }
 

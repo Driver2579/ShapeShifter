@@ -108,35 +108,65 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* LoadGameAction;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
-	float AngelSound = 80;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* SpawnCloneSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
-	float MinVelocityHitSound = 40;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* SpawningCloneSound; 
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
-	float MaxVelocityHitSound = 900;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* CancelSpawnCloneSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* DieSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* AirSlicingSound;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* JumpSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
 	USoundCue* RubberHitSound;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
 	USoundCue* MetalHitSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
 	USoundCue* RubberRollingSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
 	USoundCue* MetalRollingSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* ChangeFormSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
 	float MaxVelocityRollingSound = 500;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
 	float MinPitchRollingSound = 0.75;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
 	float MaxPitchRollingSound = 1.25;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 360), Category = "Sounds")
+	float AngelSound = 80;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	float MinVelocityHitSound = 50;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	float MaxVelocityHitSound = 900;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1), Category = "Sounds")
+	float MinPitchAirSlicingSound = 0.5;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	float MinVelocityAirSlicingSound = 100;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	float MaxVelocityAirSlicingSound = 500;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -313,6 +343,11 @@ private:
 
 	TWeakObjectPtr<USoundCue> CurrentHitSound;
 
-	UPROPERTY();
-	class UAudioComponent* CurrentRollingAudioComponent;
+	UPROPERTY()
+	UAudioComponent* CurrentRollingAudioComponent;
+
+	UPROPERTY()
+	UAudioComponent* AirSlicingAudioComponent;
+
+	TWeakObjectPtr<UAudioComponent> SpawningCloneAudioComponent;
 };

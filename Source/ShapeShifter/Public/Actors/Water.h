@@ -7,6 +7,8 @@
 #include "Water.generated.h"
 
 class UBoxComponent;
+class UAudioComponent;
+class USoundCue;
 
 UCLASS()
 class SHAPESHIFTER_API AWater : public AWaterBodyCustom
@@ -25,6 +27,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UBoxComponent* JumpZoneComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UAudioComponent* AmbientAudioComponent;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* EnterSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* LeaveSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	float MaxVelocitySound = 800;
+	
 	virtual void BeginPlay() override;
 
 	UFUNCTION()

@@ -36,6 +36,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* JumpTriggerComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* ThrowSoundComponent;
+	
 	// Indicates where the player should land in the level
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UJumpPadTargetComponent* TargetLocationComponent;

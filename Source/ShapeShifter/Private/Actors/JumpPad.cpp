@@ -4,6 +4,7 @@
 
 #include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/AudioComponent.h"
 
 AJumpPad::AJumpPad()
 {
@@ -25,6 +26,9 @@ AJumpPad::AJumpPad()
 
 	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
+
+	ThrowSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Throw Sound"));
+	ThrowSoundComponent->SetupAttachment(RootComponent);
 }
 
 void AJumpPad::BeginPlay()
@@ -167,6 +171,7 @@ void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
 	// Throw the OtherComp immediately if delay is 0
 	if (JumpDelay == 0)
 	{
+		ThrowSoundComponent->Play();
 		Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
 		AnimationTimeline.PlayFromStart();
 	}
@@ -175,6 +180,7 @@ void AJumpPad::ThrowObject(UPrimitiveComponent* Object)
 	{
 		GetWorldTimerManager().SetTimer(JumpTimer, [this, Object]
 		{
+			ThrowSoundComponent->Play();
 			Object->SetAllPhysicsLinearVelocity(ThrowVelocity);
 			AnimationTimeline.PlayFromStart();
 		}, JumpDelay, false);

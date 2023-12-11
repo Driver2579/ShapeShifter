@@ -34,6 +34,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* RightDoorMeshComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* OpenSoundComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* CloseSoundComponent;
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
@@ -50,5 +56,5 @@ private:
 	float MoveOffset = 60;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (ClampMin = 0))
-	float MoveSpeed = 75;
+	float MoveSpeed = 60;
 };

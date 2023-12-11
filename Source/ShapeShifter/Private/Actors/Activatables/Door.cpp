@@ -2,6 +2,8 @@
 
 #include "Actors/Activatables/Door.h"
 
+#include "Components/AudioComponent.h"
+
 ADoor::ADoor()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -16,6 +18,12 @@ ADoor::ADoor()
 
 	RightDoorMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Right Door Mesh");
 	RightDoorMeshComponent->SetupAttachment(RootComponent);
+
+	OpenSoundComponent = CreateDefaultSubobject<UAudioComponent>("Open Sound");
+	OpenSoundComponent->SetupAttachment(RootComponent);
+	
+	CloseSoundComponent = CreateDefaultSubobject<UAudioComponent>("Close Sound");
+	CloseSoundComponent->SetupAttachment(RootComponent);
 }
 
 void ADoor::BeginPlay()
@@ -43,6 +51,13 @@ void ADoor::Tick(float DeltaTime)
 	const FVector& NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
 		TargetRightDoorLocation, DeltaTime, MoveSpeed);
 
+
+	if (TargetLeftDoorLocation == NewLeftLocation)
+	{
+		OpenSoundComponent->Stop();
+		CloseSoundComponent->Stop();
+	}
+	
 	LeftDoorMeshComponent->SetRelativeLocation(NewLeftLocation);
 	RightDoorMeshComponent->SetRelativeLocation(NewRightLocation);
 }
@@ -55,9 +70,15 @@ bool ADoor::IsActive() const
 void ADoor::Activate()
 {
 	bActive = true;
+
+	CloseSoundComponent->Stop();
+	OpenSoundComponent->Play();
 }
 
 void ADoor::Deactivate()
 {
 	bActive = false;
+
+	OpenSoundComponent->Stop();
+	CloseSoundComponent->Play();
 }

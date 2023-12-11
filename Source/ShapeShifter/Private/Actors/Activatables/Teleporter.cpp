@@ -4,6 +4,7 @@
 
 #include "NiagaraComponent.h"
 #include "Pawns/BallPawn.h"
+#include "Components/AudioComponent.h"
 
 ATeleporter::ATeleporter()
 {
@@ -28,8 +29,17 @@ ATeleporter::ATeleporter()
 	NiagaraParticlesComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Particles"));
 	NiagaraParticlesComponent->SetupAttachment(RootComponent);
 
-	TeleportPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Teleport Point"));
+	TeleportPointComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Teleport Point"));
 	TeleportPointComponent->SetupAttachment(RootComponent);
+
+	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
+	ActivateAudioComponent->SetupAttachment(RootComponent);
+
+	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
+	DeactivateAudioComponent->SetupAttachment(RootComponent);
+
+	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
+	AmbientAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ATeleporter::BeginPlay()
@@ -131,6 +141,10 @@ void ATeleporter::Activate()
 		}
 	}
 
+	ActivateAudioComponent->Play();
+	DeactivateAudioComponent->Stop();
+	AmbientAudioComponent->Play();
+	
 	// Get OverlappingBallPawns
 	TArray<AActor*> OverlappingBallPawns;
 	GetOverlappingActors(OverlappingBallPawns, ABallPawn::StaticClass());
@@ -162,4 +176,8 @@ void ATeleporter::Deactivate()
 			It->SetVisibility(false);
 		}
 	}
+
+	ActivateAudioComponent->Stop();
+	DeactivateAudioComponent->Play();
+	AmbientAudioComponent->Stop();
 }

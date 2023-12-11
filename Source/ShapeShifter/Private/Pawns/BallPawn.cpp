@@ -55,9 +55,12 @@ void ABallPawn::SetupComponents()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 
 	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
-
+	
 	CurrentRollingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Current Rolling Audio"));
 	CurrentRollingAudioComponent->SetupAttachment(RootComponent);
+
+	AirSlicingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Current Air Slicing Audio"));
+	AirSlicingAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ABallPawn::OnConstruction(const FTransform& Transform)
@@ -86,7 +89,18 @@ void ABallPawn::BeginPlay()
 	// Call SetForm with CurrentForm to apply everything related to it
 	SetForm(CurrentForm);
 
+	// This sound needs to play all the time, but its pitch and volume can change during runtime
 	CurrentRollingAudioComponent->Play();
+
+	if (!IsValid(AirSlicingSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::BeginPlay: AirSlicingSound is invalid!"));
+	}
+	
+	AirSlicingAudioComponent->SetSound(AirSlicingSound);
+	
+	// This sound needs to play all the time, but its pitch and volume can change during runtime
+	AirSlicingAudioComponent->Play();
 }
 
 void ABallPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -105,6 +119,16 @@ void ABallPawn::Tick(float DeltaSeconds)
 
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
 
+	// Calculate the air slicing sound volume
+	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(.0f, 1.f, FMath::Min(FMath::Max(
+		GetVelocity().Length() - MinVelocityAirSlicingSound, .0f) / MaxVelocityAirSlicingSound, 1.f)));
+
+	// Calculate the air slicing sound pitch
+	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, 1.f,
+		FMath::Min(FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, .0f) /
+			MaxVelocityAirSlicingSound, 1.f)));
+
+	// Rolling sound cannot be heard if the ball is in the air
 	if (IsFalling())
 	{
 		CurrentRollingAudioComponent->SetVolumeMultiplier(0);
@@ -112,9 +136,11 @@ void ABallPawn::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// Calculate the rolling sound volume
 	CurrentRollingAudioComponent->SetVolumeMultiplier(FMath::Min(GetVelocity().Length() / MaxVelocityRollingSound,
 		MaxVelocityRollingSound));
 
+	// Calculate the rolling sound pitch
 	CurrentRollingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound,
 		GetVelocity().Length() / MaxVelocityRollingSound));
 }
@@ -434,6 +460,13 @@ void ABallPawn::Jump(const FInputActionValue& Value)
 
 	// Disable jumping until we landed
 	bCanJump = false;
+
+	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), JumpSound, GetActorLocation());
+
+	if (!IsValid(SpawnedSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Jump: SpawnedSound is invalid!"));
+	}
 }
 
 bool ABallPawn::IsFalling() const
@@ -652,7 +685,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		UE_LOG(LogTemp, Warning,
 			TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
 	}
-	
+
 	if (CurrentForm == EBallPawnForm::Rubber)
 	{
 		CurrentHitSound = RubberHitSound;
@@ -662,6 +695,16 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	{
 		CurrentHitSound = MetalHitSound;
 		CurrentRollingAudioComponent->SetSound(MetalRollingSound);
+	}
+
+	if (!CurrentHitSound.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: CurrentHitSound is invalid!"));
+	}
+
+	if (!IsValid(CurrentRollingAudioComponent->Sound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: RollingSound is invalid!"));
 	}
 }
 
@@ -686,6 +729,14 @@ void ABallPawn::ChangeForm()
 		SetForm(EBallPawnForm::Rubber);
 
 		break;
+	}
+
+	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), ChangeFormSound,
+		GetActorLocation());
+
+	if (!IsValid(SpawnedSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::ChangeForm: ChangeFormSound is invalid!"));
 	}
 }
 
@@ -713,6 +764,14 @@ void ABallPawn::CreateClone()
 
 	// Call SpawnClone in CreateCloneRate seconds
 	GetWorldTimerManager().SetTimer(CreateCloneTimer, this, &ABallPawn::SpawnClone, CreateCloneRate);
+
+	SpawningCloneAudioComponent = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), SpawningCloneSound,
+		GetActorLocation());
+
+	if (!SpawningCloneAudioComponent.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CreateClone: SpawningCloneAudioComponent is invalid!"));
+	}
 }
 
 void ABallPawn::CancelCloneCreation()
@@ -728,6 +787,19 @@ void ABallPawn::CancelCloneCreation()
 	if (CreateCloneNiagaraComponent.IsValid())
 	{
 		CreateCloneNiagaraComponent->SetCustomTimeDilation(CreateCloneVfxSpeedOnCancel);
+	}
+
+	if (SpawningCloneAudioComponent.IsValid())
+	{
+		SpawningCloneAudioComponent->Stop();
+	}
+	
+	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), CancelSpawnCloneSound,
+		GetActorLocation());
+
+	if (!IsValid(SpawnedSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CancelCloneCreation: SpawnedSound is invalid!"));
 	}
 }
 
@@ -748,6 +820,8 @@ void ABallPawn::SpawnClone()
 	// Check if we can spawn Clone and return if not
 	if (!CanSpawnClone())
 	{
+		CancelCloneCreation();
+		
 		UE_LOG(LogTemp, Display,
 			TEXT("ABallPawn::SpawnClone: Unable to spawn Clone. Clone is colliding with player."));
 
@@ -800,6 +874,14 @@ void ABallPawn::SpawnCloneObject()
 	if (Clone.IsValid())
 	{
 		Clone->SetForm(CurrentForm);
+	}
+
+	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), SpawnCloneSound,
+		GetActorLocation());
+
+	if (!IsValid(SpawnedSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: SpawnedSound is invalid!"));
 	}
 }
 
@@ -873,6 +955,14 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 
 void ABallPawn::Die()
 {
+	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DieSound,
+		GetActorLocation());
+
+	if (!IsValid(SpawnedSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: SpawnedSound is invalid!"));
+	}
+	
 	// Spawn DeathNiagaraSystem
 	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
 		DeathNiagaraSystemTemplate, GetActorLocation());

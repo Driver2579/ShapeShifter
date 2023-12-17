@@ -40,8 +40,8 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	}
 
 	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), EnterSound,
-		OtherComp->GetComponentLocation(), FRotator::ZeroRotator,
-		FMath::Min(OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
+		OtherComp->GetComponentLocation(), FRotator::ZeroRotator, FMath::Min(
+		OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
 
 	if (!IsValid(SpawnedSound))
 	{
@@ -60,11 +60,11 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	}
 
 	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), LeaveSound,
-		OtherComp->GetComponentLocation(), FRotator::ZeroRotator,
-		FMath::Min(OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
+		OtherComp->GetComponentLocation(), FRotator::ZeroRotator, FMath::Min(
+		OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
 	
 	if (!IsValid(SpawnedSound))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: SpawnedSound is invalid!"));
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: SpawnedSound is invalid!"));
 	}
 }

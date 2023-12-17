@@ -51,7 +51,7 @@ void ADoor::Tick(float DeltaTime)
 	const FVector& NewRightLocation = FMath::VInterpConstantTo(RightDoorMeshComponent->GetRelativeLocation(),
 		TargetRightDoorLocation, DeltaTime, MoveSpeed);
 
-
+	// Stop sound if the door does not move.
 	if (TargetLeftDoorLocation == NewLeftLocation)
 	{
 		OpenSoundComponent->Stop();

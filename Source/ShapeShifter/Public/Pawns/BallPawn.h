@@ -73,6 +73,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBuoyancyComponent* BuoyancyComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UAudioComponent* RollingAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UAudioComponent* AirSlicingAudioComponent;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	class UInputMappingContext* DefaultMappingContext;
 
@@ -108,64 +114,61 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enhanced Input")
 	UInputAction* LoadGameAction;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Clone")
 	USoundCue* SpawnCloneSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
-	USoundCue* SpawningCloneSound; 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Clone")
+	USoundCue* CreateCloneSound; 
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Clone")
 	USoundCue* CancelSpawnCloneSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
-	USoundCue* DieSound;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
-	USoundCue* AirSlicingSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Form")
+	USoundCue* ChangeFormSound;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Death")
+	USoundCue* DieSound;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	USoundCue* JumpSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	USoundCue* RubberHitSound;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	USoundCue* MetalHitSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	USoundCue* RubberRollingSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	USoundCue* MetalRollingSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
-	USoundCue* ChangeFormSound;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MaxVelocityRollingSound = 500;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MinPitchRollingSound = 0.75;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MaxPitchRollingSound = 1.25;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 360), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 360), Category = "Movement")
 	float AngelSound = 80;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
-	float MinVelocityHitSound = 50;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
+	float MinVelocityHitSound = 60;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MaxVelocityHitSound = 900;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MinPitchAirSlicingSound = 0.5;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MinVelocityAirSlicingSound = 100;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Movement")
 	float MaxVelocityAirSlicingSound = 500;
 
 	void Move(const FInputActionValue& Value);
@@ -343,11 +346,6 @@ private:
 
 	TWeakObjectPtr<USoundCue> CurrentHitSound;
 
-	UPROPERTY()
-	UAudioComponent* CurrentRollingAudioComponent;
-
-	UPROPERTY()
-	UAudioComponent* AirSlicingAudioComponent;
-
-	TWeakObjectPtr<UAudioComponent> SpawningCloneAudioComponent;
+	// This is needed to have control over CreateCloneSound from any part of this class code
+	TWeakObjectPtr<UAudioComponent> CreateCloneAudioComponent;
 };

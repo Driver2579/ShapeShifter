@@ -39,14 +39,15 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		BallPawn->SetOverlappingWaterJumpZone(true);
 	}
 
-	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), EnterSound,
-		OtherComp->GetComponentLocation(), FRotator::ZeroRotator, FMath::Min(
-		OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
-
-	if (!IsValid(SpawnedSound))
+	if (!IsValid(EnterSound))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: SpawnedSound is invalid!"));
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: EnterSound is invalid!"));
 	}
+
+	// Calculate the volume and pitch of sound and then play it at the location of contact
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnterSound, OtherComp->GetComponentLocation(),
+		FRotator::ZeroRotator, FMath::Min(OtherComp->GetComponentVelocity().Length() /
+		MaxVelocitySound, MaxVelocitySound));
 }
 
 void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -58,13 +59,14 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		BallPawn->SetOverlappingWaterJumpZone(false);
 	}
-
-	const UAudioComponent* SpawnedSound = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), LeaveSound,
-		OtherComp->GetComponentLocation(), FRotator::ZeroRotator, FMath::Min(
-		OtherComp->GetComponentVelocity().Length() / MaxVelocitySound, MaxVelocitySound));
 	
-	if (!IsValid(SpawnedSound))
+	if (!IsValid(LeaveSound))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: SpawnedSound is invalid!"));
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: LeaveSound is invalid!"));
 	}
+
+	// Calculate the volume and pitch of sound and then play it at the location of contact
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), LeaveSound, OtherComp->GetComponentLocation(),
+		FRotator::ZeroRotator, FMath::Min(OtherComp->GetComponentVelocity().Length() /
+		MaxVelocitySound, MaxVelocitySound));
 }

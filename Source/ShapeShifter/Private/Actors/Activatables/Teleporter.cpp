@@ -5,6 +5,8 @@
 #include "NiagaraComponent.h"
 #include "Pawns/BallPawn.h"
 #include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 ATeleporter::ATeleporter()
 {
@@ -29,7 +31,7 @@ ATeleporter::ATeleporter()
 	NiagaraParticlesComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Particles"));
 	NiagaraParticlesComponent->SetupAttachment(RootComponent);
 
-	TeleportPointComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Teleport Point"));
+	TeleportPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Teleport Point"));
 	TeleportPointComponent->SetupAttachment(RootComponent);
 
 	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
@@ -95,6 +97,14 @@ void ATeleporter::TeleportBallPawn(ABallPawn* BallPawnToTeleport) const
 
 	// Teleport BallPawn to TeleportPointComponent of OtherTeleporter
 	BallPawnToTeleport->SetActorLocation(OtherTeleporter->TeleportPointComponent->GetComponentLocation());
+
+	if (!IsValid(TeleportSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATeleporter::TeleportBallPawn: TeleportSound is invalid!"));
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TeleportSound, GetActorLocation());
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TeleportSound, OtherTeleporter->GetActorLocation());
 }
 
 bool ATeleporter::IsOtherTeleporterValid() const

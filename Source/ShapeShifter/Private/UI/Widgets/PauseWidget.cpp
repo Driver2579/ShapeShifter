@@ -7,11 +7,13 @@
 #include "GameModes/ShapeShifterGameMode.h"
 #include "Actors/SaveGameManager.h"
 #include "UI/Widgets/WarningWidget.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundCue.h"
 
 void UPauseWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
+	
 	if (IsValid(ContinueButton))
 	{
 		ContinueButton->OnClicked.AddDynamic(this, &UPauseWidget::CloseWidget);
@@ -56,7 +58,7 @@ void UPauseWidget::NativeConstruct()
 	{
 		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: ExitButton is invalid!"));
 	}
-
+	
 	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
 
 	if (!IsValid(GameMode))
@@ -66,7 +68,18 @@ void UPauseWidget::NativeConstruct()
 		return;
 	}
 
+	OnVisibilityChanged.AddDynamic(this, &UPauseWidget::SetPauseMusicState);
+
 	SaveGameManager = GameMode->GetSaveGameManager();
+
+	if (!IsValid(MenuMusic))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: MenuMusic is invalid!"));
+
+		return;
+	}
+
+	MenuMusicAudioComponent = UGameplayStatics::SpawnSound2D(this, MenuMusic);
 }
 
 void UPauseWidget::OnLoadButtonClicked()
@@ -183,4 +196,25 @@ void UPauseWidget::CloseWidget()
 	}
 
 	PlayerController->Unpause();
+}
+
+void UPauseWidget::SetPauseMusicState(ESlateVisibility InVisibility)
+{
+	if (!MenuMusicAudioComponent.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::SetPauseMusicState: MenuMusicAudioComponent is invalid!"));
+
+		return;
+	}
+
+	// Play music when the pause menu is open
+	if (ESlateVisibility::Visible == InVisibility)
+	{
+		MenuMusicAudioComponent->SetPaused(false);
+	}
+	// Stop music when the pause menu is close
+	else
+	{
+		MenuMusicAudioComponent->SetPaused(true);
+	}
 }

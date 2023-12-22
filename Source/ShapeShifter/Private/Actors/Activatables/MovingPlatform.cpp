@@ -245,7 +245,7 @@ void AMovingPlatform::Deactivate()
 	bActive = false;
 
 	MovementTimeline.Stop();
-
+ 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 	
 	ActivateAudioComponent->Stop();

@@ -164,7 +164,7 @@ private:
 
 	// The time it takes to kill hit BallPawn
 	UPROPERTY(EditAnywhere, Category = "Death", meta = (ClampMin = 0, ClampMax = 0.2))
-	float KillBallPawnTime = 0.2;
+	float KillBallPawnTime = 0.1;
 
 	FTimerHandle KillBallPawnTimer;
 

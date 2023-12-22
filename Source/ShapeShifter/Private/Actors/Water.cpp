@@ -4,6 +4,9 @@
 
 #include "Components/BoxComponent.h"
 #include "Pawns/BallPawn.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 AWater::AWater()
 {
@@ -12,6 +15,9 @@ AWater::AWater()
 
 	JumpZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Jump Zone"));
 	JumpZoneComponent->SetupAttachment(RootComponent);
+
+	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
+	AmbientAudioComponent->SetupAttachment(RootComponent);
 }
 
 void AWater::BeginPlay()
@@ -31,6 +37,16 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	{
 		BallPawn->SetOverlappingWaterJumpZone(true);
 	}
+
+	if (!IsValid(EnterSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: EnterSound is invalid!"));
+	}
+
+	// Calculate the volume and pitch of sound and then play it at the location of contact
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnterSound, OtherComp->GetComponentLocation(),
+		FRotator::ZeroRotator, FMath::Min(OtherComp->GetComponentVelocity().Length() /
+		MaxVelocitySound, MaxVelocitySound));
 }
 
 void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -42,4 +58,14 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		BallPawn->SetOverlappingWaterJumpZone(false);
 	}
+	
+	if (!IsValid(LeaveSound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: LeaveSound is invalid!"));
+	}
+
+	// Calculate the volume and pitch of sound and then play it at the location of contact
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), LeaveSound, OtherComp->GetComponentLocation(),
+		FRotator::ZeroRotator, FMath::Min(OtherComp->GetComponentVelocity().Length() /
+		MaxVelocitySound, MaxVelocitySound));
 }

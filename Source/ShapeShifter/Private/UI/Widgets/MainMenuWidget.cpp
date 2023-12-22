@@ -8,6 +8,7 @@
 #include "GameModes/ShapeShifterGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Objects/ShapeShifterSaveGame.h"
+#include "Sound/SoundCue.h"
 #include "UI/Widgets/WarningWidget.h"
 
 void UMainMenuWidget::NativeConstruct()
@@ -50,7 +51,7 @@ void UMainMenuWidget::OnNewGameButtonClicked()
 
 		return;
 	}
-
+	
 	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessange(MessageBeforeStart);
@@ -117,7 +118,7 @@ void UMainMenuWidget::OnExitGameButtonClicked()
 
 		return;
 	}
-
+	
 	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
 	WarningWidget->SetMessange(MessageBeforeLeave);

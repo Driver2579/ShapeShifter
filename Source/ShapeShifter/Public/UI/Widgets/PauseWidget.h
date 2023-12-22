@@ -16,6 +16,9 @@ class SHAPESHIFTER_API UPauseWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* MenuMusic;
+	
 	UPROPERTY(meta = (BindWidget))
 	UButton* ContinueButton;
 
@@ -30,8 +33,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* ExitButton;
-
-private:
+	
 	// Widget that will be used as a warning for some actions
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UWarningWidget> WarningWidgetClass;
@@ -40,12 +42,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> MainMenuLevel;
 
-	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
-
 	FString MessageBeforeLoad = "Load save?";
 	FString MessageBeforeRestart = "Restart level?";
 	FString MessageBeforeExit = "Exit to menu?";
-
+	
+private:
 	UFUNCTION()
 	void OnLoadButtonClicked();
 
@@ -73,4 +74,12 @@ private:
 	// Close this menu
 	UFUNCTION()
 	void CloseWidget();
+
+	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
+	
+	// This is needed to have control over MenuMusic from any part of this class code
+	TSoftObjectPtr<UAudioComponent> MenuMusicAudioComponent;
+	
+	UFUNCTION()
+	void SetPauseMusicState(ESlateVisibility InVisibility);
 };

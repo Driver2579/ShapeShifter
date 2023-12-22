@@ -4,6 +4,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Objects/ShapeShifterSaveGame.h"
+#include "Components/AudioComponent.h"
 
 ALever::ALever()
 {
@@ -26,6 +27,12 @@ ALever::ALever()
 
 	DeactivateZoneComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Deactivate Zone"));
 	DeactivateZoneComponent->SetupAttachment(LeverMeshComponent);
+
+	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
+	ActivateAudioComponent->SetupAttachment(RootComponent);
+
+	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
+	DeactivateAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ALever::OnConstruction(const FTransform& Transform)
@@ -160,6 +167,9 @@ void ALever::Activate()
 		return;
 	}
 
+	ActivateAudioComponent->Play();
+	DeactivateAudioComponent->Stop();
+	
 	bActive = true;
 	OnActiveSwitch();
 }
@@ -171,6 +181,9 @@ void ALever::Deactivate()
 	{
 		return;
 	}
+
+	ActivateAudioComponent->Stop();
+	DeactivateAudioComponent->Play();
 
 	bActive = false;
 	OnActiveSwitch();

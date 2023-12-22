@@ -4,6 +4,8 @@
 #include "Components/SplineComponent.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Pawns/BallPawn.h"
+#include "Components/AudioComponent.h"
+
 
 AMovingPlatform::AMovingPlatform()
 {
@@ -19,6 +21,15 @@ AMovingPlatform::AMovingPlatform()
 
 	CollisionAttachPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Collision Attach Point"));
 	CollisionAttachPointComponent->SetupAttachment(MeshComponent);
+
+	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
+	ActivateAudioComponent->SetupAttachment(RootComponent);
+
+	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
+	DeactivateAudioComponent->SetupAttachment(RootComponent);
+
+	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
+	AmbientAudioComponent->SetupAttachment(RootComponent);
 }
 
 void AMovingPlatform::BeginPlay()
@@ -210,6 +221,10 @@ void AMovingPlatform::Activate()
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
+	ActivateAudioComponent->Play();
+	DeactivateAudioComponent->Stop();
+	AmbientAudioComponent->Play();
+	
 	// Start movement immediately if StartDelay is 0
 	if (StartDelay == 0)
 	{
@@ -232,6 +247,10 @@ void AMovingPlatform::Deactivate()
 	MovementTimeline.Stop();
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
+	
+	ActivateAudioComponent->Stop();
+	DeactivateAudioComponent->Play();
+	AmbientAudioComponent->Stop();
 
 	// If the platform is not looped it should not move to the starting location
 	if (bLoop)

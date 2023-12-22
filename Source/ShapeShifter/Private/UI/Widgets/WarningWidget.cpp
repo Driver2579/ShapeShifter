@@ -59,7 +59,7 @@ const UWarningWidget* UWarningWidget::Show(TWeakObjectPtr<UUserWidget> Parent, T
 
 void UWarningWidget::SetMessange(const FString& Messenge) const
 {
-	if (!Messenge.IsEmpty())
+	if (Messenge.IsEmpty())
 	{
 		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::SetMessenge: Messenge is invalid!"));
 

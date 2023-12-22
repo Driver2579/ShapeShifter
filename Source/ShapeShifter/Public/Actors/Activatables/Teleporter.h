@@ -38,6 +38,18 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* TeleportPointComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* ActivateAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* DeactivateAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* AmbientAudioComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	USoundCue* TeleportSound;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 

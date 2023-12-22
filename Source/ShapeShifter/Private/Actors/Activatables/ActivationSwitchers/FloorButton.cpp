@@ -2,6 +2,8 @@
 
 #include "Actors/Activatables/ActivationSwitchers/FloorButton.h"
 
+#include "Components/AudioComponent.h"
+
 AFloorButton::AFloorButton()
 {
  	// Set this actor to call Tick() every frame
@@ -22,6 +24,12 @@ void AFloorButton::SetupComponents()
 
 	ButtonTriggerComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Button Trigger"));
 	ButtonTriggerComponent->SetupAttachment(ButtonMeshComponent);
+
+	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
+	ActivateAudioComponent->SetupAttachment(RootComponent);
+
+	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
+	DeactivateAudioComponent->SetupAttachment(RootComponent);
 
 	// Set ButtonTriggerComponent collision profile to OverlapOnlyPawn
 	ButtonTriggerComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
@@ -68,6 +76,9 @@ void AFloorButton::OnButtonTriggerBeginOverlap(UPrimitiveComponent* OverlappedCo
 {
 	if (IsValid(OtherActor) && OtherActor != this)
 	{
+		ActivateAudioComponent->Play();
+		DeactivateAudioComponent->Stop();
+		
 		Activate();
 	}
 }
@@ -83,6 +94,9 @@ void AFloorButton::OnButtonTriggerEndOverlap(UPrimitiveComponent* OverlappedComp
 
 	if (OverlappingActors.Num() == 0)
 	{
+		ActivateAudioComponent->Stop();
+		DeactivateAudioComponent->Play();
+		
 		Deactivate();
 	}
 }

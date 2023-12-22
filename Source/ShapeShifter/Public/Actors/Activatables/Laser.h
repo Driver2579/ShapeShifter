@@ -39,6 +39,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UArrowComponent* LaserDirectionComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* ActivateAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* DeactivateAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UAudioComponent* AmbientAudioComponent;
+
 	/**
 	 * Called when Laser beam hit any not ignored Actor. This function called every tick while hitting Actor.
 	 * @param HitActor Hit Actor by Laser beam.

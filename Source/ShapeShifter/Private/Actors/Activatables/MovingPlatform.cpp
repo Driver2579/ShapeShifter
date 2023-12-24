@@ -23,13 +23,13 @@ AMovingPlatform::AMovingPlatform()
 	CollisionAttachPointComponent->SetupAttachment(MeshComponent);
 
 	ActivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Activate Audio"));
-	ActivateAudioComponent->SetupAttachment(RootComponent);
+	ActivateAudioComponent->SetupAttachment(MeshComponent);
 
 	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
-	DeactivateAudioComponent->SetupAttachment(RootComponent);
+	DeactivateAudioComponent->SetupAttachment(MeshComponent);
 
 	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
-	AmbientAudioComponent->SetupAttachment(RootComponent);
+	AmbientAudioComponent->SetupAttachment(MeshComponent);
 }
 
 void AMovingPlatform::BeginPlay()

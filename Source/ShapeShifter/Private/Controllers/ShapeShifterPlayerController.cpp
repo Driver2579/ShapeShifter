@@ -11,7 +11,7 @@ void AShapeShifterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Get LocalPlayer to get Subsystem
+	// Get LocalPlayer to get its subsystem
 	const ULocalPlayer* LocalPlayer = GetLocalPlayer();
 
 	if (!IsValid(LocalPlayer))
@@ -39,8 +39,8 @@ void AShapeShifterPlayerController::BeginPlay()
 	}
 
 	/**
-	* When entering from the level where there was control through the cursor, 
-	* it will remain visible. To fix this, you need this line.
+	* When entering from the level where there was control through the cursor, it will remain visible. To fix this, you
+	* need this line.
 	*/
 	SetInputMode(FInputModeGameOnly());
 

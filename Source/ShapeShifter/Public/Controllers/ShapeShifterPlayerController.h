@@ -12,15 +12,16 @@ class SHAPESHIFTER_API AShapeShifterPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	// Set pause true
+	// Open pause menu
 	void Pause();
 
-	// Set pause false
+	// Close pause false
 	void Unpause();
 
 protected:
 	virtual void BeginPlay() override;
 
+	// MappingContext that will always work, even when the player is not on stage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
 	class UInputMappingContext* ShapeShifterMappingContext;
 
@@ -30,6 +31,7 @@ protected:
 	virtual void SetupInputComponent() override;
 
 private:
+	// HUD that is tied to the level
 	TWeakObjectPtr<AShapeShifterHUD> CurrentHUD;
 
 	// Pause or unpause game and open pause menu

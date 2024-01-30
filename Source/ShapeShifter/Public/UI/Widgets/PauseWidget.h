@@ -42,8 +42,13 @@ private:
 
 	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
 
+	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeLoad = "Load save?";
+
+	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeRestart = "Restart level?";
+
+	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeExit = "Exit to menu?";
 
 	UFUNCTION()

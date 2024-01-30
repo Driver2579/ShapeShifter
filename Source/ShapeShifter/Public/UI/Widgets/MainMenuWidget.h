@@ -33,7 +33,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "New Game")
 	TSoftObjectPtr<UWorld> FirstLevel;
 
+	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeStart = "Start a new game?";
+
+	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeLeave = "Leave the game?";
 
 	UFUNCTION()

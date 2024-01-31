@@ -9,7 +9,7 @@ void AMainMenuHUD::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!IsValid(MainMenuWidgetClass))
+    if (!MainMenuWidgetClass)
     {
         UE_LOG(LogTemp, Error, TEXT("AMainMenuHUD::BeginPlay: MainMenuWidgetClass is invalid!"));
 

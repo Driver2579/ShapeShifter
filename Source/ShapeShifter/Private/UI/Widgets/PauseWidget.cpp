@@ -70,8 +70,8 @@ void UPauseWidget::NativeConstruct()
 
 	if (!SaveGameManager.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: Failed to get SaveGameManager from the "
-							  "ShapeShifterGameMode!"));
+		UE_LOG(LogTemp, Error,
+			TEXT("UPauseWidget::NativeConstruct: Failed to get SaveGameManager from the ShapeShifterGameMode!"));
 	}
 }
 

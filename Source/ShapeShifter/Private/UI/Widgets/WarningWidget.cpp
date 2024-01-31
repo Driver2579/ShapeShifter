@@ -79,6 +79,8 @@ const UWarningWidget* UWarningWidget::Show(UUserWidget* Parent, TSubclassOf<UWar
 
 void UWarningWidget::SetMessage(const FString& Message) const
 {
+	check(MessageTextBlock)
+	
 	MessageTextBlock->SetText(FText::FromString(Message));
 }
 

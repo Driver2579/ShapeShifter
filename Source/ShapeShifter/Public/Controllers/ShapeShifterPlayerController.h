@@ -33,7 +33,4 @@ protected:
 private:
 	// HUD that is tied to the level
 	TWeakObjectPtr<AShapeShifterHUD> CurrentHUD;
-
-	// Pause or unpause game and open pause menu
-	void SetPause(bool bPaused);
 };

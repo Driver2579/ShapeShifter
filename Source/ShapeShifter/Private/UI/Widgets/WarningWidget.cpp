@@ -38,7 +38,7 @@ const UWarningWidget* UWarningWidget::Show(UUserWidget* Parent, TSubclassOf<UWar
 		return nullptr;
 	}
 
-	if (!IsValid(WarningWidgetClass))
+	if (!WarningWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UWarningWidget::Show: WarningWidgetClass is invalid!"));
 

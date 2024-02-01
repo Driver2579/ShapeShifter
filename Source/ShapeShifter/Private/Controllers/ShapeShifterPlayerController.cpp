@@ -162,7 +162,4 @@ void AShapeShifterPlayerController::Unpause()
 
 	// Hide cursor
 	bShowMouseCursor = false;
-
-	
-	SetPause(false);
 }

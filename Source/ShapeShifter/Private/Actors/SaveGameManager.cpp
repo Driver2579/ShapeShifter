@@ -2,6 +2,7 @@
 
 #include "Actors/SaveGameManager.h"
 
+#include "GameInstances/ShapeShifterGameInstance.h"
 #include "Interfaces/Savable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Objects/ShapeShifterSaveGame.h"
@@ -15,6 +16,12 @@ void ASaveGameManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// We don't need to bind any functionality of this class if it's not active
+	if (!bActive)
+	{
+		return;
+	}
+
 	// Initial SaveGameObject initializing
 	CreateSaveGameObjectIfNotExists();
 
@@ -22,17 +29,38 @@ void ASaveGameManager::BeginPlay()
 
 	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &ASaveGameManager::OnAsyncLoadGameFinished);
 
-	// Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all 
+	/**
+	 * Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all Actors called their
+	 * BeginPlay
+	 */
 	GetWorld()->OnWorldBeginPlay.AddUObject(this, &ASaveGameManager::OnWorldBeginPlay);
 }
 
 void ASaveGameManager::OnWorldBeginPlay()
 {
+	const UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<
+		UShapeShifterGameInstance>();
+
+	if (!IsValid(ShapeShifterGameInstance))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ASaveGameManager::OnWorldBeginPlay: Failed to get ShapeShifterGameInstance!"));
+
+		return;
+	}
+
 	/**
-	 * We always save the game on level load. We call it after BeginPlay to be able to load the game on BeginPlay if
-	 * needed.
+	 * We always save the game on level load if auto save is allowed. We call it after BeginPlay to be able to load the
+	 * game on BeginPlay if needed.
 	 */
-	SaveGame();
+	if (ShapeShifterGameInstance->IsAutoSaveAllowed())
+	{
+		SaveGame();
+	}
+	// Load the game in another case as bAllowAutoSave documentation in the ShapeShifterGameInstance says
+	else
+	{
+		LoadGame();
+	}
 }
 
 UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const
@@ -138,4 +166,9 @@ void ASaveGameManager::OnAsyncLoadGameFinished(const FString& SlotName, const in
 		UE_LOG(LogTemp, Warning, TEXT("ASaveGameManager::LoadGame: Unable to load the save from another level! "
 			"Current level: %s Saved level: %s"), *CurrentLevelName, *ShapeShifterSaveGameObject->LevelName);
 	}
+}
+
+FString ASaveGameManager::GetSaveGameSlotName() const
+{
+	return SaveGameSlotName;
 }

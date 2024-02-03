@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BuoyancyComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
@@ -483,6 +485,26 @@ EBallPawnForm ABallPawn::GetForm() const
 
 void ABallPawn::SetForm(const EBallPawnForm NewForm)
 {
+	// We have to spawn ChangeFormNiagaraComponent only if form was changed
+	if (NewForm != CurrentForm)
+	{
+		FFXSystemSpawnParameters NiagaraSpawnParameters;
+
+		// Initialize NiagaraSpawnParameters
+		NiagaraSpawnParameters.SystemTemplate = ChangeFormNiagaraSystemTemplate;
+		NiagaraSpawnParameters.AttachToComponent = RootComponent;
+		NiagaraSpawnParameters.LocationType = EAttachLocation::SnapToTarget;
+
+		// Spawn ChangeFormNiagaraComponent
+		const UNiagaraComponent* ChangeFormNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(
+			NiagaraSpawnParameters);
+
+		if (!IsValid(ChangeFormNiagaraComponent))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to spawn ChangeFormNiagaraComponent!"));
+		}
+	}
+
 	// Remember OldForm before changing it to compare a new one with the old one when needed 
 	const EBallPawnForm OldForm = CurrentForm;
 
@@ -505,13 +527,12 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	 */
 	if (NewForm != OldForm && bDestroyCloneOnChangeForm)
 	{
-		// Clear CreateCloneTimer to cancel Clone creation if timer has been set
-		GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+		CancelCloneCreation();
 
-		// Destroy Clone if it was created
+		// Kill Clone if it was created
 		if (Clone.IsValid())
 		{
-			Clone->Destroy();
+			Clone->Die();
 		}
 	}
 
@@ -636,14 +657,38 @@ void ABallPawn::CreateClone()
 		return;
 	}
 
-	// Clear CreateCloneTimer to avoid multiple clone creation by CreateClone call spamming
-	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+	CancelCloneCreation();
+
+	// Spawn CreateCloneNiagaraComponent
+	CreateCloneNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		CreateCloneNiagaraSystemTemplate, GetActorLocation());
+
+	if (!CreateCloneNiagaraComponent.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CreateClone: Failed to spawn CreateCloneNiagaraComponent!"));
+	}
 
 	// Remember current Actor Transform where clone will be spawned
 	CloneSpawnTransform = GetActorTransform();
 
 	// Call SpawnClone in CreateCloneRate seconds
 	GetWorldTimerManager().SetTimer(CreateCloneTimer, this, &ABallPawn::SpawnClone, CreateCloneRate);
+}
+
+void ABallPawn::CancelCloneCreation()
+{
+	// There is nothing to cancel if CreateCloneTimer isn't active
+	if (!GetWorldTimerManager().IsTimerActive(CreateCloneTimer))
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(CreateCloneTimer);
+
+	if (CreateCloneNiagaraComponent.IsValid())
+	{
+		CreateCloneNiagaraComponent->SetCustomTimeDilation(CreateCloneVfxSpeedOnCancel);
+	}
 }
 
 void ABallPawn::SpawnClone()
@@ -654,10 +699,10 @@ void ABallPawn::SpawnClone()
 		return;
 	}
 
-	// Destroy old Clone if it was created before
+	// Kill old Clone if it was created before
 	if (Clone.IsValid())
 	{
-		Clone->Destroy();
+		Clone->Die();
 	}
 
 	// Check if we can spawn Clone and return if not
@@ -690,6 +735,16 @@ bool ABallPawn::CanSpawnClone() const
 
 void ABallPawn::SpawnCloneObject()
 {
+	// Spawn SpawnCloneNiagaraSystem
+	const UNiagaraComponent* SpawnCloneNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		this, SpawnCloneNiagaraSystemTemplate,
+		CloneSpawnTransform.GetLocation());
+
+	if (!IsValid(SpawnCloneNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: Failed to spawn SpawnCloneNiagaraSystem!"));
+	}
+
 	FActorSpawnParameters SpawnParameters;
 
 	// We have to set Clone scale same as players instead of multiplying them by each other
@@ -778,6 +833,15 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 
 void ABallPawn::Die()
 {
+	// Spawn DeathNiagaraSystem
+	const UNiagaraComponent* DeathNiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,
+		DeathNiagaraSystemTemplate, GetActorLocation());
+
+	if (!IsValid(DeathNiagaraSystem))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: Failed to spawn DeathNiagaraSystem!"));
+	}
+
 	// Destroy BallPawn if it called for clone
 	if (!IsPlayerControlled())
 	{

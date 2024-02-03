@@ -21,6 +21,9 @@ public class ShapeShifter : ModuleRules
 
 		// Water
 		PrivateDependencyModuleNames.AddRange(new string[] { "Water" });
+		
+		// UMG
+		PrivateDependencyModuleNames.AddRange(new string[] { "UMG" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

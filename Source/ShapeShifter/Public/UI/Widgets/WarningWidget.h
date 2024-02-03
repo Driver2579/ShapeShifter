@@ -13,11 +13,12 @@ class SHAPESHIFTER_API UWarningWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
-public: 
-	static const UWarningWidget* Show(TWeakObjectPtr<UUserWidget> Parent, TSubclassOf<UWarningWidget> WarningWidgetClass);
+public:
+	// Display this widget on top of the current one
+	static const UWarningWidget* Show(UUserWidget* Parent, TSubclassOf<UWarningWidget> WarningWidgetClass);
 
 	// Set message to display
-	void SetMessange(const FString& Messenge) const;
+	void SetMessage(const FString& Message) const;
 
 	UButton* GetOkButton() const;
 

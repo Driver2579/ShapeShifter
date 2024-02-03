@@ -45,7 +45,7 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnNewGameButtonClicked()
 {
-	if (!IsValid(WarningWidgetClass))
+	if (!WarningWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnNewGameButtonClicked: WarningWidgetClass is invalid!"));
 
@@ -54,7 +54,22 @@ void UMainMenuWidget::OnNewGameButtonClicked()
 	
 	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
-	WarningWidget->SetMessange(MessageBeforeStart);
+	if (!IsValid(WarningWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnNewGameButtonClicked: WarningWidget is invalid!"));
+
+		return;
+	}
+	
+	WarningWidget->SetMessage(MessageBeforeStart);
+
+	if (!IsValid(WarningWidget->GetOkButton()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnNewGameButtonClicked: OkButton is invalid!"));
+
+		return;
+	}
+	
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::OpenFirstLevel);
 }
 
@@ -112,7 +127,7 @@ void UMainMenuWidget::OnContinueGameButtonClicked()
 
 void UMainMenuWidget::OnExitGameButtonClicked()
 {
-	if (!IsValid(WarningWidgetClass))
+	if (!WarningWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnExitGameButtonClicked: WarningWidgetClass is invalid!"));
 
@@ -121,7 +136,22 @@ void UMainMenuWidget::OnExitGameButtonClicked()
 	
 	const UWarningWidget* WarningWidget = UWarningWidget::Show(this, WarningWidgetClass);
 
-	WarningWidget->SetMessange(MessageBeforeLeave);
+	if (!IsValid(WarningWidget))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnExitGameButtonClicked: WarningWidget is invalid!"));
+
+		return;
+	}
+	
+	WarningWidget->SetMessage(MessageBeforeLeave);
+
+	if (!IsValid(WarningWidget->GetOkButton()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnExitGameButtonClicked: OkButton is invalid!"));
+
+		return;
+	}
+	
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::ExitGame);
 }
 

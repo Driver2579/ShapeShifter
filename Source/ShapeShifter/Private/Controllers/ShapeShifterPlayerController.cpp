@@ -11,7 +11,7 @@ void AShapeShifterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Get LocalPlayer to get Subsystem
+	// Get LocalPlayer to get its subsystem
 	const ULocalPlayer* LocalPlayer = GetLocalPlayer();
 
 	if (!IsValid(LocalPlayer))
@@ -39,8 +39,8 @@ void AShapeShifterPlayerController::BeginPlay()
 	}
 
 	/**
-	* When entering from the level where there was control through the cursor, 
-	* it will remain visible. To fix this, you need this line.
+	* When entering from the level where there was control through the cursor, it will remain visible. To fix this, you
+	* need this line.
 	*/
 	SetInputMode(FInputModeGameOnly());
 
@@ -112,16 +112,6 @@ void AShapeShifterPlayerController::SetupInputComponent()
 
 void AShapeShifterPlayerController::Pause()
 {
-	SetPause(true);
-}
-
-void AShapeShifterPlayerController::Unpause()
-{
-	SetPause(false);
-}
-
-void AShapeShifterPlayerController::SetPause(bool bPaused)
-{
 	if (!CurrentHUD.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: CurrentHUD is invalid!"));
@@ -129,8 +119,8 @@ void AShapeShifterPlayerController::SetPause(bool bPaused)
 		return;
 	}
 
-	// Open or close pause menu
-	bPaused ? CurrentHUD->OpenPauseMenu() : CurrentHUD->ClosePauseMenu();
+	// Open pause menu
+	CurrentHUD->OpenPauseMenu();
 
 	if (!IsValid(GetWorld()->GetAuthGameMode()))
 	{
@@ -140,18 +130,36 @@ void AShapeShifterPlayerController::SetPause(bool bPaused)
 	}
 
 	// Pause game
-	if (bPaused)
+	SetInputMode(FInputModeUIOnly());
+	GetWorld()->GetAuthGameMode()->SetPause(this);
+
+	// Show cursor
+	bShowMouseCursor = true;
+}
+
+void AShapeShifterPlayerController::Unpause()
+{
+	if (!CurrentHUD.IsValid())
 	{
-		SetInputMode(FInputModeUIOnly());
-		GetWorld()->GetAuthGameMode()->SetPause(this);
-	}
-	// Unpause game
-	else
-	{
-		SetInputMode(FInputModeGameOnly());
-		GetWorld()->GetAuthGameMode()->ClearPause();
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: CurrentHUD is invalid!"));
+
+		return;
 	}
 
-	// Show cursor if pause menu is opened or hide if it's closed
-	bShowMouseCursor = bPaused;
+	// Close pause menu
+	CurrentHUD->ClosePauseMenu();
+
+	if (!IsValid(GetWorld()->GetAuthGameMode()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("AShapeShifterPlayerController::SetPause: GameMode is invalid!"));
+
+		return;
+	}
+	
+	// Unpause game
+	SetInputMode(FInputModeGameOnly());
+	GetWorld()->GetAuthGameMode()->ClearPause();
+
+	// Hide cursor
+	bShowMouseCursor = false;
 }

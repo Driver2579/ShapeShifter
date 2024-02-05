@@ -8,9 +8,9 @@ void AShapeShifterHUD::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!IsValid(PauseWidgetClass))
+    if (!PauseWidgetClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidgetClass is NONE!"));
+        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidgetClass is invalid!"));
 
         return;
     }
@@ -19,7 +19,7 @@ void AShapeShifterHUD::BeginPlay()
 
     if (!PauseWidget.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidget is invalid!"));
+        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: Failed to create PauseWidget!"));
 
         return;
     }

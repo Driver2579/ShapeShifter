@@ -21,9 +21,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UUserWidget> PauseWidgetClass;
-
 private:
 	TWeakObjectPtr<UUserWidget> PauseWidget;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> PauseWidgetClass;
 };

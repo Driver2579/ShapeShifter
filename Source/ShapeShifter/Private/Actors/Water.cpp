@@ -41,6 +41,15 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	if (!IsValid(EnterSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: EnterSound is invalid!"));
+
+		return;
+	}
+
+	if (!IsValid(OtherComp))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: OtherComp is invalid!"));
+
+		return;
 	}
 
 	// Calculate the volume and pitch of sound and then play it at the location of contact
@@ -62,6 +71,15 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	if (!IsValid(LeaveSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: LeaveSound is invalid!"));
+
+		return;
+	}
+
+	if (!IsValid(OtherComp))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: OtherComp is invalid!"));
+
+		return;
 	}
 
 	// Calculate the volume and pitch of sound and then play it at the location of contact

@@ -59,7 +59,7 @@ void ABallPawn::SetupComponents()
 	RollingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Rolling Audio"));
 	RollingAudioComponent->SetupAttachment(RootComponent);
 
-	AirSlicingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Current Air Slicing Audio"));
+	AirSlicingAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Air Slicing Audio"));
 	AirSlicingAudioComponent->SetupAttachment(RootComponent);
 }
 
@@ -110,13 +110,13 @@ void ABallPawn::Tick(float DeltaSeconds)
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
 
 	// Calculate the air slicing sound volume
-	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(.0f, 1.f, FMath::Min(FMath::Max(
-		GetVelocity().Length() - MinVelocityAirSlicingSound, .0f) / MaxVelocityAirSlicingSound, 1.f)));
+	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, FMath::Min(FMath::Max(
+		GetVelocity().Length() - MinVelocityAirSlicingSound, 0) / MaxVelocityAirSlicingSound, 1)));
 
 	// Calculate the air slicing sound pitch
-	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, 1.f,
-		FMath::Min(FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, .0f) /
-			MaxVelocityAirSlicingSound, 1.f)));
+	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, 1,
+		FMath::Min(FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, 0) /
+			MaxVelocityAirSlicingSound, 1)));
 
 	// Rolling sound cannot be heard if the ball is in the air
 	if (IsFalling())
@@ -507,8 +507,11 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 		bCanJump = true;
 	}
 
-	if (AngelSound < FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitNormal, GetVelocity().GetSafeNormal())))
-		|| MinVelocityHitSound > GetVelocity().Length())
+	// At what angle to the surface did the collision occur?
+	const double ContactAngle = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitNormal,
+		GetVelocity().GetSafeNormal())));
+	
+	if (AngelSound < ContactAngle || MinVelocityHitSound > GetVelocity().Length())
 	{
 		return;
 	}
@@ -736,6 +739,8 @@ void ABallPawn::ChangeForm()
 	if (!IsValid(ChangeFormSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::ChangeForm: ChangeFormSound is invalid!"));
+		
+		return;
 	}
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ChangeFormSound, GetActorLocation());
@@ -769,6 +774,8 @@ void ABallPawn::CreateClone()
 	if (!IsValid(CreateCloneSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CreateClone: CreateCloneSound is invalid!"));
+		
+		return;
 	}
 	
 	CreateCloneAudioComponent = UGameplayStatics::SpawnSoundAtLocation(GetWorld(), CreateCloneSound,
@@ -798,6 +805,8 @@ void ABallPawn::CancelCloneCreation()
 	if (!IsValid(CancelSpawnCloneSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CancelCloneCreation: CancelSpawnCloneSound is invalid!"));
+		
+		return;
 	}
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), CancelSpawnCloneSound, GetActorLocation());
@@ -879,6 +888,8 @@ void ABallPawn::SpawnCloneObject()
 	if (!IsValid(SpawnCloneSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: SpawnCloneSound is invalid!"));
+		
+		return;
 	}
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SpawnCloneSound, GetActorLocation());
@@ -957,6 +968,8 @@ void ABallPawn::Die()
 	if (!IsValid(DieSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: DieSound is invalid!"));
+		
+		return;
 	}
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), DieSound, GetActorLocation());

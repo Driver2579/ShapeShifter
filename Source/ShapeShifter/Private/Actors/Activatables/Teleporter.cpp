@@ -101,6 +101,8 @@ void ATeleporter::TeleportBallPawn(ABallPawn* BallPawnToTeleport) const
 	if (!IsValid(TeleportSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ATeleporter::TeleportBallPawn: TeleportSound is invalid!"));
+
+		return;
 	}
 
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TeleportSound, GetActorLocation());

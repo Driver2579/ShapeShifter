@@ -32,10 +32,24 @@ void AShapeShifterHUD::BeginPlay()
 
 void AShapeShifterHUD::OpenPauseMenu()
 {
+    if (!PauseWidget.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::OpenPauseMenu: PauseWidget is invalid!"));
+        
+        return;
+    }
+
     PauseWidget->SetVisibility(ESlateVisibility::Visible);
 }
 
 void AShapeShifterHUD::ClosePauseMenu()
 {
+    if (!PauseWidget.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::OpenPauseMenu: PauseWidget is invalid!"));
+        
+        return;
+    }
+    
     PauseWidget->SetVisibility(ESlateVisibility::Hidden);
 }

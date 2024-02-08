@@ -42,8 +42,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> MainMenuLevel;
 
-	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
-
 	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeLoad = "Load save?";
 

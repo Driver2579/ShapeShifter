@@ -14,9 +14,9 @@ class SHAPESHIFTER_API AMainMenuHUD : public AHUD
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UUserWidget> MainMenuWidgetClass;
-
 private:
 	TWeakObjectPtr<UUserWidget> MainMenuWidget;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
 };

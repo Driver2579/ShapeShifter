@@ -2,7 +2,7 @@
 
 #include "Controllers/ShapeShifterPlayerController.h"
 
-#include "UI/HUDs/ShapeShifterHUD.h"
+#include "UI/HUDs/PlayerHUD.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/GameModeBase.h"
@@ -82,7 +82,7 @@ void AShapeShifterPlayerController::BeginPlay()
 	}
 
 	// Save CurrentHUD
-	CurrentHUD = Cast<AShapeShifterHUD>(PrimaryPlayerController->GetHUD());
+	CurrentHUD = Cast<APlayerHUD>(PrimaryPlayerController->GetHUD());
 }
 
 void AShapeShifterPlayerController::SetupInputComponent()

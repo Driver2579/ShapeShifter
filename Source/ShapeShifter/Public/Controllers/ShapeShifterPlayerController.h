@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/HUDs/ShapeShifterHUD.h"
+#include "UI/HUDs/PlayerHUD.h"
 #include "ShapeShifterPlayerController.generated.h"
 
 UCLASS()
@@ -32,5 +32,5 @@ protected:
 
 private:
 	// HUD that is tied to the level
-	TWeakObjectPtr<AShapeShifterHUD> CurrentHUD;
+	TWeakObjectPtr<APlayerHUD> CurrentHUD;
 };

@@ -1,16 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UI/HUDs/ShapeShifterHUD.h"
+#include "UI/HUDs/PlayerHUD.h"
 
 #include "Blueprint/UserWidget.h"
 
-void AShapeShifterHUD::BeginPlay()
+void APlayerHUD::BeginPlay()
 {
     Super::BeginPlay();
 
     if (!PauseWidgetClass)
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: PauseWidgetClass is invalid!"));
+        UE_LOG(LogTemp, Error, TEXT("APlayerHUD::BeginPlay: PauseWidgetClass is invalid!"));
 
         return;
     }
@@ -19,7 +19,7 @@ void AShapeShifterHUD::BeginPlay()
 
     if (!PauseWidget.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::BeginPlay: Failed to create PauseWidget!"));
+        UE_LOG(LogTemp, Error, TEXT("APlayerHUD::BeginPlay: Failed to create PauseWidget!"));
 
         return;
     }
@@ -30,11 +30,11 @@ void AShapeShifterHUD::BeginPlay()
     PauseWidget->SetVisibility(ESlateVisibility::Hidden);
 }
 
-void AShapeShifterHUD::OpenPauseMenu()
+void APlayerHUD::OpenPauseMenu()
 {
     if (!PauseWidget.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::OpenPauseMenu: PauseWidget is invalid!"));
+        UE_LOG(LogTemp, Error, TEXT("APlayerHUD::OpenPauseMenu: PauseWidget is invalid!"));
         
         return;
     }
@@ -42,11 +42,11 @@ void AShapeShifterHUD::OpenPauseMenu()
     PauseWidget->SetVisibility(ESlateVisibility::Visible);
 }
 
-void AShapeShifterHUD::ClosePauseMenu()
+void APlayerHUD::ClosePauseMenu()
 {
     if (!PauseWidget.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("AShapeShifterHUD::OpenPauseMenu: PauseWidget is invalid!"));
+        UE_LOG(LogTemp, Error, TEXT("APlayerHUD::OpenPauseMenu: PauseWidget is invalid!"));
         
         return;
     }

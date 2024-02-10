@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "ShapeShifterHUD.generated.h"
+#include "PlayerHUD.generated.h"
 
 UCLASS()
-class SHAPESHIFTER_API AShapeShifterHUD : public AHUD
+class SHAPESHIFTER_API APlayerHUD : public AHUD
 {
 	GENERATED_BODY()
 

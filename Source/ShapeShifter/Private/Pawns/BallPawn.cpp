@@ -719,6 +719,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		RollingAudioComponent->SetSound(MetalRollingSound);
 	}
 
+#if WITH_EDITOR
 	if (!CurrentHitSound.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: CurrentHitSound is invalid!"));
@@ -728,6 +729,7 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: RollingSound is invalid!"));
 	}
+#endif
 }
 
 void ABallPawn::ChangeForm()

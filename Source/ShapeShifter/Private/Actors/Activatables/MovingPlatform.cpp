@@ -6,7 +6,6 @@
 #include "Pawns/BallPawn.h"
 #include "Components/AudioComponent.h"
 
-
 AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;

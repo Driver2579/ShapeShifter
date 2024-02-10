@@ -108,16 +108,22 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
+	
+	// How much velocity is greater than the minimum velocity for sound
+	const float HowMuchMoreThanMinAirSlicing = FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, 0);
+	
+	// Range to set pitch and volume to AirSlicingAudioComponent
+	const float AlphaVelocityAirSlicing = FMath::Min(HowMuchMoreThanMinAirSlicing / MaxVelocityAirSlicingSound, 1);
+	
+	// Pitch should be from MinPitchAirSlicingSound to MaxPitchAirSlicingSound at AlphaVelocityAirSlicing
+	// TODO: Replace it with:
+	// AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, MaxPitchAirSlicingSound,
+	//		AlphaVelocityAirSlicingSound));
+	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound,1, AlphaVelocityAirSlicing));
 
-	// Calculate the air slicing sound volume
-	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, FMath::Min(FMath::Max(
-		GetVelocity().Length() - MinVelocityAirSlicingSound, 0) / MaxVelocityAirSlicingSound, 1)));
-
-	// Calculate the air slicing sound pitch
-	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, 1,
-		FMath::Min(FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, 0) /
-			MaxVelocityAirSlicingSound, 1)));
-
+	// Volume should be from 0 to 1 at AlphaVelocityAirSlicing
+	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, AlphaVelocityAirSlicing));
+	
 	// Rolling sound cannot be heard if the ball is in the air
 	if (IsFalling())
 	{
@@ -132,10 +138,13 @@ void ABallPawn::Tick(float DeltaSeconds)
 	// Calculate the rolling sound volume
 	RollingAudioComponent->SetVolumeMultiplier(FMath::Min(ProjectedVector.Length() / MaxVelocityRollingSound,
 		MaxVelocityRollingSound));
-
-	// Calculate the rolling sound pitch
-	RollingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound,
-		ProjectedVector.Length() / MaxVelocityRollingSound));
+	
+	// Range to set pitch to AirSlicingAudioComponent
+	const float AlphaRolling = ProjectedVector.Length() / MaxVelocityRollingSound;
+	
+	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
+	RollingAudioComponent->SetPitchMultiplier(
+		FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound, AlphaRolling));
 }
 
 void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
@@ -508,10 +517,12 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 	}
 
 	// At what angle to the surface did the collision occur?
-	const double ContactAngle = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitNormal,
-		GetVelocity().GetSafeNormal())));
+	const double ContactAngleRadians = FMath::Acos(FVector::DotProduct(HitNormal,
+		GetVelocity().GetSafeNormal()));
+
+	const double ContactAngleDegrees = FMath::RadiansToDegrees(ContactAngleRadians);
 	
-	if (AngelSound < ContactAngle || MinVelocityHitSound > GetVelocity().Length())
+	if (AngelSound < ContactAngleDegrees || MinVelocityHitSound > GetVelocity().Length())
 	{
 		return;
 	}
@@ -522,9 +533,13 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 
 		return;
 	}
+
+	// The hit volume depends on the velocity where the limit values are from MaxVelocityHitSound to MinVelocityHitSound
+	const double HitVolume =  GetVelocity().Length() / (MaxVelocityHitSound - MinVelocityHitSound);
 	
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), CurrentHitSound.Get(), GetActorLocation(),
-		FMath::Min(GetVelocity().Length() / (MaxVelocityHitSound - MinVelocityHitSound), MaxVelocityHitSound));
+	const double LimitedHitVolume = FMath::Min(HitVolume, MaxVelocityHitSound);
+	
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), CurrentHitSound.Get(), GetActorLocation(), LimitedHitVolume);
 }
 
 void ABallPawn::EnableJumpIfSwimmingWithDelay()

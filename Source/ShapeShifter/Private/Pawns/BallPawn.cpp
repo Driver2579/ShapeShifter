@@ -132,15 +132,17 @@ void ABallPawn::Tick(float DeltaSeconds)
 		return;
 	}
 
-	const FVector ProjectedVector = FVector::DotProduct(GetVelocity(), FVector(1, 1, 0)) *
-		FVector(1, 1, 0);
+	// Shows in which directions movement has what weight
+	const FVector DirectionsSignificanceTemplate = FVector(1, 1, 0);
 	
-	// Calculate the rolling sound volume
-	RollingAudioComponent->SetVolumeMultiplier(FMath::Min(ProjectedVector.Length() / MaxVelocityRollingSound,
-		MaxVelocityRollingSound));
-	
+	const FVector ProjectedVector = FVector::DotProduct(GetVelocity(), DirectionsSignificanceTemplate) *
+		DirectionsSignificanceTemplate;
+
 	// Range to set pitch to AirSlicingAudioComponent
 	const float AlphaRolling = ProjectedVector.Length() / MaxVelocityRollingSound;
+	
+	// Calculate the rolling sound volume
+	RollingAudioComponent->SetVolumeMultiplier(FMath::Min(AlphaRolling, MaxVelocityRollingSound));
 	
 	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
 	RollingAudioComponent->SetPitchMultiplier(

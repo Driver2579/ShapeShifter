@@ -34,14 +34,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* ExitButton;
 	
-	// Widget that will be used as a warning for some actions
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class UWarningWidget> WarningWidgetClass;
-
-	// Level to exit
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UWorld> MainMenuLevel;
-	
 private:
 	UFUNCTION()
 	void OnLoadButtonClicked();
@@ -71,6 +63,14 @@ private:
 	UFUNCTION()
 	void CloseWidget();
 
+	// Widget that will be used as a warning for some actions
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UWarningWidget> WarningWidgetClass;
+
+	// Level to exit
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> MainMenuLevel;
+	
 	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeLoad = "Load save?";
 

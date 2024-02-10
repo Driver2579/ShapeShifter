@@ -45,13 +45,13 @@ void AWater::OnJumpZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		return;
 	}
 
+#if WITH_EDITOR
 	if (!IsValid(OtherComp))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneBeginOverlap: OtherComp is invalid!"));
-
-		return;
 	}
-
+#endif
+	
 	// Calculate the volume and pitch of sound and then play it at the location of contact
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnterSound, OtherComp->GetComponentLocation(),
 		FRotator::ZeroRotator, FMath::Min(OtherComp->GetComponentVelocity().Length() /
@@ -67,13 +67,13 @@ void AWater::OnJumpZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		BallPawn->SetOverlappingWaterJumpZone(false);
 	}
-	
+
+#if WITH_EDITOR
 	if (!IsValid(LeaveSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AWater::OnJumpZoneEndOverlap: LeaveSound is invalid!"));
-
-		return;
 	}
+#endif
 
 	if (!IsValid(OtherComp))
 	{

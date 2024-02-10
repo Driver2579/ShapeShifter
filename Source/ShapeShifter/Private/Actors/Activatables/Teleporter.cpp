@@ -98,13 +98,13 @@ void ATeleporter::TeleportBallPawn(ABallPawn* BallPawnToTeleport) const
 	// Teleport BallPawn to TeleportPointComponent of OtherTeleporter
 	BallPawnToTeleport->SetActorLocation(OtherTeleporter->TeleportPointComponent->GetComponentLocation());
 
+#if WITH_EDITOR
 	if (!IsValid(TeleportSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ATeleporter::TeleportBallPawn: TeleportSound is invalid!"));
-
-		return;
 	}
-
+#endif
+	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TeleportSound, GetActorLocation());
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TeleportSound, OtherTeleporter->GetActorLocation());
 }

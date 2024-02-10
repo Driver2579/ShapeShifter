@@ -76,9 +76,6 @@ void AFloorButton::OnButtonTriggerBeginOverlap(UPrimitiveComponent* OverlappedCo
 {
 	if (IsValid(OtherActor) && OtherActor != this)
 	{
-		ActivateAudioComponent->Play();
-		DeactivateAudioComponent->Stop();
-		
 		Activate();
 	}
 }
@@ -94,9 +91,6 @@ void AFloorButton::OnButtonTriggerEndOverlap(UPrimitiveComponent* OverlappedComp
 
 	if (OverlappingActors.Num() == 0)
 	{
-		ActivateAudioComponent->Stop();
-		DeactivateAudioComponent->Play();
-		
 		Deactivate();
 	}
 }
@@ -117,6 +111,9 @@ void AFloorButton::Activate()
 	bActive = true;
 
 	SwitchActorsActivation();
+
+	ActivateAudioComponent->Play();
+	DeactivateAudioComponent->Stop();
 }
 
 void AFloorButton::Deactivate()
@@ -130,4 +127,7 @@ void AFloorButton::Deactivate()
 	bActive = false;
 
 	SwitchActorsActivation();
+
+	ActivateAudioComponent->Stop();
+	DeactivateAudioComponent->Play();
 }

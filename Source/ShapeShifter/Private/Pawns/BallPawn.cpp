@@ -464,13 +464,13 @@ void ABallPawn::Jump(const FInputActionValue& Value)
 
 	// Disable jumping until we landed
 	bCanJump = false;
-
+	
+#if WITH_EDITOR
 	if (!IsValid(JumpSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Jump: JumpSound is invalid!"));
-
-		return;
 	}
+#endif
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), JumpSound, GetActorLocation());
 }
@@ -529,12 +529,12 @@ void ABallPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitive
 		return;
 	}
 	
+#if WITH_EDITOR
 	if (!CurrentHitSound.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::NotifyHit: CurrentHitSound is invalid!"));
-
-		return;
 	}
+#endif
 
 	// The hit volume depends on the velocity where the limit values are from MaxVelocityHitSound to MinVelocityHitSound
 	const double HitVolume =  GetVelocity().Length() / (MaxVelocityHitSound - MinVelocityHitSound);
@@ -753,12 +753,12 @@ void ABallPawn::ChangeForm()
 		break;
 	}
 
+#if WITH_EDITOR
 	if (!IsValid(ChangeFormSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::ChangeForm: ChangeFormSound is invalid!"));
-		
-		return;
 	}
+#endif
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ChangeFormSound, GetActorLocation());
 }
@@ -819,12 +819,12 @@ void ABallPawn::CancelCloneCreation()
 		CreateCloneAudioComponent->Stop();
 	}
 
+#if WITH_EDITOR
 	if (!IsValid(CancelSpawnCloneSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::CancelCloneCreation: CancelSpawnCloneSound is invalid!"));
-		
-		return;
 	}
+#endif
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), CancelSpawnCloneSound, GetActorLocation());
 }
@@ -902,12 +902,12 @@ void ABallPawn::SpawnCloneObject()
 		Clone->SetForm(CurrentForm);
 	}
 
+#if WITH_EDITOR
 	if (!IsValid(SpawnCloneSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SpawnCloneObject: SpawnCloneSound is invalid!"));
-		
-		return;
 	}
+#endif
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SpawnCloneSound, GetActorLocation());
 }
@@ -982,12 +982,12 @@ void ABallPawn::SetOverlappingWaterJumpZone(const bool bNewOverlappingWaterJumpZ
 
 void ABallPawn::Die()
 {
+#if WITH_EDITOR
 	if (!IsValid(DieSound))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::Die: DieSound is invalid!"));
-		
-		return;
 	}
+#endif
 	
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), DieSound, GetActorLocation());
 	

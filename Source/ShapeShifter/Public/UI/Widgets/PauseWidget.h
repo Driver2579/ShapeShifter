@@ -34,18 +34,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* ExitButton;
 	
-	// Widget that will be used as a warning for some actions
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class UWarningWidget> WarningWidgetClass;
-
-	// Level to exit
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UWorld> MainMenuLevel;
-
-	FString MessageBeforeLoad = "Load save?";
-	FString MessageBeforeRestart = "Restart level?";
-	FString MessageBeforeExit = "Exit to menu?";
-	
 private:
 	UFUNCTION()
 	void OnLoadButtonClicked();
@@ -75,6 +63,23 @@ private:
 	UFUNCTION()
 	void CloseWidget();
 
+	// Widget that will be used as a warning for some actions
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UWarningWidget> WarningWidgetClass;
+
+	// Level to exit
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> MainMenuLevel;
+	
+	UPROPERTY(EditDefaultsOnly)
+	FString MessageBeforeLoad = "Load save?";
+
+	UPROPERTY(EditDefaultsOnly)
+	FString MessageBeforeRestart = "Restart level?";
+
+	UPROPERTY(EditDefaultsOnly)
+	FString MessageBeforeExit = "Exit to menu?";
+	
 	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
 	
 	// This is needed to have control over MenuMusic from any part of this class code

@@ -43,10 +43,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UBoxComponent* DeactivateZoneComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* ActivateAudioComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* DeactivateAudioComponent;
 	
 	// Called when the game starts or when spawned

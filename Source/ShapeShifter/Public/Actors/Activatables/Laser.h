@@ -39,13 +39,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UArrowComponent* LaserDirectionComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* ActivateAudioComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* DeactivateAudioComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* AmbientAudioComponent;
 
 	/**

@@ -30,13 +30,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UAudioComponent* AmbientAudioComponent;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	USoundCue* EnterSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	USoundCue* LeaveSound;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = 0), Category = "Sounds")
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = 0), Category = "Sounds")
 	float MaxVelocitySound = 800;
 	
 	virtual void BeginPlay() override;

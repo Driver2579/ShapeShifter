@@ -6,7 +6,6 @@
 #include "Pawns/BallPawn.h"
 #include "Components/AudioComponent.h"
 
-
 AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -245,7 +244,7 @@ void AMovingPlatform::Deactivate()
 	bActive = false;
 
 	MovementTimeline.Stop();
- 
+
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 	
 	ActivateAudioComponent->Stop();

@@ -164,10 +164,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MinPitchAirSlicingSound = 0.5;
-
-	// TODO: Uncomment
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
-	//float MaxPitchAirSlicingSound = 1;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
+	float MaxPitchAirSlicingSound = 1;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0), Category = "Movement")
 	float MinVelocityAirSlicingSound = 100;

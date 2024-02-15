@@ -116,10 +116,8 @@ void ABallPawn::Tick(float DeltaSeconds)
 	const float AlphaVelocityAirSlicing = FMath::Min(HowMuchMoreThanMinAirSlicing / MaxVelocityAirSlicingSound, 1);
 	
 	// Pitch should be from MinPitchAirSlicingSound to MaxPitchAirSlicingSound at AlphaVelocityAirSlicing
-	// TODO: Replace it with:
-	// AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound, MaxPitchAirSlicingSound,
-	//		AlphaVelocityAirSlicingSound));
-	AirSlicingAudioComponent->SetPitchMultiplier(FMath::Lerp(MinPitchAirSlicingSound,1, AlphaVelocityAirSlicing));
+	AirSlicingAudioComponent->SetPitchMultiplier(
+		FMath::Lerp(MinPitchAirSlicingSound, MaxPitchAirSlicingSound, AlphaVelocityAirSlicing));
 
 	// Volume should be from 0 to 1 at AlphaVelocityAirSlicing
 	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, AlphaVelocityAirSlicing));
@@ -670,6 +668,30 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: Failed to find Mass associated with NewForm in FormMasses"));
 	}
 
+	// Set current sounds
+	if (CurrentForm == EBallPawnForm::Rubber)
+	{
+		CurrentHitSound = RubberHitSound;
+		RollingAudioComponent->SetSound(RubberRollingSound);
+	}
+	else if (CurrentForm == EBallPawnForm::Metal)
+	{
+		CurrentHitSound = MetalHitSound;
+		RollingAudioComponent->SetSound(MetalRollingSound);
+	}
+
+#if WITH_EDITOR
+	if (!CurrentHitSound.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: CurrentHitSound is invalid!"));
+	}
+
+	if (!IsValid(RollingAudioComponent->Sound))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: RollingSound is invalid!"));
+	}
+#endif
+	
 	// Find Buoyancy associated with NewForm in FormBuoyancyData
 	const FBuoyancyData* BuoyancyData = FormBuoyancyData.Find(NewForm);
 
@@ -707,29 +729,6 @@ void ABallPawn::SetForm(const EBallPawnForm NewForm)
 		UE_LOG(LogTemp, Warning,
 			TEXT("ABallPawn::SetForm: Failed to find BuoyancyData associated with NewForm in FormBuoyancyData"));
 	}
-
-	if (CurrentForm == EBallPawnForm::Rubber)
-	{
-		CurrentHitSound = RubberHitSound;
-		RollingAudioComponent->SetSound(RubberRollingSound);
-	}
-	else if (CurrentForm == EBallPawnForm::Metal)
-	{
-		CurrentHitSound = MetalHitSound;
-		RollingAudioComponent->SetSound(MetalRollingSound);
-	}
-
-#if WITH_EDITOR
-	if (!CurrentHitSound.IsValid())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: CurrentHitSound is invalid!"));
-	}
-
-	if (!IsValid(RollingAudioComponent->Sound))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ABallPawn::SetForm: RollingSound is invalid!"));
-	}
-#endif
 }
 
 void ABallPawn::ChangeForm()

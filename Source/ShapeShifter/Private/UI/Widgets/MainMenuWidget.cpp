@@ -155,6 +155,7 @@ void UMainMenuWidget::OnExitGameButtonClicked()
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::ExitGame);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UMainMenuWidget::OpenFirstLevel()
 {
 	if (!FirstLevel.IsNull())
@@ -167,6 +168,7 @@ void UMainMenuWidget::OpenFirstLevel()
 	}
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UMainMenuWidget::ExitGame()
 {
 	if (!IsValid(GetOwningPlayer()))

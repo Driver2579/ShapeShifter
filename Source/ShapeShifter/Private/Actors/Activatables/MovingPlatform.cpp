@@ -9,7 +9,7 @@
 AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	
 	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
@@ -44,6 +44,29 @@ void AMovingPlatform::BeginPlay()
 		return;
 	}
 
+	// Check elements for validity
+	for (auto& Elem : DelaysMap)
+	{
+		if (Elem.Key < 0 || Elem.Key > MoveTime)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap key %f is invalid!"), Elem.Key);
+		}
+
+		if (Elem.Value < 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap value %f is invalid!"), Elem.Key);
+		}
+	}
+	
+	FOnTimelineEvent TimelineCallback;
+	TimelineCallback.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
+
+	// Add an event to each key 
+	for (const auto& Elem : DelaysMap)
+	{
+		MovementTimeline.AddEvent(Elem.Key, TimelineCallback);
+	}
+	
 	// Duplicate curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
@@ -78,6 +101,53 @@ void AMovingPlatform::BeginPlay()
 	SetActive(bActive);
 }
 
+void AMovingPlatform::OnMovementTimelineEvent()
+{
+	bool bReversePlayback = MovementTimeline.IsReversing();
+	
+	MovementTimeline.Stop();
+
+	// Current time
+	const float Time = MovementTimeline.GetPlaybackPosition();
+
+	auto It = DelaysMap.CreateConstIterator();
+
+	// Values from the first element
+	float CurrentDelayAccuracy = FMath::Abs(Time - It.Key());
+	float CurrentDelayDuration = It.Value();
+
+	// Find the most similar to Time
+	while (++It)
+	{
+		const float NewDelayAccuracy = FMath::Abs(Time - It.Key());
+
+		// Reassign more profitable
+		if (NewDelayAccuracy < CurrentDelayAccuracy)
+		{
+			CurrentDelayAccuracy = NewDelayAccuracy;
+			CurrentDelayDuration = It.Value();
+		}
+	}
+
+	// Reassign to more similar
+	GetWorldTimerManager().SetTimer(MoveTimer, [this, bReversePlayback]
+	{
+		if (!IsActive() && bLoop)
+		{
+			return;
+		}
+		
+		if (bReversePlayback)
+		{
+			MovementTimeline.Reverse();
+		}
+		else
+		{
+			MovementTimeline.Play();
+		}
+	}, CurrentDelayDuration, false);
+}
+
 void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
@@ -88,7 +158,7 @@ void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 	// Update platform location
 	if (MovementTimeline.IsPlaying())
 	{
@@ -160,7 +230,8 @@ void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	if (MovingPlatformSaveData == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: MovingPlatformSaveData is invalid for %s"), *GetName());
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: MovingPlatformSaveData is invalid for %s"),
+			*GetName());
 
 		return;
 	}
@@ -224,28 +295,14 @@ void AMovingPlatform::Activate()
 	DeactivateAudioComponent->Stop();
 	AmbientAudioComponent->Play();
 	
-	// Start movement immediately if StartDelay is 0
-	if (StartDelay == 0)
-	{
-		MovementTimeline.Play();
-	}
-	// Start movement with delay in another case
-	else
-	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]()
-		{
-			MovementTimeline.Play();
-		}, StartDelay, false);
-	}
+	MovementTimeline.Play();
 }
 
 void AMovingPlatform::Deactivate()
 {
 	bActive = false;
 
-	MovementTimeline.Stop();
-
-	GetWorldTimerManager().ClearTimer(MoveTimer);
+	//GetWorldTimerManager().ClearTimer(MoveTimer);
 	
 	ActivateAudioComponent->Stop();
 	DeactivateAudioComponent->Play();
@@ -254,20 +311,10 @@ void AMovingPlatform::Deactivate()
 	// If the platform is not looped it should not move to the starting location
 	if (bLoop)
 	{
-		return;
+		MovementTimeline.Stop();
 	}
-
-	// Start reversing movement immediately if EndDelay is 0
-	if (EndDelay == 0)
-	{
-		MovementTimeline.Reverse();
-	}
-	// Start reversing with delay in another case
 	else
 	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]
-		{
-			MovementTimeline.Reverse();
-		}, EndDelay, false);
+		MovementTimeline.Reverse();
 	}
 }

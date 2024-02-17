@@ -3,21 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "Kismet/GameplayStatics.h"
-#include "SaveGameManager.generated.h"
+#include "SaveGameSubsystem.generated.h"
 
 class UShapeShifterSaveGame;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSaveLoadGameSignature, UShapeShifterSaveGame*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSaveLoadGameSignature, UShapeShifterSaveGame* SaveGameObject);
 
 UCLASS()
-class SHAPESHIFTER_API ASaveGameManager : public AActor
+class SHAPESHIFTER_API USaveGameSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:
-	ASaveGameManager();
+	USaveGameSubsystem();
+
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	UShapeShifterSaveGame* GetSaveGameObject() const;
 
@@ -35,25 +37,32 @@ public:
 
 	FString GetSaveGameSlotName() const;
 
+	bool IsAutoSaveAllowed() const;
+	void SetAllowAutoSave(const bool bNewAllowAutoSave);
+
+	bool WillEnableAllowAutoSaveOnOpenLevel() const;
+	void SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel);
+
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void OnGameStartOrLevelChanged();
 
 	// Celled after all Actors have begun play
 	virtual void OnWorldBeginPlay();
-
+	
 private:
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UShapeShifterSaveGame> SaveGameClass;
+	// Levels where any saving doesn't work
+	TArray<FString> LevelsToIgnoreSaving;
 
 	TWeakObjectPtr<UShapeShifterSaveGame> SaveGameObject;
 
 	/**
 	 * Create SaveGameObject if it doesn't exists.
+	 * @param bCreateOnlyIfNotExist If true than SaveGameObject will be created only if it wasn't created before.
+	 * Otherwise it will be recreated.
 	 * @return true if SaveGameObject was successfully created or it was created before.
 	 * @return false if failed to create SaveGameObject.
 	 */
-	bool CreateSaveGameObjectIfNotExists();
+	bool CreateSaveGameObject(const bool bCreateOnlyIfNotExist = true);
 
 	void LoadSaveGameObject();
 
@@ -67,11 +76,12 @@ private:
 
 	void OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex, USaveGame* SaveGameObjectPtr) const;
 
+	// Whether the game will be saved on any level open or not. If not than save will be loaded instead of saving.
+	bool bAllowAutoSave = true;
+
 	/**
-	 * Whether save/load game will work or not. You should deactivate it if you don't need saves to work on this level.
-	 * This will also deactivate auto saves and any other functionality of this class except GetSaveGameSlotName
-	 * function.
+	 * If true than bAllowAutoSave will be set to true on any level open. Use it if you need to disable bAllowAutoSave
+	 * for 1 level loading only.
 	 */
-	UPROPERTY(EditDefaultsOnly)
-	bool bActive = true;
+	bool bEnableAllowAutoSaveOnOpenLevel = false;
 };

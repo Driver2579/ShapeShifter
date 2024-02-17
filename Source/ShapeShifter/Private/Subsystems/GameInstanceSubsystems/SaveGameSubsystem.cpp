@@ -1,57 +1,53 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/SaveGameManager.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 
 #include "GameInstances/ShapeShifterGameInstance.h"
 #include "Interfaces/Savable.h"
-#include "Kismet/GameplayStatics.h"
 #include "Objects/ShapeShifterSaveGame.h"
 
-ASaveGameManager::ASaveGameManager()
+USaveGameSubsystem::USaveGameSubsystem()
 {
-	SaveGameClass = UShapeShifterSaveGame::StaticClass();
+	LevelsToIgnoreSaving.Add(TEXT("L_MainMenu"));
 }
 
-void ASaveGameManager::BeginPlay()
+void USaveGameSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	Super::BeginPlay();
+	Super::Initialize(Collection);
 
-	// Initial SaveGameObject initializing
-	CreateSaveGameObjectIfNotExists();
+	// Get GameInstance and subscribe to the OnGameStartOrLevelChanged
+	UShapeShifterGameInstance* GameInstance = CastChecked<UShapeShifterGameInstance>(GetGameInstance());
+	GameInstance->OnGameStartOrLevelChanged.AddUObject(this, &USaveGameSubsystem::OnGameStartOrLevelChanged);
+}
 
-	// We don't need to bind any functionality of this class if it's not active
-	if (!bActive)
+void USaveGameSubsystem::OnGameStartOrLevelChanged()
+{
+	/**
+	 * Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all Actors called their
+	 * BeginPlay
+	 */
+	GetWorld()->OnWorldBeginPlay.AddUObject(this, &USaveGameSubsystem::OnWorldBeginPlay);
+}
+
+void USaveGameSubsystem::OnWorldBeginPlay()
+{
+	// Initial SaveGameObject initialization. Recreate on world change.
+	CreateSaveGameObject(false);
+
+	if (LevelsToIgnoreSaving.Contains(UGameplayStatics::GetCurrentLevelName(this)))
 	{
 		return;
 	}
 
 	BindAllSavables();
 
-	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &ASaveGameManager::OnAsyncLoadGameFinished);
-
-	/**
-	 * Bind OnWorldBeginPlay function to OnWorldBeginPlay delegate which will be broadcast after all Actors called their
-	 * BeginPlay
-	 */
-	GetWorld()->OnWorldBeginPlay.AddUObject(this, &ASaveGameManager::OnWorldBeginPlay);
-}
-
-void ASaveGameManager::OnWorldBeginPlay()
-{
-	UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<UShapeShifterGameInstance>();
-
-	if (!IsValid(ShapeShifterGameInstance))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ASaveGameManager::OnWorldBeginPlay: Failed to get ShapeShifterGameInstance!"));
-
-		return;
-	}
+	OnAsyncLoadGameFinishedDelegate.BindUObject(this, &USaveGameSubsystem::OnAsyncLoadGameFinished);
 
 	/**
 	 * We always save the game on level load if auto save is allowed. We call it after BeginPlay to be able to load the
 	 * game on BeginPlay if needed.
 	 */
-	if (ShapeShifterGameInstance->IsAutoSaveAllowed())
+	if (bAllowAutoSave)
 	{
 		SaveGame();
 
@@ -61,41 +57,32 @@ void ASaveGameManager::OnWorldBeginPlay()
 	// Load the game in another case as bAllowAutoSave documentation in the ShapeShifterGameInstance says
 	LoadGame();
 
-	// Enable AllowAutoSave if ShapeShifterGameInstance says so
-	if (ShapeShifterGameInstance->WillEnableAllowAutoSaveOnOpenLevel())
+	// Enable AllowAutoSave if we need to
+	if (bEnableAllowAutoSaveOnOpenLevel)
 	{
-		ShapeShifterGameInstance->SetAllowAutoSave(true);
+		bAllowAutoSave = true;
 	}
 }
 
-UShapeShifterSaveGame* ASaveGameManager::GetSaveGameObject() const
+UShapeShifterSaveGame* USaveGameSubsystem::GetSaveGameObject() const
 {
 	return SaveGameObject.Get();
 }
 
-bool ASaveGameManager::CreateSaveGameObjectIfNotExists()
+bool USaveGameSubsystem::CreateSaveGameObject(const bool bCreateOnlyIfNotExist)
 {
-	// Don't create SaveGameObject if it's already exists
-	if (SaveGameObject.IsValid())
+	// Don't create if bCreateOnlyIfNotExist and SaveGameObject already exist
+	if (bCreateOnlyIfNotExist && SaveGameObject.IsValid())
 	{
 		return true;
 	}
 
-	if (!SaveGameClass)
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("ASaveGameManager::CreateSaveGameObjectIfNotExists: Failed to create SaveGameObject. SaveGameClass is "
-				"invalid!"));
-
-		return false;
-	}
-	
-	SaveGameObject = CastChecked<UShapeShifterSaveGame>(UGameplayStatics::CreateSaveGameObject(SaveGameClass));
+	SaveGameObject = CastChecked<UShapeShifterSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UShapeShifterSaveGame::StaticClass()));
 
 	if (!SaveGameObject.IsValid())
 	{
-		UE_LOG(LogTemp, Error,
-			TEXT("ASaveGameManager::CreateSaveGameObjectIfNotExists: Failed to create SaveGameObject!"));
+		UE_LOG(LogTemp, Error, TEXT("USaveGameSubsystem::CreateSaveGameObject: Failed to create SaveGameObject!"));
 			
 		return false;
 	}
@@ -105,7 +92,7 @@ bool ASaveGameManager::CreateSaveGameObjectIfNotExists()
 	return true;
 }
 
-void ASaveGameManager::LoadSaveGameObject()
+void USaveGameSubsystem::LoadSaveGameObject()
 {
 	FAsyncLoadGameFromSlotDelegate OnLoadFinished;
 
@@ -123,7 +110,7 @@ void ASaveGameManager::LoadSaveGameObject()
 	}
 }
 
-void ASaveGameManager::BindAllSavables()
+void USaveGameSubsystem::BindAllSavables()
 {
 	// Get all Actors with Savable interface
 	TArray<AActor*> SavableActors;
@@ -138,16 +125,13 @@ void ASaveGameManager::BindAllSavables()
 		// Bind SavableActor to delegates
 		OnSaveGame.AddRaw(SavableActor, &ISavable::OnSaveGame);
 		OnLoadGame.AddRaw(SavableActor, &ISavable::OnLoadGame);
-
-		// Call OnSavableSetup for SavableActor once we set it up
-		SavableActor->OnSavableSetup(this);
 	}
 }
 
-void ASaveGameManager::SaveGame()
+void USaveGameSubsystem::SaveGame()
 {
 	// Create SaveGameObject just in case and return if it's not valid 
-	if (!CreateSaveGameObjectIfNotExists())
+	if (!CreateSaveGameObject())
 	{
 		return;
 	}
@@ -162,7 +146,7 @@ void ASaveGameManager::SaveGame()
 	UGameplayStatics::AsyncSaveGameToSlot(SaveGameObject.Get(), SaveGameSlotName, 0);
 }
 
-void ASaveGameManager::LoadGame() const
+void USaveGameSubsystem::LoadGame() const
 {
 	// Load the game if save game slot exists
 	if (UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
@@ -171,7 +155,7 @@ void ASaveGameManager::LoadGame() const
 	}
 }
 
-void ASaveGameManager::OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex,
+void USaveGameSubsystem::OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex,
 	USaveGame* SaveGameObjectPtr) const
 {
 	const FString& CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
@@ -188,12 +172,32 @@ void ASaveGameManager::OnAsyncLoadGameFinished(const FString& SlotName, const in
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ASaveGameManager::LoadGame: Unable to load the save from another level! "
+		UE_LOG(LogTemp, Warning, TEXT("USaveGameSubsystem::LoadGame: Unable to load the save from another level! "
 			"Current level: %s Saved level: %s"), *CurrentLevelName, *ShapeShifterSaveGameObject->LevelName);
 	}
 }
 
-FString ASaveGameManager::GetSaveGameSlotName() const
+FString USaveGameSubsystem::GetSaveGameSlotName() const
 {
 	return SaveGameSlotName;
+}
+
+bool USaveGameSubsystem::IsAutoSaveAllowed() const
+{
+	return bAllowAutoSave;
+}
+
+void USaveGameSubsystem::SetAllowAutoSave(const bool bNewAllowAutoSave)
+{
+	bAllowAutoSave = bNewAllowAutoSave;
+}
+
+bool USaveGameSubsystem::WillEnableAllowAutoSaveOnOpenLevel() const
+{
+	return bEnableAllowAutoSaveOnOpenLevel;
+}
+
+void USaveGameSubsystem::SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel)
+{
+	bEnableAllowAutoSaveOnOpenLevel = bNewEnableAllowAutoSaveOnOpenLevel;
 }

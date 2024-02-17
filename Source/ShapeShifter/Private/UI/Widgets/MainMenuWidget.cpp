@@ -2,19 +2,16 @@
 
 #include "UI/Widgets/MainMenuWidget.h"
 
-#include "Actors/SaveGameManager.h"
 #include "Components/Button.h"
-#include "GameInstances/ShapeShifterGameInstance.h"
-#include "GameModes/ShapeShifterGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Objects/ShapeShifterSaveGame.h"
-#include "Sound/SoundCue.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 #include "UI/Widgets/WarningWidget.h"
 
 void UMainMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+
 	if (IsValid(NewGameButton))
 	{
 		NewGameButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnNewGameButtonClicked);
@@ -73,53 +70,27 @@ void UMainMenuWidget::OnNewGameButtonClicked()
 	WarningWidget->GetOkButton()->OnClicked.AddDynamic(this, &UMainMenuWidget::OpenFirstLevel);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UMainMenuWidget::OnContinueGameButtonClicked()
 {
-	UShapeShifterGameInstance* ShapeShifterGameInstance = GetWorld()->GetGameInstance<UShapeShifterGameInstance>();
+	USaveGameSubsystem* SaveGameSubsystem = GetGameInstance()->GetSubsystem<USaveGameSubsystem>();
 
-	if (!IsValid(ShapeShifterGameInstance))
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("UMainMenuWidget::OnContinueGameButtonClicked: ShapeShifterGameInstance is invalid!"));
-
-		return;
-	}
-
-	const AShapeShifterGameMode* ShapeShifterGameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(ShapeShifterGameMode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnContinueGameButtonClicked: ShapeShifterGameMode is invalid!"));
-
-		return;
-	}
-
-	const ASaveGameManager* SaveGameManager = ShapeShifterGameMode->GetSaveGameManager();
-
-	if (!IsValid(SaveGameManager))
-	{
-		UE_LOG(LogTemp, Error, TEXT("UMainMenuWidget::OnContinueGameButtonClicked: Failed to get SaveGameManager from "
-			"the ShapeShifterGameMode!"));
-
-		return;
-	}
-
-	const UShapeShifterSaveGame* SaveGameObject = SaveGameManager->GetSaveGameObject();
+	const UShapeShifterSaveGame* SaveGameObject = SaveGameSubsystem->GetSaveGameObject();
 
 	if (!IsValid(SaveGameObject))
 	{
 		UE_LOG(LogTemp, Error,
 			TEXT("UMainMenuWidget::OnContinueGameButtonClicked: Failed to get SaveGameObject from the "
-				"SaveGameManager!"));
+				"SaveGameSubsystem!"));
 
 		return;
 	}
 
 	// Disable auto save to load a saved game on level load instead of saving it
-	ShapeShifterGameInstance->SetAllowAutoSave(false);
+	SaveGameSubsystem->SetAllowAutoSave(false);
 
 	// Enable auto save back after loading the level and saved game
-	ShapeShifterGameInstance->SetDisableAllowAutoSaveOnOpenLevel(true);
+	SaveGameSubsystem->SetDisableAllowAutoSaveOnOpenLevel(true);
 
 	// Open saved level
 	UGameplayStatics::OpenLevel(this, *SaveGameObject->LevelName);

@@ -185,8 +185,6 @@ protected:
 	// Remove old Clone and spawn the new one if it won't collide anything
 	void SpawnClone();
 
-	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
-
 	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
 	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
@@ -312,8 +310,6 @@ private:
 	// Niagara VFX which will be spawned on Clone creation end
 	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	UNiagaraSystem* SpawnCloneNiagaraSystemTemplate;
-
-	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")

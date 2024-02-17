@@ -12,10 +12,10 @@
 #include "BuoyancyComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 
 ABallPawn::ABallPawn()
 {
@@ -145,11 +145,6 @@ void ABallPawn::Tick(float DeltaSeconds)
 	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
 	RollingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound, AlphaRolling));
-}
-
-void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
-{
-	SaveGameManagerPtr = SaveGameManager;
 }
 
 void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
@@ -916,27 +911,13 @@ void ABallPawn::SpawnCloneObject()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::SaveGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->SaveGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->SaveGame();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::LoadGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->LoadGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->LoadGame();
 }
 
 void ABallPawn::InitWaterFluidSimulation()

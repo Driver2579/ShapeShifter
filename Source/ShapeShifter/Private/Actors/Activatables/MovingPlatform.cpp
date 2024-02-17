@@ -44,7 +44,8 @@ void AMovingPlatform::BeginPlay()
 		return;
 	}
 
-	// Check elements for validity
+#if WITH_EDITOR
+	// Check elements for validation
 	for (auto& Elem : DelaysMap)
 	{
 		if (Elem.Key < 0 || Elem.Key > MoveTime)
@@ -57,14 +58,15 @@ void AMovingPlatform::BeginPlay()
 			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap value %f is invalid!"), Elem.Key);
 		}
 	}
+#endif
 	
-	FOnTimelineEvent TimelineCallback;
-	TimelineCallback.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
+	FOnTimelineEvent MovementTimelineEvent;
+	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
 
 	// Add an event to each key 
 	for (const auto& Elem : DelaysMap)
 	{
-		MovementTimeline.AddEvent(Elem.Key, TimelineCallback);
+		MovementTimeline.AddEvent(Elem.Key, MovementTimelineEvent);
 	}
 	
 	// Duplicate curve for editing and using
@@ -101,6 +103,24 @@ void AMovingPlatform::BeginPlay()
 	SetActive(bActive);
 }
 
+void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(MoveTimer);
+}
+
+void AMovingPlatform::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Update platform location
+	if (MovementTimeline.IsPlaying())
+	{
+		MovementTimeline.TickTimeline(DeltaTime);	
+	}
+}
+
 void AMovingPlatform::OnMovementTimelineEvent()
 {
 	bool bReversePlayback = MovementTimeline.IsReversing();
@@ -110,7 +130,7 @@ void AMovingPlatform::OnMovementTimelineEvent()
 	// Current time
 	const float Time = MovementTimeline.GetPlaybackPosition();
 
-	auto It = DelaysMap.CreateConstIterator();
+	TMap<float, float>::TConstIterator It = DelaysMap.CreateConstIterator();
 
 	// Values from the first element
 	float CurrentDelayAccuracy = FMath::Abs(Time - It.Key());
@@ -129,7 +149,7 @@ void AMovingPlatform::OnMovementTimelineEvent()
 		}
 	}
 
-	// Reassign to more similar
+	// Return the platform to motion after a while
 	GetWorldTimerManager().SetTimer(MoveTimer, [this, bReversePlayback]
 	{
 		if (!IsActive() && bLoop)
@@ -146,24 +166,6 @@ void AMovingPlatform::OnMovementTimelineEvent()
 			MovementTimeline.Play();
 		}
 	}, CurrentDelayDuration, false);
-}
-
-void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	GetWorldTimerManager().ClearTimer(MoveTimer);
-}
-
-void AMovingPlatform::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	// Update platform location
-	if (MovementTimeline.IsPlaying())
-	{
-		MovementTimeline.TickTimeline(DeltaTime);	
-	}
 }
 
 void AMovingPlatform::SetupCollisionComponents() const

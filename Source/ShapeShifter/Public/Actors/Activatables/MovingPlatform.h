@@ -82,11 +82,11 @@ private:
 	// Time it takes the platform to complete the route
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))
 	float MoveTime = 1;
-	
+
 	/**
 	 * Map where:
-	 *	The key is the time when the delay starts.
-	 *	The value is how long the delay lasts.
+	 *	The key is the time when the delay starts;
+	 *	The value is how long the delay lasts;
 	 */
 	UPROPERTY(EditAnywhere)
 	TMap<float, float> DelaysMap;
@@ -104,6 +104,6 @@ private:
 	UCurveFloat* MovementCurve;
 
 	FTimeline MovementTimeline;
-	
+
 	FTimerHandle MoveTimer;
 };

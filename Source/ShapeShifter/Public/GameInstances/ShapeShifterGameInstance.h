@@ -6,7 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "ShapeShifterGameInstance.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnWorldInitializedOrChangedDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnGameStartOrLevelChangedDelegate);
 
 UCLASS()
 class SHAPESHIFTER_API UShapeShifterGameInstance : public UGameInstance
@@ -14,7 +14,7 @@ class SHAPESHIFTER_API UShapeShifterGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
-	FOnWorldInitializedOrChangedDelegate OnGameStartOrLevelChanged;
+	FOnGameStartOrLevelChangedDelegate OnGameStartOrLevelChanged;
 
 protected:
 	virtual void OnStart() override;

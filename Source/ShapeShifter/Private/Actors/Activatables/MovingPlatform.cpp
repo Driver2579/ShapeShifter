@@ -9,7 +9,7 @@
 AMovingPlatform::AMovingPlatform()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	
 	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
@@ -158,7 +158,7 @@ void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	// Update platform location
 	if (MovementTimeline.IsPlaying())
 	{
@@ -301,12 +301,12 @@ void AMovingPlatform::Activate()
 void AMovingPlatform::Deactivate()
 {
 	bActive = false;
-
-	//GetWorldTimerManager().ClearTimer(MoveTimer);
 	
 	ActivateAudioComponent->Stop();
 	DeactivateAudioComponent->Play();
 	AmbientAudioComponent->Stop();
+
+	GetWorldTimerManager().ClearTimer(MoveTimer);
 
 	// If the platform is not looped it should not move to the starting location
 	if (bLoop)

@@ -31,9 +31,6 @@ void USaveGameSubsystem::OnGameStartOrLevelChanged()
 
 void USaveGameSubsystem::OnWorldBeginPlay()
 {
-	// Initial SaveGameObject initialization. Recreate on world change.
-	CreateSaveGameObject(false);
-
 	if (LevelsToIgnoreSaving.Contains(UGameplayStatics::GetCurrentLevelName(this)))
 	{
 		return;
@@ -64,40 +61,29 @@ void USaveGameSubsystem::OnWorldBeginPlay()
 	}
 }
 
-UShapeShifterSaveGame* USaveGameSubsystem::GetSaveGameObject() const
+UShapeShifterSaveGame* USaveGameSubsystem::CreateSaveGameObject()
 {
-	return SaveGameObject.Get();
-}
-
-bool USaveGameSubsystem::CreateSaveGameObject(const bool bCreateOnlyIfNotExist)
-{
-	// Don't create if bCreateOnlyIfNotExist and SaveGameObject already exist
-	if (bCreateOnlyIfNotExist && SaveGameObject.IsValid())
-	{
-		return true;
-	}
-
-	SaveGameObject = CastChecked<UShapeShifterSaveGame>(
+	UShapeShifterSaveGame* SaveGameObject = CastChecked<UShapeShifterSaveGame>(
 		UGameplayStatics::CreateSaveGameObject(UShapeShifterSaveGame::StaticClass()));
 
-	if (!SaveGameObject.IsValid())
+	if (!IsValid(SaveGameObject))
 	{
 		UE_LOG(LogTemp, Error, TEXT("USaveGameSubsystem::CreateSaveGameObject: Failed to create SaveGameObject!"));
 			
-		return false;
+		return nullptr;
 	}
 
-	LoadSaveGameObject();
-
-	return true;
+	return SaveGameObject;
 }
 
-void USaveGameSubsystem::LoadSaveGameObject()
+UShapeShifterSaveGame* USaveGameSubsystem::CreateAndLoadSaveGameObject() const
 {
+	UShapeShifterSaveGame* SaveGameObject = CreateSaveGameObject();
+
 	FAsyncLoadGameFromSlotDelegate OnLoadFinished;
 
 	// Load SaveGameObject on OnLoadFinished
-	OnLoadFinished.BindLambda([this](const FString& SlotName, const int32 UserIndex,
+	OnLoadFinished.BindLambda([&SaveGameObject](const FString& SlotName, const int32 UserIndex,
 		USaveGame* SaveGameObjectPtr)
 	{
 		SaveGameObject = CastChecked<UShapeShifterSaveGame>(SaveGameObjectPtr);
@@ -106,8 +92,11 @@ void USaveGameSubsystem::LoadSaveGameObject()
 	// Load SaveGameObject values if save game slot exists
 	if (UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
 	{
-		UGameplayStatics::AsyncLoadGameFromSlot(SaveGameSlotName, 0, OnLoadFinished);
+		SaveGameObject = CastChecked<UShapeShifterSaveGame>(
+			UGameplayStatics::LoadGameFromSlot(SaveGameSlotName, 0));
 	}
+
+	return SaveGameObject;
 }
 
 void USaveGameSubsystem::BindAllSavables()
@@ -128,22 +117,18 @@ void USaveGameSubsystem::BindAllSavables()
 	}
 }
 
-void USaveGameSubsystem::SaveGame()
+void USaveGameSubsystem::SaveGame() const
 {
-	// Create SaveGameObject just in case and return if it's not valid 
-	if (!CreateSaveGameObject())
-	{
-		return;
-	}
+	UShapeShifterSaveGame* SaveGameObject = CreateSaveGameObject();
 
 	// Save current level name
 	SaveGameObject->LevelName = UGameplayStatics::GetCurrentLevelName(this);
 
 	// Broadcast OnSaveGame to all subscribed Actors to save their variables
-	OnSaveGame.Broadcast(SaveGameObject.Get());
+	OnSaveGame.Broadcast(SaveGameObject);
 
 	// Save the game
-	UGameplayStatics::AsyncSaveGameToSlot(SaveGameObject.Get(), SaveGameSlotName, 0);
+	UGameplayStatics::AsyncSaveGameToSlot(SaveGameObject, SaveGameSlotName, 0);
 }
 
 void USaveGameSubsystem::LoadGame() const

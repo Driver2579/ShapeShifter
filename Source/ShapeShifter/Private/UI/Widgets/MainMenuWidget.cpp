@@ -75,7 +75,7 @@ void UMainMenuWidget::OnContinueGameButtonClicked()
 {
 	USaveGameSubsystem* SaveGameSubsystem = GetGameInstance()->GetSubsystem<USaveGameSubsystem>();
 
-	const UShapeShifterSaveGame* SaveGameObject = SaveGameSubsystem->GetSaveGameObject();
+	const UShapeShifterSaveGame* SaveGameObject = SaveGameSubsystem->CreateAndLoadSaveGameObject();
 
 	if (!IsValid(SaveGameObject))
 	{

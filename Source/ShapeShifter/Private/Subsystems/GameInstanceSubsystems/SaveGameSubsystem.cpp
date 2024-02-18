@@ -90,6 +90,10 @@ UShapeShifterSaveGame* USaveGameSubsystem::GetOrCreateSaveGameObject(const bool 
 
 void USaveGameSubsystem::BindAllSavables()
 {
+	// Clear all subscriptions from the previous level
+	OnSaveGame.Clear();
+	OnLoadGame.Clear();
+
 	// Get all Actors with Savable interface
 	TArray<AActor*> SavableActors;
 	UGameplayStatics::GetAllActorsWithInterface(this, USavable::StaticClass(),

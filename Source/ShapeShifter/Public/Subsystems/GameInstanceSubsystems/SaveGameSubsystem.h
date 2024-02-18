@@ -21,11 +21,11 @@ public:
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-	// Create SaveGameObject and load its data from the save file
-	UShapeShifterSaveGame* CreateAndLoadSaveGameObject() const;
+	// Get SaveGameObject with last save data inside or create and load it if it's not valid
+	UShapeShifterSaveGame* GetOrCreateSaveGameObject(const bool bLoadSaveGameObject = true);
 
 	// Call this after BeginPlay to save all variables of subscribed Actors to OnSaveGame delegate to save file
-	void SaveGame() const;
+	void SaveGame();
 
 	// Call this after BeginPlay to load all variables to subscribed Actors to OnLoadGame delegate from save file
 	void LoadGame() const;
@@ -54,7 +54,7 @@ private:
 	// Levels where any saving doesn't work
 	TArray<FString> LevelsToIgnoreSaving;
 
-	static UShapeShifterSaveGame* CreateSaveGameObject();
+	TWeakObjectPtr<UShapeShifterSaveGame> SaveGameObject;
 
 	UPROPERTY(EditDefaultsOnly)
 	FString SaveGameSlotName = TEXT("SaveGame");
@@ -64,7 +64,7 @@ private:
 
 	FAsyncLoadGameFromSlotDelegate OnAsyncLoadGameFinishedDelegate;
 
-	void OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex, USaveGame* SaveGameObjectPtr) const;
+	void OnAsyncLoadGameFinished(const FString& SlotName, const int32 UserIndex, USaveGame* SaveGameObjectPtr);
 
 	// Whether the game will be saved on any level open or not. If not than save will be loaded instead of saving.
 	bool bAllowAutoSave = true;

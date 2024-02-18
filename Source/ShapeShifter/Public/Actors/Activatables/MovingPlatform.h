@@ -86,7 +86,7 @@ private:
 	/**
 	 * Map where:
 	 *	The key is the time when the delay starts;
-	 *	The value is how long the delay lasts;
+	 *	The value is how long the delay lasts.
 	 */
 	UPROPERTY(EditAnywhere)
 	TMap<float, float> DelaysMap;

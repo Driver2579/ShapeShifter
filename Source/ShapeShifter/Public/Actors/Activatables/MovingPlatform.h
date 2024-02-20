@@ -71,6 +71,9 @@ private:
 	// Add OnComponentBeginOverlap delegate subscription to all attached components of CollisionAttachPointComponent
 	void SetupCollisionComponents() const;
 
+	UFUNCTION()
+	void OnMovementTimelineEvent();
+	
 	UPROPERTY(EditAnywhere, Category = "Activation")
 	bool bActive = false;
 
@@ -80,13 +83,13 @@ private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))
 	float MoveTime = 1;
 
-	// Delay before starting to move
-	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
-	float StartDelay = 0;
-
-	// Delay before starting to move backwards
-	UPROPERTY(EditAnywhere, meta = (ClampMin = 0))
-	float EndDelay = 0;
+	/**
+	 * Map where:
+	 *	The key is the time when the delay starts;
+	 *	The value is how long the delay lasts.
+	 */
+	UPROPERTY(EditAnywhere)
+	TMap<float, float> DelaysMap;
 
 	// Whether the platform will turn towards the route or not
 	UPROPERTY(EditAnywhere)

@@ -44,6 +44,31 @@ void AMovingPlatform::BeginPlay()
 		return;
 	}
 
+#if WITH_EDITOR
+	// Check elements for validation
+	for (auto& Elem : DelaysMap)
+	{
+		if (Elem.Key < 0 || Elem.Key > MoveTime)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap key %f is invalid!"), Elem.Key);
+		}
+
+		if (Elem.Value < 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap value %f is invalid!"), Elem.Key);
+		}
+	}
+#endif
+	
+	FOnTimelineEvent MovementTimelineEvent;
+	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
+
+	// Add an event to each key 
+	for (const auto& Elem : DelaysMap)
+	{
+		MovementTimeline.AddEvent(Elem.Key, MovementTimelineEvent);
+	}
+	
 	// Duplicate curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
@@ -94,6 +119,53 @@ void AMovingPlatform::Tick(float DeltaTime)
 	{
 		MovementTimeline.TickTimeline(DeltaTime);	
 	}
+}
+
+void AMovingPlatform::OnMovementTimelineEvent()
+{
+	bool bReversePlayback = MovementTimeline.IsReversing();
+	
+	MovementTimeline.Stop();
+
+	// Current time
+	const float Time = MovementTimeline.GetPlaybackPosition();
+
+	TMap<float, float>::TConstIterator It = DelaysMap.CreateConstIterator();
+
+	// Values from the first element
+	float CurrentDelayAccuracy = FMath::Abs(Time - It.Key());
+	float CurrentDelayDuration = It.Value();
+
+	// Find the most similar to Time
+	while (++It)
+	{
+		const float NewDelayAccuracy = FMath::Abs(Time - It.Key());
+
+		// Reassign more profitable
+		if (NewDelayAccuracy < CurrentDelayAccuracy)
+		{
+			CurrentDelayAccuracy = NewDelayAccuracy;
+			CurrentDelayDuration = It.Value();
+		}
+	}
+
+	// Return the platform to motion after a while
+	GetWorldTimerManager().SetTimer(MoveTimer, [this, bReversePlayback]
+	{
+		if (!IsActive() && bLoop)
+		{
+			return;
+		}
+		
+		if (bReversePlayback)
+		{
+			MovementTimeline.Reverse();
+		}
+		else
+		{
+			MovementTimeline.Play();
+		}
+	}, CurrentDelayDuration, false);
 }
 
 void AMovingPlatform::SetupCollisionComponents() const
@@ -160,7 +232,8 @@ void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 
 	if (MovingPlatformSaveData == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: MovingPlatformSaveData is invalid for %s"), *GetName());
+		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::OnLoadGame: MovingPlatformSaveData is invalid for %s"),
+			*GetName());
 
 		return;
 	}
@@ -224,50 +297,26 @@ void AMovingPlatform::Activate()
 	DeactivateAudioComponent->Stop();
 	AmbientAudioComponent->Play();
 	
-	// Start movement immediately if StartDelay is 0
-	if (StartDelay == 0)
-	{
-		MovementTimeline.Play();
-	}
-	// Start movement with delay in another case
-	else
-	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]()
-		{
-			MovementTimeline.Play();
-		}, StartDelay, false);
-	}
+	MovementTimeline.Play();
 }
 
 void AMovingPlatform::Deactivate()
 {
 	bActive = false;
-
-	MovementTimeline.Stop();
-
-	GetWorldTimerManager().ClearTimer(MoveTimer);
 	
 	ActivateAudioComponent->Stop();
 	DeactivateAudioComponent->Play();
 	AmbientAudioComponent->Stop();
 
+	GetWorldTimerManager().ClearTimer(MoveTimer);
+
 	// If the platform is not looped it should not move to the starting location
 	if (bLoop)
 	{
-		return;
+		MovementTimeline.Stop();
 	}
-
-	// Start reversing movement immediately if EndDelay is 0
-	if (EndDelay == 0)
-	{
-		MovementTimeline.Reverse();
-	}
-	// Start reversing with delay in another case
 	else
 	{
-		GetWorldTimerManager().SetTimer(MoveTimer, [this]
-		{
-			MovementTimeline.Reverse();
-		}, EndDelay, false);
+		MovementTimeline.Reverse();
 	}
 }

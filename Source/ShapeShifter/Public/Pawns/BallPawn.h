@@ -164,10 +164,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MinPitchAirSlicingSound = 0.5;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MaxPitchAirSlicingSound = 1;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0), Category = "Movement")
 	float MinVelocityAirSlicingSound = 100;
 
@@ -209,6 +209,14 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float MovementSpeed = 150;
+
+	/**
+	 * How fast player can turn the other direction.
+	 * 0 - no effect;
+	 * 1 - immediately.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, ClampMax = 1))
+	float MovementAmortizationFactor = 0.75;
 
 	// Whether player can jump or not
 	UPROPERTY(EditAnywhere, Category = "Movement")

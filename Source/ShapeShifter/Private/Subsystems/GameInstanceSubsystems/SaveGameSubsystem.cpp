@@ -68,21 +68,23 @@ UShapeShifterSaveGame* USaveGameSubsystem::GetOrCreateSaveGameObject(const bool 
 		return SaveGameObject.Get();
 	}
 
-	SaveGameObject = CastChecked<UShapeShifterSaveGame>(
-		UGameplayStatics::CreateSaveGameObject(UShapeShifterSaveGame::StaticClass()));
+	// Load SaveGameObject values if we have to and save game slot exists
+	if (bLoadSaveGameObject && UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
+	{
+		SaveGameObject = CastChecked<UShapeShifterSaveGame>(
+			UGameplayStatics::LoadGameFromSlot(SaveGameSlotName, 0));
+	}
+	else
+	{
+		SaveGameObject = CastChecked<UShapeShifterSaveGame>(
+			UGameplayStatics::CreateSaveGameObject(UShapeShifterSaveGame::StaticClass()));
+	}
 
 	if (!SaveGameObject.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("USaveGameSubsystem::GetOrCreateSaveGameObject: Failed to create SaveGameObject!"));
 			
 		return nullptr;
-	}
-
-	// Load SaveGameObject values if we have to and save game slot exists
-	if (bLoadSaveGameObject && UGameplayStatics::DoesSaveGameExist(SaveGameSlotName, 0))
-	{
-		SaveGameObject = CastChecked<UShapeShifterSaveGame>(
-			UGameplayStatics::LoadGameFromSlot(SaveGameSlotName, 0));
 	}
 
 	return SaveGameObject.Get();
@@ -155,8 +157,9 @@ void USaveGameSubsystem::OnAsyncLoadGameFinished(const FString& SlotName, const 
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USaveGameSubsystem::LoadGame: Unable to load the save from another level! "
-			"Current level: %s Saved level: %s"), *CurrentLevelName, *SaveGameObject->LevelName);
+		UE_LOG(LogTemp, Warning,
+			TEXT("USaveGameSubsystem::OnAsyncLoadGameFinished: Unable to load the save from another level! Current "
+				"level: %s Saved level: %s"), *CurrentLevelName, *SaveGameObject->LevelName);
 	}
 }
 

@@ -49,7 +49,7 @@ protected:
 
 	// Celled after all Actors have begun play
 	virtual void OnWorldBeginPlay();
-	
+
 private:
 	// Levels where any saving doesn't work
 	TArray<FString> LevelsToIgnoreSaving;

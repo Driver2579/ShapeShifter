@@ -199,9 +199,7 @@ protected:
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
 
-	/**
-	 * Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
-	 */
+	// Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
 	void Revive();
 
 private:

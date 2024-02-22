@@ -12,10 +12,10 @@
 #include "BuoyancyComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 
 ABallPawn::ABallPawn()
 {
@@ -83,6 +83,9 @@ void ABallPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// MovementAmortizationFactor will also slow down the usual MovementSpeed so we need to compensate it
+	MovementSpeed += MovementSpeed * MovementAmortizationFactor;
+
 	InitDefaultMappingContext();
 	InitWaterFluidSimulation();
 
@@ -145,11 +148,6 @@ void ABallPawn::Tick(float DeltaSeconds)
 	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
 	RollingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound, AlphaRolling));
-}
-
-void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
-{
-	SaveGameManagerPtr = SaveGameManager;
 }
 
 void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
@@ -398,7 +396,7 @@ void ABallPawn::Move(const FInputActionValue& Value)
 		// Get ForwardControlDirection (Y FRotator axis). X - FVector axis
 		const FVector ForwardControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::X);
 
-		// Add force to MeshComponent with MoveAxisVale.Y multiplied with MovementSpeed and direction to move
+		// Add force to MeshComponent with MoveAxisValue.Y multiplied with MovementSpeed and direction to move
 		MeshComponent->AddForce(MoveAxisValue.Y * MovementSpeed * ForwardControlDirection);
 	}
 
@@ -408,9 +406,23 @@ void ABallPawn::Move(const FInputActionValue& Value)
 		// Get RightControlDirection (X FRotator axis). Y - FVector axis
 		const FVector RightControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::Y);
 
-		// Add force to MeshComponent with MoveAxisVale.X multiplied with MovementSpeed and direction to move
+		// Add force to MeshComponent with MoveAxisValue.X multiplied with MovementSpeed and direction to move
 		MeshComponent->AddForce(MoveAxisValue.X * MovementSpeed * RightControlDirection);
 	}
+
+	const FVector CurrentVelocity = MeshComponent->GetComponentVelocity();
+
+	// Calculate MovementAmortizationForce without Z axis to not affect jumping function while this function is working
+	FVector MovementAmortizationForce;
+	MovementAmortizationForce.X = -CurrentVelocity.X * MovementAmortizationFactor;
+	MovementAmortizationForce.Y = -CurrentVelocity.Y * MovementAmortizationFactor;
+	MovementAmortizationForce.Z = 0;
+
+	/**
+	 * Add MovementAmortizationForce to slow down the ball in any direction which will help to stop the ball if it moves
+	 * in opposite direction of CurrentVelocity
+	 */
+	MeshComponent->AddForce(MovementAmortizationForce);
 }
 
 void ABallPawn::Look(const FInputActionValue& Value)
@@ -916,27 +928,13 @@ void ABallPawn::SpawnCloneObject()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::SaveGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->SaveGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->SaveGame();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::LoadGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->LoadGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->LoadGame();
 }
 
 void ABallPawn::InitWaterFluidSimulation()

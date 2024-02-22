@@ -164,10 +164,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MinPitchAirSlicingSound = 0.5;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1), Category = "Movement")
 	float MaxPitchAirSlicingSound = 1;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0), Category = "Movement")
 	float MinVelocityAirSlicingSound = 100;
 
@@ -185,8 +185,6 @@ protected:
 	// Remove old Clone and spawn the new one if it won't collide anything
 	void SpawnClone();
 
-	virtual void OnSavableSetup(ASaveGameManager* SaveGameManager) override;
-
 	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) override;
 	virtual void OnLoadGame(UShapeShifterSaveGame* SaveGameObject) override;
 
@@ -201,9 +199,7 @@ protected:
 	void RegisterDynamicForce(AActor* FluidSim, USceneComponent* ForceComponent, const float ForceRadius,
 		const float ForceStrength);
 
-	/**
-	 * Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
-	 */
+	// Revive the player if he was dead. The camera will fade back from black. Doesn't work for clones.
 	void Revive();
 
 private:
@@ -211,6 +207,14 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0))
 	float MovementSpeed = 150;
+
+	/**
+	 * How fast player can turn the other direction.
+	 * 0 - no effect;
+	 * 1 - immediately.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (ClampMin = 0, ClampMax = 1))
+	float MovementAmortizationFactor = 0.75;
 
 	// Whether player can jump or not
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -312,8 +316,6 @@ private:
 	// Niagara VFX which will be spawned on Clone creation end
 	UPROPERTY(EditDefaultsOnly, Category = "Clone", meta = (EditCondition = "bCanEverCreateClone"))
 	UNiagaraSystem* SpawnCloneNiagaraSystemTemplate;
-
-	TWeakObjectPtr<ASaveGameManager> SaveGameManagerPtr;
 
 	// This tag will work only if CurrentForm is Metal
 	UPROPERTY(EditAnywhere, Category = "Laser")

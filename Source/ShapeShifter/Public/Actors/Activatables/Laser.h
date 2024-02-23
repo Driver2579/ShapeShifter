@@ -115,14 +115,17 @@ private:
 	 * Draw one beam and calculate start location and direction of next beam. This should be called while iterating
 	 * through Beams array.
 	 * @param CurrentBeamIndex Current index of Beams array iteration.
-	 * @param BeamStartLocation Should be initialized with current beam start location. Out is next beam start location.
-	 * @param BeamDirection Should be initialized with current beam direction. Out is next beam direction.
+	 * @param InOutBeamStartLocation Should be initialized with current beam start location. Out is next beam start location.
+	 * @param InOutBeamDirection Should be initialized with current beam direction. Out is next beam direction.
+	 * @param bRenderAndHit If false than beam location will be initialized but the beam itself will not be rendered and
+	 * OnLaserHit will not be called. 
 	 * @return True if there should be next reflected beam. You should keep calling this in Beams array iteration in
 	 * this case.
 	 * @return False if there can't be next reflected beam. You should stop calling this in Beams array iteration in
 	 * this case.
 	 */
-	bool DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStartLocation, FVector& BeamDirection);
+	bool DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& InOutBeamStartLocation, FVector& InOutBeamDirection,
+		const bool bRenderAndHit = true);
 
 	/**
 	 * You must set your own custom Collision Trace Channel with "Block" default response to this variable to make laser
@@ -140,12 +143,11 @@ private:
 	FName IgnoreActorTagName = TEXT("IgnoreLaser");
 
 	/**
-	 * Enables or disables all beams in Beams array from FirstBeamIndex.
-	 * @param bNewActive Whether we should enable or disable beams.
-	 * @param FirstBeamIndex First beam index which will be enabled/disabled. All previous indexes will not be hit.
-	 * You have to keep default 0 value if you need to enable/disable all beams.
+	 * Disables all beams in Beams array from FirstBeamIndex.
+	 * @param FirstBeamIndex First beam index which will be disabled. All previous indexes will not be hit.
+	 * You have to keep default 0 value if you need to disable all beams.
 	 */
-	void SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex = 0);
+	void DisableBeams(const int32 FirstBeamIndex = 0);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Laser Niagara variables")
 	FName SpawnBeamVariableName = TEXT("SpawnBeam");

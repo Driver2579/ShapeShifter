@@ -100,6 +100,15 @@ void ALaser::SpawnLaserBeams()
 		// Add Beam to Beams array
 		Beams.Add(Beam);
 	}
+
+	// Initialize first beam BeamStartLocation and BeamDirection but don't render it and don't call OnLaserHit
+	if (Beams.Num() > 0)
+	{
+		FVector BeamStartLocation = LaserSpawnPointComponent->GetComponentLocation();
+		FVector BeamDirection = LaserDirectionComponent->GetForwardVector();
+
+		DrawLaserBeamSingle(0, BeamStartLocation, BeamDirection);
+	}
 }
 
 void ALaser::Tick(float DeltaTime)
@@ -129,7 +138,8 @@ void ALaser::DrawLaserBeams()
 	}
 }
 
-bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStartLocation, FVector& BeamDirection)
+bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& InOutBeamStartLocation,
+	FVector& InOutBeamDirection, const bool bRenderAndHit)
 {
 	// Send error message and return false if CurrentBeamIndex isn't valid
 	if (!Beams.IsValidIndex(CurrentBeamIndex))
@@ -139,22 +149,11 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 		return false;
 	}
 
-	// We should never hit this
-	if (!IsValid(Beams[CurrentBeamIndex]))
-	{
-		UE_LOG(LogTemp, Error, TEXT("ALaser::DrawLaserBeamSingle: Beams array has an invalid element!"));
-
-		return false;
-	}
-
-	// Enable current Beam
-	Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamVariableName, true);
-
 	// Set StartLocation of current Beam
-	Beams[CurrentBeamIndex]->SetVariableVec3(BeamStartLocationVariableName, BeamStartLocation);
+	Beams[CurrentBeamIndex]->SetVariableVec3(BeamStartLocationVariableName, InOutBeamStartLocation);
 
 	// Calculate TraceEnd
-	const FVector TraceEnd = BeamStartLocation + BeamDirection * MaxBeamLength;
+	const FVector TraceEnd = InOutBeamStartLocation + InOutBeamDirection * MaxBeamLength;
 
 	// Create TraceParams
 	FCollisionQueryParams TraceParams;
@@ -171,7 +170,7 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 
 	// LineTrace to set current beam variables
 	FHitResult HitResult;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, BeamStartLocation, TraceEnd,
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, InOutBeamStartLocation, TraceEnd,
 		LaserCollisionTraceChanel, TraceParams);
 
 	// Calculate NextBeamIndex
@@ -183,33 +182,45 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 		// Set current beam EndLocation
 		Beams[CurrentBeamIndex]->SetVariableVec3(BeamEndLocationVariableName, HitResult.TraceEnd);
 
+		// Enable current Beam if it should be rendered
+		if (bRenderAndHit)
+		{
+			Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamVariableName, true);
+		}
+
 		// Disable all next beams if NextBeamIndex is valid
 		if (Beams.IsValidIndex(NextBeamIndex))
 		{
-			SetBeamsActive(false, NextBeamIndex);
+			DisableBeams(NextBeamIndex);
 		}
 
 		// Return false as we don't need to draw next reflected beam
 		return false;
 	}
 
-	// Set NextBeamDirection with ReflectionVector between BeamDirection and ImpactPoint
-	const FVector NextBeamDirection = FMath::GetReflectionVector(BeamDirection, HitResult.ImpactNormal);
+	// Set NextBeamDirection with ReflectionVector between InOutBeamDirection and ImpactPoint
+	const FVector NextBeamDirection = FMath::GetReflectionVector(InOutBeamDirection, HitResult.ImpactNormal);
 
 	// Calculate BeamsBisectorDirection
-	const FVector BeamsBisectorDirection = -(BeamDirection - NextBeamDirection);
+	const FVector BeamsBisectorDirection = -(InOutBeamDirection - NextBeamDirection);
 
 	// Set BeamsBisectorDirection to current beam
 	Beams[CurrentBeamIndex]->SetVariableVec3(BeamsBisectorDirectionVariableName, BeamsBisectorDirection);
 
-	// Set BeamDirection for next beam
-	BeamDirection = NextBeamDirection;
+	// Set InOutBeamDirection for next beam
+	InOutBeamDirection = NextBeamDirection;
 
-	// Calculate next BeamStartLocation
-	BeamStartLocation = HitResult.Location + NextBeamDirection * BeamDistanceToImpactPoint;
+	// Calculate next InOutBeamStartLocation
+	InOutBeamStartLocation = HitResult.Location + NextBeamDirection * BeamDistanceToImpactPoint;
 
 	// Set current beam EndLocation with next beam StartLocation
-	Beams[CurrentBeamIndex]->SetVariableVec3(BeamEndLocationVariableName, BeamStartLocation);
+	Beams[CurrentBeamIndex]->SetVariableVec3(BeamEndLocationVariableName, InOutBeamStartLocation);
+
+	// Enable current Beam if it should be rendered
+	if (bRenderAndHit)
+	{
+		Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamVariableName, true);
+	}
 
 	// Get HitActor from HitResult
 	AActor* HitActor = HitResult.GetActor();
@@ -226,22 +237,28 @@ bool ALaser::DrawLaserBeamSingle(const int32 CurrentBeamIndex, FVector& BeamStar
 		Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamEndVariableName, false);
 
 		// Call OnLaserHit with bReflected true as HitActor reflected Laser
-		OnLaserHit(HitActor, true);
+		if (bRenderAndHit)
+		{
+			OnLaserHit(HitActor, true);
+		}
 
 		return true;
 	}
 
-	// Enable BeamEnd in current beam because there won't be any next reflected beams 
-	Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamEndVariableName, true);
-
-	// Disable all next beams if NextBeamIndex is valid
+	// Disable next beam if NextBeamIndex is valid
 	if (Beams.IsValidIndex(NextBeamIndex))
 	{
-		SetBeamsActive(false, NextBeamIndex);
+		DisableBeams(NextBeamIndex);
 	}
 
-	// Call OnLaserHit with bReflected false as this HitActor blocked Laser
-	OnLaserHit(HitActor, false);
+	if (bRenderAndHit)
+	{
+		// Enable BeamEnd in current beam because there won't be any next reflected beams
+		Beams[CurrentBeamIndex]->SetVariableBool(SpawnBeamEndVariableName, true);
+
+		// Call OnLaserHit with bReflected false as this HitActor blocked Laser
+		OnLaserHit(HitActor, false);
+	}
 
 	// Return false to stop drawing next reflected beams
 	return false;
@@ -276,7 +293,7 @@ void ALaser::OnLaserHit(AActor* HitActor, const bool bReflected)
 	}
 }
 
-void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
+void ALaser::DisableBeams(const int32 FirstBeamIndex)
 {
 	if (!HasActorBegunPlay())
 	{
@@ -285,30 +302,16 @@ void ALaser::SetBeamsActive(const bool bNewActive, const int32 FirstBeamIndex)
 
 	if (!Beams.IsValidIndex(FirstBeamIndex))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALaser::SetBeamsActive: FirstBeamIndex isn't valid!"));
+		UE_LOG(LogTemp, Error, TEXT("ALaser::DisableBeams: FirstBeamIndex isn't valid!"));
 
 		return;
 	}
 
-	// Call DrawLaserBeams for the first time after activation to initialize Beams location
-	if (bNewActive)
-	{
-		DrawLaserBeams();
-	}
-
+	// Disable all beams
 	for (int i = FirstBeamIndex; i < Beams.Num(); ++i)
 	{
-		// We should never hit this
-		if (!IsValid(Beams[i]))
-		{
-			UE_LOG(LogTemp, Error, TEXT("ALaser::SetBeamsActive: Beams array has an invalid element!"));
-
-			return;
-		}
-
-		// Set new active state to current beam
-		Beams[i]->SetVariableBool(SpawnBeamVariableName, bNewActive);
-		Beams[i]->SetVariableBool(SpawnBeamEndVariableName, bNewActive);
+		Beams[i]->SetVariableBool(SpawnBeamVariableName, false);
+		Beams[i]->SetVariableBool(SpawnBeamEndVariableName, false);
 	}
 }
 
@@ -324,8 +327,6 @@ void ALaser::Activate()
 	ActivateAudioComponent->Play();
 	DeactivateAudioComponent->Stop();
 	AmbientAudioComponent->Play();
-	
-	SetBeamsActive(bActive);
 }
 
 void ALaser::Deactivate()
@@ -335,8 +336,8 @@ void ALaser::Deactivate()
 	ActivateAudioComponent->Stop();
 	DeactivateAudioComponent->Play();
 	AmbientAudioComponent->Stop();
-	
-	SetBeamsActive(bActive);
+
+	DisableBeams();
 }
 
 void ALaser::KillBallPawn(ABallPawn* BallPawnToKill)

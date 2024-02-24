@@ -107,7 +107,7 @@ void ALaser::SpawnLaserBeams()
 		FVector BeamStartLocation = LaserSpawnPointComponent->GetComponentLocation();
 		FVector BeamDirection = LaserDirectionComponent->GetForwardVector();
 
-		DrawLaserBeamSingle(0, BeamStartLocation, BeamDirection);
+		DrawLaserBeamSingle(0, BeamStartLocation, BeamDirection, false);
 	}
 }
 

@@ -10,7 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"Water"
+				"Water",
+				"SpiderNavigation"
 			]
 		}
 	],
@@ -23,11 +24,6 @@
 			]
 		},
 		{
-			"Name": "LaserReflectionSystem",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/5e5962737c014cfd9817d454e1980b11"
-		},
-		{
 			"Name": "Water",
 			"Enabled": true
 		},
@@ -35,6 +31,11 @@
 			"Name": "AsyncLoadingScreen",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/01f39767dc6b4290877f38365787cbf8"
+		},
+		{
+			"Name": "SpiderNavigation",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/9061da2ec4df457dbce7c416381896d5"
 		}
 	]
 }

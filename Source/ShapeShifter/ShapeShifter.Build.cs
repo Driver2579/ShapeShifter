@@ -28,12 +28,10 @@ public class ShapeShifter : ModuleRules
 		// Navigation for walls
 		PrivateDependencyModuleNames.AddRange(new string[] { "SpiderNavigation" });
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
-
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+		// EditorSubsystem is needed only in the editor
+		if (Target.Type == TargetType.Editor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[] { "EditorSubsystem", "UnrealEd" });
+		}
 	}
 }

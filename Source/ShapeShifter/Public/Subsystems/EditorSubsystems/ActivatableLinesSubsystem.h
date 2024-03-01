@@ -20,6 +20,9 @@ public:
 	virtual void Deinitialize() override;
 
 private:
+	void OnWorldInitialized(UWorld* World, const UWorld::InitializationValues IVS);
 	void OnMapOpened(const FString& Filename, bool bAsTemplate) const;
+
+	TWeakObjectPtr<UWorld> LastOpenedWorld;
 };
 #endif

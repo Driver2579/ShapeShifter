@@ -12,6 +12,7 @@ void UActivatableLinesSubsystem::Initialize(FSubsystemCollectionBase& Collection
 {
 	Super::Initialize(Collection);
 
+	FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &UActivatableLinesSubsystem::OnWorldInitialized);
 	FEditorDelegates::OnMapOpened.AddUObject(this, &UActivatableLinesSubsystem::OnMapOpened);
 }
 
@@ -20,6 +21,12 @@ void UActivatableLinesSubsystem::Deinitialize()
 	Super::Deinitialize();
 
 	FEditorDelegates::OnMapOpened.RemoveAll(this);
+	FWorldDelegates::OnPostWorldInitialization.RemoveAll(this);
+}
+
+void UActivatableLinesSubsystem::OnWorldInitialized(UWorld* World, const UWorld::InitializationValues IVS)
+{
+	LastOpenedWorld = World;
 }
 
 void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTemplate) const
@@ -30,7 +37,7 @@ void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTe
 	}
 
 	TArray<AActor*> ActivationSwitchers;
-	UGameplayStatics::GetAllActorsOfClass(this, AActivationSwitcher::StaticClass(),
+	UGameplayStatics::GetAllActorsOfClass(LastOpenedWorld.Get(), AActivationSwitcher::StaticClass(),
 		ActivationSwitchers);
 
 	if (ActivationSwitchers.IsEmpty())
@@ -41,10 +48,12 @@ void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTe
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ASpiderNavGridBuilder* GridBuilder = GetWorld()->SpawnActor<ASpiderNavGridBuilder>(SpawnParameters);
+	ASpiderNavGridBuilder* GridBuilder = LastOpenedWorld->SpawnActor<ASpiderNavGridBuilder>(SpawnParameters);
 	GridBuilder->BuildGrid();
+	GridBuilder->SaveGrid();
 
-	ASpiderNavigation* Navigation = GetWorld()->SpawnActor<ASpiderNavigation>(SpawnParameters);
+	ASpiderNavigation* Navigation = LastOpenedWorld->SpawnActor<ASpiderNavigation>(SpawnParameters);
+	Navigation->LoadGrid();
 
 	for (AActor* ActivationSwitcherActor : ActivationSwitchers)
 	{
@@ -65,7 +74,7 @@ void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTe
 
 			for (FVector& Point : Path)
 			{
-				DrawDebugLine(GetWorld(), PreviousPoint, Point, FColor::Blue, true);
+				DrawDebugLine(LastOpenedWorld.Get(), PreviousPoint, Point, FColor::Blue, true);
 				PreviousPoint = Point;
 			}
 		}

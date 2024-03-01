@@ -6,11 +6,10 @@
 #include "EditorSubsystem.h"
 #include "ActivatableLinesSubsystem.generated.h"
 
-#if WITH_EDITOR
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class SHAPESHIFTER_API UActivatableLinesSubsystem : public UEditorSubsystem
 {
 	GENERATED_BODY()
@@ -19,10 +18,11 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+	void RebuildActivatableLines(const UWorld* World) const;
+
 private:
+	TWeakObjectPtr<UWorld> LastOpenedWorld;
+
 	void OnWorldInitialized(UWorld* World, const UWorld::InitializationValues IVS);
 	void OnMapOpened(const FString& Filename, bool bAsTemplate) const;
-
-	TWeakObjectPtr<UWorld> LastOpenedWorld;
 };
-#endif

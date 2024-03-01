@@ -6,8 +6,6 @@
 #include "SpiderNavigation.h"
 #include "Actors/Activatables/ActivationSwitchers/ActivationSwitcher.h"
 
-#if WITH_EDITOR
-
 void UActivatableLinesSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -31,29 +29,33 @@ void UActivatableLinesSubsystem::OnWorldInitialized(UWorld* World, const UWorld:
 
 void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTemplate) const
 {
-	if (bAsTemplate)
+	if (!bAsTemplate)
 	{
-		return;
+		RebuildActivatableLines(LastOpenedWorld.Get());
 	}
+}
+
+void UActivatableLinesSubsystem::RebuildActivatableLines(const UWorld* World) const
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ASpiderNavGridBuilder* NavGridBuilder = LastOpenedWorld->SpawnActor<ASpiderNavGridBuilder>(SpawnParameters);
+
+	NavGridBuilder->BuildGrid();
+	NavGridBuilder->SaveGrid();
+
+	ASpiderNavigation* Navigation = LastOpenedWorld->SpawnActor<ASpiderNavigation>(SpawnParameters);
+	Navigation->LoadGrid();
 
 	TArray<AActor*> ActivationSwitchers;
-	UGameplayStatics::GetAllActorsOfClass(LastOpenedWorld.Get(), AActivationSwitcher::StaticClass(),
+	UGameplayStatics::GetAllActorsOfClass(World, AActivationSwitcher::StaticClass(),
 		ActivationSwitchers);
 
 	if (ActivationSwitchers.IsEmpty())
 	{
 		return;
 	}
-
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ASpiderNavGridBuilder* GridBuilder = LastOpenedWorld->SpawnActor<ASpiderNavGridBuilder>(SpawnParameters);
-	GridBuilder->BuildGrid();
-	GridBuilder->SaveGrid();
-
-	ASpiderNavigation* Navigation = LastOpenedWorld->SpawnActor<ASpiderNavigation>(SpawnParameters);
-	Navigation->LoadGrid();
 
 	for (AActor* ActivationSwitcherActor : ActivationSwitchers)
 	{
@@ -74,16 +76,14 @@ void UActivatableLinesSubsystem::OnMapOpened(const FString& Filename, bool bAsTe
 
 			for (FVector& Point : Path)
 			{
-				DrawDebugLine(LastOpenedWorld.Get(), PreviousPoint, Point, FColor::Blue, true);
+				DrawDebugLine(World, PreviousPoint, Point, FColor::Blue, true);
 				PreviousPoint = Point;
 			}
 		}
 	}
 
-	GridBuilder->EmptyAll();
-	GridBuilder->Destroy();
+	NavGridBuilder->EmptyAll();
+	NavGridBuilder->Destroy();
 
 	Navigation->Destroy();
 }
-
-#endif

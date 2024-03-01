@@ -18,10 +18,7 @@
 		{
 			"Name": "ActivatableLinesGenerator",
 			"Type": "Editor",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"ShapeShifter"
-			]
+			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [

@@ -10,9 +10,7 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"Water",
-				"SpiderNavigation",
-				"LevelEditor"
+				"Water"
 			]
 		}
 	],

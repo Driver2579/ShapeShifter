@@ -24,14 +24,5 @@ public class ShapeShifter : ModuleRules
 
 		// UMG
 		PrivateDependencyModuleNames.AddRange(new string[] { "UMG" });
-
-		// Navigation for walls
-		PrivateDependencyModuleNames.AddRange(new string[] { "SpiderNavigation" });
-
-		// EditorSubsystem is needed only in the editor
-		if (Target.Type == TargetType.Editor)
-		{
-			PrivateDependencyModuleNames.AddRange(new string[] { "EditorSubsystem", "UnrealEd" });
-		}
 	}
 }

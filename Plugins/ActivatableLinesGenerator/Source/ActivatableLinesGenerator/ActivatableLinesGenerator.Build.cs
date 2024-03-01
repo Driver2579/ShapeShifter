@@ -12,8 +12,8 @@ public class ActivatableLinesGenerator : ModuleRules
 			new string[]
 			{
 				"Core",
-				"ShapeShifter",
-				"SpiderNavigation"
+				"ShapeShifter", // Main project
+				"SpiderNavigation" // Navigation for walls
 			}
 			);
 			

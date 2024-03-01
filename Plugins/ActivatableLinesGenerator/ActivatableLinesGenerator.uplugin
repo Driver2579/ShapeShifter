@@ -1,0 +1,33 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Activatable Lines Generator",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Vladislav Semchuk",
+	"CreatedByURL": "https://www.linkedin.com/in/vladislav-semchuk-a2b944203/",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ActivatableLinesGenerator",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"ShapeShifter"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SpiderNavigation",
+			"Enabled": true
+		}
+	]
+}

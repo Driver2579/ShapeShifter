@@ -201,7 +201,7 @@ void UPauseWidget::Exit()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void UPauseWidget::CloseWidget()
 {
-	// Get PlayerController to call Unpause
+	// Get PlayerController to call UnpauseGame
 	AShapeShifterPlayerController* PlayerController = GetOwningPlayer<AShapeShifterPlayerController>();
 
 	if (!IsValid(PlayerController))
@@ -211,7 +211,7 @@ void UPauseWidget::CloseWidget()
 		return;
 	}
 
-	PlayerController->Unpause();
+	PlayerController->UnpauseGame();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

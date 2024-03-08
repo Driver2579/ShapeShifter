@@ -89,20 +89,12 @@ void AShapeShifterPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
-
-	if (!IsValid(EnhancedInputComponent))
-	{
-		UE_LOG(LogTemp, Error, TEXT(
-			"AShapeShifterPlayerController::SetupInputComponent: EnhancedInputComponent is invalid!"));
-
-		return;
-	}
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
 
 	if (IsValid(PauseAction))
 	{
 		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Triggered, this, 
-			&AShapeShifterPlayerController::Pause);
+			&AShapeShifterPlayerController::SwitchPause);
 	}
 	else
 	{
@@ -110,7 +102,19 @@ void AShapeShifterPlayerController::SetupInputComponent()
 	}
 }
 
-void AShapeShifterPlayerController::Pause()
+void AShapeShifterPlayerController::SwitchPause()
+{
+	if (IsPaused())
+	{
+		UnpauseGame();
+	}
+	else
+	{
+		PauseGame();
+	}
+}
+
+void AShapeShifterPlayerController::PauseGame()
 {
 	if (!CurrentHUD.IsValid())
 	{
@@ -130,14 +134,14 @@ void AShapeShifterPlayerController::Pause()
 	}
 
 	// Pause game
-	SetInputMode(FInputModeUIOnly());
+	SetInputMode(FInputModeGameAndUI());
 	GetWorld()->GetAuthGameMode()->SetPause(this);
 
 	// Show cursor
 	bShowMouseCursor = true;
 }
 
-void AShapeShifterPlayerController::Unpause()
+void AShapeShifterPlayerController::UnpauseGame()
 {
 	if (!CurrentHUD.IsValid())
 	{

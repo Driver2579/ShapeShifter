@@ -12,11 +12,13 @@ class SHAPESHIFTER_API AShapeShifterPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	// Open pause menu
-	void Pause();
+	void SwitchPause();
 
-	// Close pause false
-	void Unpause();
+	// Open pause menu
+	void PauseGame();
+
+	// Close pause menu
+	void UnpauseGame();
 
 protected:
 	virtual void BeginPlay() override;

@@ -111,20 +111,20 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
-	
+
 	// How much velocity is greater than the minimum velocity for sound
 	const float HowMuchMoreThanMinAirSlicing = FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, 0);
-	
+
 	// Range to set pitch and volume to AirSlicingAudioComponent
 	const float AlphaVelocityAirSlicing = FMath::Min(HowMuchMoreThanMinAirSlicing / MaxVelocityAirSlicingSound, 1);
-	
+
 	// Pitch should be from MinPitchAirSlicingSound to MaxPitchAirSlicingSound at AlphaVelocityAirSlicing
 	AirSlicingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchAirSlicingSound, MaxPitchAirSlicingSound, AlphaVelocityAirSlicing));
 
 	// Volume should be from 0 to 1 at AlphaVelocityAirSlicing
 	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, AlphaVelocityAirSlicing));
-	
+
 	// Rolling sound cannot be heard if the ball is in the air
 	if (IsFalling())
 	{
@@ -135,16 +135,16 @@ void ABallPawn::Tick(float DeltaSeconds)
 
 	// Shows in which directions movement has what weight
 	const FVector DirectionsSignificanceTemplate = FVector(1, 1, 0);
-	
+
 	const FVector ProjectedVector = FVector::DotProduct(GetVelocity(), DirectionsSignificanceTemplate) *
 		DirectionsSignificanceTemplate;
 
 	// Range to set pitch to AirSlicingAudioComponent
 	const float AlphaRolling = ProjectedVector.Length() / MaxVelocityRollingSound;
-	
+
 	// Calculate the rolling sound volume
 	RollingAudioComponent->SetVolumeMultiplier(FMath::Min(AlphaRolling, MaxVelocityRollingSound));
-	
+
 	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
 	RollingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound, AlphaRolling));
@@ -953,7 +953,7 @@ void ABallPawn::InitWaterFluidSimulation()
 	// Call RegisterDynamicForce for every water fluid Actor
 	for (AActor* It : WaterFluidActors)
 	{
-		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius, WaterFluidForceStrength);
+		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius / 2, WaterFluidForceStrength);
 	}
 }
 

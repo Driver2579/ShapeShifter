@@ -60,6 +60,8 @@ void AMovingPlatform::BeginPlay()
 	}
 #endif
 	
+	RelativeLocation = MeshComponent->GetRelativeLocation();
+
 	FOnTimelineEvent MovementTimelineEvent;
 	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
 
@@ -258,13 +260,15 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 {
 	// Location on the spline
 	const float Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
+	
+	//const FVector RelativeLocation = MeshComponent->GetRelativeLocation();
 
 	// Calculation of location in space
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
 	// Set new location for platform
-	MeshComponent->SetWorldLocation(CurrentSplineLocation);
+	MeshComponent->SetWorldLocation(CurrentSplineLocation + RelativeLocation);
 
 	// The platform has shifted in the indicated direction
 	if (!bRotate)

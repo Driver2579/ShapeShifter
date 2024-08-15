@@ -6,22 +6,6 @@
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 
-AMovingPlatformWithRail::AMovingPlatformWithRail()
-{
-	RailStartScene = CreateDefaultSubobject<USceneComponent>(TEXT("Rail Start Scene"));
-	RailStartScene->SetupAttachment(RootComponent);
-
-	RailEndScene = CreateDefaultSubobject<USceneComponent>(TEXT("Rail End Scene"));
-	RailEndScene->SetupAttachment(RootComponent);
-	
-	RailStartStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rail Start Mesh"));
-	RailStartStaticMesh->SetupAttachment(RootComponent);
-	
-	RailEndStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rail End Mesh"));
-	RailEndStaticMesh->SetupAttachment(RootComponent);
-}
-
-
 void AMovingPlatformWithRail::BeginPlay()
 {
 	Super::BeginPlay();
@@ -29,27 +13,18 @@ void AMovingPlatformWithRail::BeginPlay()
 	ConstructRail();
 }
 
-#if WITH_EDITOR
 void AMovingPlatformWithRail::OnConstruction(const FTransform& Transform)
 {
-	// TInlineComponentArray<USplineMeshComponent*> Components;
-	// GetComponents<USplineMeshComponent>(Components);
-	//
-	// for (USplineMeshComponent* Component : Components)
-	// {
-	// 	Component->DestroyComponent();
-	// }
-
+	// Clean old rails
 	for (USplineMeshComponent* Rail : Rails)
 	{
 		Rail->DestroyComponent();
 	}
+	Rails.Reset(); 
 	
-	//Rails.RemoveAll();
-	
+	// Build new rail
 	ConstructRail();
 }
-#endif
 
 void AMovingPlatformWithRail::ConstructRail()
 {
@@ -57,6 +32,7 @@ void AMovingPlatformWithRail::ConstructRail()
 	
 	const int32 NumSegments = Spline->GetNumberOfSplinePoints() - 1;
 
+	// Create a mesh for each segment on the spline
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
 		if (USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this))
@@ -65,6 +41,7 @@ void AMovingPlatformWithRail::ConstructRail()
 
 			SplineMeshComponent->SetStaticMesh(RailStaticMesh);
 
+			// Stretch the mouse to the entire segment
 			SplineMeshComponent->SetStartAndEnd(
 				Spline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
 				Spline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
@@ -79,20 +56,19 @@ void AMovingPlatformWithRail::ConstructRail()
 		}
 	}
 
-	RailStartStaticMesh->SetStaticMesh(RailStartAndEndStaticMesh);
-	RailEndStaticMesh->SetStaticMesh(RailStartAndEndStaticMesh);
+	//RailStartStaticMesh->SetStaticMesh(RailStartAndEndStaticMesh);
+	//RailEndStaticMesh->SetStaticMesh(RailStartAndEndStaticMesh);
 
-	RailStartStaticMesh->SetRelativeLocationAndRotation(
-		Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local) -
-		RailStartScene->GetRelativeLocation() + RailStartStaticMesh->GetRelativeLocation(),
+	//RailStartStaticMesh->SetRelativeLocationAndRotation(
+	//	Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local) -
+	//	RailStartScene->GetRelativeLocation() + RailStartStaticMesh->GetRelativeLocation(),
 
-		Spline->GetRotationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local) -
-		RailStartScene->GetRelativeRotation() + RailStartStaticMesh->GetRelativeRotation()
-		);
+	//	Spline->GetRotationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local) -
+	//	RailStartScene->GetRelativeRotation() + RailStartStaticMesh->GetRelativeRotation()
+	//	);
 
-	RailStartScene->SetRelativeLocationAndRotation(
-		Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local),
-		Spline->GetRotationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local)
-		);
-
+	//RailStartScene->SetRelativeLocationAndRotation(
+	//	Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local),
+	//	Spline->GetRotationAtSplinePoint(0, ESplineCoordinateSpace::Type::Local)
+	//	);
 }

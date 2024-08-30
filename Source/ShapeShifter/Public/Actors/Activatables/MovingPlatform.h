@@ -28,7 +28,7 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class USplineComponent* MovementDirectionSplineComponent;
+	class UEndsMeshesAlongSplineComponent* MovementDirectionSplineComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;

@@ -15,6 +15,9 @@ class SHAPESHIFTER_API AActivationSwitcher : public AActor
 {
 	GENERATED_BODY()
 
+public:
+	void GetActorsToSwitchActivation(TArray<AActor*>& OutActorsToSwitchActivation) const;
+
 protected:
 	/**
 	 * Actors in this array must implement Activatable interface. They will be activated or deactivated on overlap

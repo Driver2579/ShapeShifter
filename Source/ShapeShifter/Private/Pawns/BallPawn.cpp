@@ -63,16 +63,16 @@ void ABallPawn::SetupComponents()
 	AirSlicingAudioComponent->SetupAttachment(RootComponent);
 }
 
+// This is just for preview in editor. We don't need to set it twice in packaged project.
+#if WITH_EDITOR
 void ABallPawn::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-// This is just for preview in editor. We don't need to set it twice in packaged project.
-#if WITH_EDITOR
 	// Call SetForm in OnConstruction to preview CurrentForm
 	SetForm(CurrentForm);
-#endif
 }
+#endif
 
 UStaticMeshComponent* ABallPawn::GetMesh() const
 {
@@ -304,15 +304,7 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-
-	if (!IsValid(EnhancedInputComponent))
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be EnhancedInputComponent!"));
-
-		return;
-	}
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 
 	if (IsValid(MoveAction))
 	{

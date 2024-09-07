@@ -25,7 +25,9 @@ class SHAPESHIFTER_API ABallPawn : public APawn, public ISavable
 public:
 	ABallPawn();
 
+#if WITH_EDITOR
 	virtual void OnConstruction(const FTransform& Transform) override;
+#endif
 
 	virtual void Tick(float DeltaSeconds) override;
 

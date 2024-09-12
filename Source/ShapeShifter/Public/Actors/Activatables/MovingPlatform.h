@@ -80,7 +80,7 @@ private:
 	bool bHasEverSwitchedActivation = false;
 
 	// Stores the initial relative mesh's position 
-	FVector RelativeLocation;
+	FVector MeshComponentInitialRelativeLocation;
 
 	// Time it takes the platform to complete the route
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))

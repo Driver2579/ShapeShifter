@@ -5,13 +5,6 @@
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 
-void USplineMeshesComponent::UpdateSpline()
-{
-	Super::UpdateSpline();
-
-	ReconstructMeshesAlongSpline();
-}
-
 void USplineMeshesComponent::OnRegister()
 {
 	Super::OnRegister();
@@ -19,42 +12,51 @@ void USplineMeshesComponent::OnRegister()
 	ReconstructMeshesAlongSpline();
 }
 
+void USplineMeshesComponent::UpdateSpline()
+{
+	Super::UpdateSpline();
+
+	ReconstructMeshesAlongSpline();
+}
+
 void USplineMeshesComponent::ConstructMeshesAlongSpline()
 {
-	// Build new meshes
-	const int32 NumSegments = this->GetNumberOfSplinePoints() - 1;
+	// The number of segments on the spline excluding the last one because of "i + 1" in the next loop
+	const int32 NumSegments = GetNumberOfSplinePoints() - 1;
 
-	// Create a mesh for each segment on the spline
+	// Build new meshes by creating a mesh for each segment on the spline
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
-		if (USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this))
-		{
-			SplineMeshComponent->SetMobility(EComponentMobility::Stationary);
-			SplineMeshComponent->SetStaticMesh(StaticMesh);
+		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this);
 
-			// Stretch the mouse to the entire segment
-			SplineMeshComponent->SetStartAndEnd(
-				this->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
-				this->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
-				this->GetLocationAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local),
-				this->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local)
-			);
+		SplineMeshComponent->RegisterComponent();
 
-			SplineMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-			SplineMeshComponent->RegisterComponent();
+		SplineMeshComponent->SetMobility(Mobility);
+		SplineMeshComponent->SetStaticMesh(StaticMesh);
 
-			MeshesAlongSpline.Add(SplineMeshComponent);
-		}
+		// Stretch the mesh to the entire segment
+		SplineMeshComponent->SetStartAndEnd(
+			GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
+			GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
+			GetLocationAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local),
+			GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local)
+		);
+
+		SplineMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+
+		MeshesAlongSpline.Add(SplineMeshComponent);
 	}
 }
 
 void USplineMeshesComponent::ReconstructMeshesAlongSpline()
 {
-	// Clean old meshes
+	// Destroy old meshes
 	for (USplineMeshComponent* Rail : MeshesAlongSpline)
 	{
 		Rail->DestroyComponent();
 	}
+
+	// Clear an array of old meshes
 	MeshesAlongSpline.Reset();
 
 	// Build new meshes

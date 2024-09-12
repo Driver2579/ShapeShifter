@@ -13,17 +13,22 @@ class SHAPESHIFTER_API USplineMeshesComponent : public USplineComponent
 	GENERATED_BODY()
 
 public:
+	virtual void OnRegister() override;
+
 	virtual void UpdateSpline() override;
 
-	virtual void OnRegister()  override;
-
 private:
+	// The mesh that will be spawned along the spline
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UStaticMesh> StaticMesh;
 
-	// Stores all meshes that create the current rail.
-	TInlineComponentArray<class USplineMeshComponent*> MeshesAlongSpline;
+	// Stores all meshes that were created along the spline
+	UPROPERTY(Transient)
+	TInlineComponentArray<TObjectPtr<class USplineMeshComponent>> MeshesAlongSpline;
 
+	// Creates the meshes along the spline
 	void ConstructMeshesAlongSpline();
+
+	// Destroys all created meshes and creates new ones using ConstructMeshesAlongSpline function
 	void ReconstructMeshesAlongSpline();
 };

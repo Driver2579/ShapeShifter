@@ -1,24 +1,25 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "Components/MeshesAlongSplineComponent.h"
+#include "Components/SplineMeshesComponent.h"
 
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 
-void UMeshesAlongSplineComponent::UpdateSpline()
+void USplineMeshesComponent::UpdateSpline()
 {
 	Super::UpdateSpline();
+
 	ReconstructMeshesAlongSpline();
 }
 
-void UMeshesAlongSplineComponent::OnRegister()
+void USplineMeshesComponent::OnRegister()
 {
 	Super::OnRegister();
+
 	ReconstructMeshesAlongSpline();
 }
 
-void UMeshesAlongSplineComponent::ConstructMeshesAlongSpline()
+void USplineMeshesComponent::ConstructMeshesAlongSpline()
 {
 	// Build new meshes
 	const int32 NumSegments = this->GetNumberOfSplinePoints() - 1;
@@ -47,7 +48,7 @@ void UMeshesAlongSplineComponent::ConstructMeshesAlongSpline()
 	}
 }
 
-void UMeshesAlongSplineComponent::ReconstructMeshesAlongSpline()
+void USplineMeshesComponent::ReconstructMeshesAlongSpline()
 {
 	// Clean old meshes
 	for (USplineMeshComponent* Rail : MeshesAlongSpline)

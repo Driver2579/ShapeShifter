@@ -4,13 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/SplineComponent.h"
-#include "MeshesAlongSplineComponent.generated.h"
+#include "SplineMeshesComponent.generated.h"
 
-/**
- * 
- */
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class SHAPESHIFTER_API UMeshesAlongSplineComponent : public USplineComponent
+// Generates a series of SplineMeshComponents along the spline
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class SHAPESHIFTER_API USplineMeshesComponent : public USplineComponent
 {
 	GENERATED_BODY()
 

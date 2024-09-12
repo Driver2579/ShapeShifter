@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/MeshesAlongSplineComponent.h"
+#include "Components/SplineMeshesComponent.h"
 #include "EndsMeshesAlongSplineComponent.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class SHAPESHIFTER_API UEndsMeshesAlongSplineComponent : public UMeshesAlongSplineComponent
+class SHAPESHIFTER_API UEndsMeshesAlongSplineComponent : public USplineMeshesComponent
 {
 	GENERATED_BODY()
 	

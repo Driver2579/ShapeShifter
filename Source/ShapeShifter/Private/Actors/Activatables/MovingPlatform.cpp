@@ -3,7 +3,7 @@
 #include "Actors/Activatables/MovingPlatform.h"
 
 #include "Common/Structs/SaveData/MovingPlatformSaveData.h"
-#include "Components/EndsMeshesAlongSplineComponent.h"
+#include "Components/SplineMeshesWithEdgesComponent.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Pawns/BallPawn.h"
 #include "Components/AudioComponent.h"
@@ -14,7 +14,7 @@ AMovingPlatform::AMovingPlatform()
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
-	MovementDirectionSplineComponent = CreateDefaultSubobject<UEndsMeshesAlongSplineComponent>(
+	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineMeshesWithEdgesComponent>(
 		TEXT("Movement Direction Spline"));
 
 	MovementDirectionSplineComponent->SetupAttachment(RootComponent);

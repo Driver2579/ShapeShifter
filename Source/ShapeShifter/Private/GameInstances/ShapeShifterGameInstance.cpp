@@ -2,22 +2,19 @@
 
 #include "GameInstances/ShapeShifterGameInstance.h"
 
-bool UShapeShifterGameInstance::IsAutoSaveAllowed() const
+void UShapeShifterGameInstance::OnStart()
 {
-	return bAllowAutoSave;
+	Super::OnStart();
+
+	OnGameStartOrLevelChanged.Broadcast();
 }
 
-void UShapeShifterGameInstance::SetAllowAutoSave(const bool bNewAllowAutoSave)
+void UShapeShifterGameInstance::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
 {
-	bAllowAutoSave = bNewAllowAutoSave;
-}
+	Super::OnWorldChanged(OldWorld, NewWorld);
 
-bool UShapeShifterGameInstance::WillEnableAllowAutoSaveOnOpenLevel() const
-{
-	return bEnableAllowAutoSaveOnOpenLevel;
-}
-
-void UShapeShifterGameInstance::SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel)
-{
-	bEnableAllowAutoSaveOnOpenLevel = bNewEnableAllowAutoSaveOnOpenLevel;
+	if (IsValid(NewWorld))
+	{
+		OnGameStartOrLevelChanged.Broadcast();
+	}
 }

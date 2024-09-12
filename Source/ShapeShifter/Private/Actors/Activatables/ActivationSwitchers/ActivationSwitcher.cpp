@@ -4,6 +4,11 @@
 
 #include "Interfaces/Activatable.h"
 
+void AActivationSwitcher::GetActorsToSwitchActivation(TArray<AActor*>& OutActorsToSwitchActivation) const
+{
+	OutActorsToSwitchActivation = ActorsToSwitchActivation;
+}
+
 void AActivationSwitcher::SwitchActorsActivation() const
 {
 	// Iterate through ActorsToSwitchActivation

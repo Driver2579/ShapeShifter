@@ -21,12 +21,6 @@ class SHAPESHIFTER_API ISavable
 	GENERATED_BODY()
 
 public:
-	/**
-	 * Called after SaveGameManager set up OnSaveGame and OnLoadGame for this Actor. It's not necessary to implement
-	 * this function. The default function body is empty.
-	 */
-	virtual void OnSavableSetup(class ASaveGameManager* SaveGameManager) { }
-
 	// Called right before saving game. Use it to save data for a specific class to the SaveGameObject.
 	virtual void OnSaveGame(UShapeShifterSaveGame* SaveGameObject) = 0;
 

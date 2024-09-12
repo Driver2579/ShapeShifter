@@ -4,11 +4,10 @@
 
 #include "Controllers/ShapeShifterPlayerController.h"
 #include "Components/Button.h"
-#include "GameModes/ShapeShifterGameMode.h"
-#include "Actors/SaveGameManager.h"
 #include "UI/Widgets/WarningWidget.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundCue.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 
 void UPauseWidget::NativeConstruct()
 {
@@ -59,18 +58,7 @@ void UPauseWidget::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: ExitButton is invalid!"));
 	}
 
-	const AShapeShifterGameMode* GameMode = GetWorld()->GetAuthGameMode<AShapeShifterGameMode>();
-
-	if (!IsValid(GameMode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::NativeConstruct: GameMode is invalid!"));
-
-		return;
-	}
-
 	OnVisibilityChanged.AddDynamic(this, &UPauseWidget::SetPauseMusicState);
-
-	SaveGameManager = GameMode->GetSaveGameManager();
 
 	if (!IsValid(MenuMusic))
 	{
@@ -80,14 +68,6 @@ void UPauseWidget::NativeConstruct()
 	}
 
 	MenuMusicAudioComponent = UGameplayStatics::SpawnSound2D(this, MenuMusic);
-
-	SaveGameManager = GameMode->GetSaveGameManager();
-
-	if (!SaveGameManager.IsValid())
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("UPauseWidget::NativeConstruct: Failed to get SaveGameManager from the GameMode!"));
-	}
 }
 
 void UPauseWidget::OnLoadButtonClicked()
@@ -122,14 +102,7 @@ void UPauseWidget::OnLoadButtonClicked()
 
 void UPauseWidget::OnSaveButtonClicked()
 {
-	if (!SaveGameManager.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::OnSaveButtonClicked: SaveGameManager is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager->SaveGame();
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->SaveGame();
 
 	CloseWidget();
 }
@@ -196,26 +169,22 @@ void UPauseWidget::OnExitButtonClicked()
 
 void UPauseWidget::Load()
 {
-	if (!SaveGameManager.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("UPauseWidget::Load: SaveGameManager is invalid!"));
-
-		return;
-	}
-
-	SaveGameManager->LoadGame();
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->LoadGame();
 
 	CloseWidget();
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UPauseWidget::Restart()
 {
-	FString CurrentLevelName = *UGameplayStatics::GetCurrentLevelName(this, true);
+	const FString CurrentLevelName = *UGameplayStatics::GetCurrentLevelName(this,
+		true);
 	
 	// Restart the level
 	UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName), true);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UPauseWidget::Exit()
 {
 	// Open MainMenuLevel if it's valid
@@ -229,9 +198,10 @@ void UPauseWidget::Exit()
 	}
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UPauseWidget::CloseWidget()
 {
-	// Get PlayerController to call Unpause
+	// Get PlayerController to call UnpauseGame
 	AShapeShifterPlayerController* PlayerController = GetOwningPlayer<AShapeShifterPlayerController>();
 
 	if (!IsValid(PlayerController))
@@ -241,10 +211,11 @@ void UPauseWidget::CloseWidget()
 		return;
 	}
 
-	PlayerController->Unpause();
+	PlayerController->UnpauseGame();
 }
 
-void UPauseWidget::SetPauseMusicState(ESlateVisibility InVisibility)
+// ReSharper disable once CppMemberFunctionMayBeConst
+void UPauseWidget::SetPauseMusicState(const ESlateVisibility InVisibility)
 {
 	if (!MenuMusicAudioComponent.IsValid())
 	{

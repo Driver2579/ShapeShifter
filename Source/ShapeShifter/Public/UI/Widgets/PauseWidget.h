@@ -80,11 +80,9 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	FString MessageBeforeExit = "Exit to menu?";
 	
-	TWeakObjectPtr<class ASaveGameManager> SaveGameManager;
-	
 	// This is needed to have control over MenuMusic from any part of this class code
 	TSoftObjectPtr<UAudioComponent> MenuMusicAudioComponent;
 	
 	UFUNCTION()
-	void SetPauseMusicState(ESlateVisibility InVisibility);
+	void SetPauseMusicState(const ESlateVisibility InVisibility);
 };

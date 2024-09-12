@@ -12,10 +12,10 @@
 #include "BuoyancyComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Actors/SaveGameManager.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "Subsystems/GameInstanceSubsystems/SaveGameSubsystem.h"
 
 ABallPawn::ABallPawn()
 {
@@ -63,16 +63,16 @@ void ABallPawn::SetupComponents()
 	AirSlicingAudioComponent->SetupAttachment(RootComponent);
 }
 
+// This is just for preview in editor. We don't need to set it twice in packaged project.
+#if WITH_EDITOR
 void ABallPawn::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-// This is just for preview in editor. We don't need to set it twice in packaged project.
-#if WITH_EDITOR
 	// Call SetForm in OnConstruction to preview CurrentForm
 	SetForm(CurrentForm);
-#endif
 }
+#endif
 
 UStaticMeshComponent* ABallPawn::GetMesh() const
 {
@@ -82,6 +82,9 @@ UStaticMeshComponent* ABallPawn::GetMesh() const
 void ABallPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// MovementAmortizationFactor will also slow down the usual MovementSpeed so we need to compensate it
+	MovementSpeed += MovementSpeed * MovementAmortizationFactor;
 
 	InitDefaultMappingContext();
 	InitWaterFluidSimulation();
@@ -108,20 +111,20 @@ void ABallPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	LastUpdateVelocity = GetRootComponent()->GetComponentVelocity();
-	
+
 	// How much velocity is greater than the minimum velocity for sound
 	const float HowMuchMoreThanMinAirSlicing = FMath::Max(GetVelocity().Length() - MinVelocityAirSlicingSound, 0);
-	
+
 	// Range to set pitch and volume to AirSlicingAudioComponent
 	const float AlphaVelocityAirSlicing = FMath::Min(HowMuchMoreThanMinAirSlicing / MaxVelocityAirSlicingSound, 1);
-	
+
 	// Pitch should be from MinPitchAirSlicingSound to MaxPitchAirSlicingSound at AlphaVelocityAirSlicing
 	AirSlicingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchAirSlicingSound, MaxPitchAirSlicingSound, AlphaVelocityAirSlicing));
 
 	// Volume should be from 0 to 1 at AlphaVelocityAirSlicing
 	AirSlicingAudioComponent->SetVolumeMultiplier(FMath::Lerp(0, 1, AlphaVelocityAirSlicing));
-	
+
 	// Rolling sound cannot be heard if the ball is in the air
 	if (IsFalling())
 	{
@@ -132,24 +135,19 @@ void ABallPawn::Tick(float DeltaSeconds)
 
 	// Shows in which directions movement has what weight
 	const FVector DirectionsSignificanceTemplate = FVector(1, 1, 0);
-	
+
 	const FVector ProjectedVector = FVector::DotProduct(GetVelocity(), DirectionsSignificanceTemplate) *
 		DirectionsSignificanceTemplate;
 
 	// Range to set pitch to AirSlicingAudioComponent
 	const float AlphaRolling = ProjectedVector.Length() / MaxVelocityRollingSound;
-	
+
 	// Calculate the rolling sound volume
 	RollingAudioComponent->SetVolumeMultiplier(FMath::Min(AlphaRolling, MaxVelocityRollingSound));
-	
+
 	// Volume should be from MinPitchRollingSound to MaxPitchRollingSound at AlphaPitchRolling
 	RollingAudioComponent->SetPitchMultiplier(
 		FMath::Lerp(MinPitchRollingSound, MaxPitchRollingSound, AlphaRolling));
-}
-
-void ABallPawn::OnSavableSetup(ASaveGameManager* SaveGameManager)
-{
-	SaveGameManagerPtr = SaveGameManager;
 }
 
 void ABallPawn::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
@@ -306,15 +304,7 @@ void ABallPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-
-	if (!IsValid(EnhancedInputComponent))
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("ABallPawn::SetupPlayerInputComponent: InputComponentClass must be EnhancedInputComponent!"));
-
-		return;
-	}
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 
 	if (IsValid(MoveAction))
 	{
@@ -398,7 +388,7 @@ void ABallPawn::Move(const FInputActionValue& Value)
 		// Get ForwardControlDirection (Y FRotator axis). X - FVector axis
 		const FVector ForwardControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::X);
 
-		// Add force to MeshComponent with MoveAxisVale.Y multiplied with MovementSpeed and direction to move
+		// Add force to MeshComponent with MoveAxisValue.Y multiplied with MovementSpeed and direction to move
 		MeshComponent->AddForce(MoveAxisValue.Y * MovementSpeed * ForwardControlDirection);
 	}
 
@@ -408,9 +398,23 @@ void ABallPawn::Move(const FInputActionValue& Value)
 		// Get RightControlDirection (X FRotator axis). Y - FVector axis
 		const FVector RightControlDirection = FRotationMatrix(YawControlRotation).GetUnitAxis(EAxis::Y);
 
-		// Add force to MeshComponent with MoveAxisVale.X multiplied with MovementSpeed and direction to move
+		// Add force to MeshComponent with MoveAxisValue.X multiplied with MovementSpeed and direction to move
 		MeshComponent->AddForce(MoveAxisValue.X * MovementSpeed * RightControlDirection);
 	}
+
+	const FVector CurrentVelocity = MeshComponent->GetComponentVelocity();
+
+	// Calculate MovementAmortizationForce without Z axis to not affect jumping function while this function is working
+	FVector MovementAmortizationForce;
+	MovementAmortizationForce.X = -CurrentVelocity.X * MovementAmortizationFactor;
+	MovementAmortizationForce.Y = -CurrentVelocity.Y * MovementAmortizationFactor;
+	MovementAmortizationForce.Z = 0;
+
+	/**
+	 * Add MovementAmortizationForce to slow down the ball in any direction which will help to stop the ball if it moves
+	 * in opposite direction of CurrentVelocity
+	 */
+	MeshComponent->AddForce(MovementAmortizationForce);
 }
 
 void ABallPawn::Look(const FInputActionValue& Value)
@@ -916,27 +920,13 @@ void ABallPawn::SpawnCloneObject()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::SaveGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->SaveGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::SaveGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->SaveGame();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ABallPawn::LoadGame()
 {
-	if (SaveGameManagerPtr.IsValid())
-	{
-		SaveGameManagerPtr->LoadGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABallPawn::LoadGame: SaveGameManagerPtr is invalid!"));
-	}
+	GetGameInstance()->GetSubsystem<USaveGameSubsystem>()->LoadGame();
 }
 
 void ABallPawn::InitWaterFluidSimulation()
@@ -955,7 +945,7 @@ void ABallPawn::InitWaterFluidSimulation()
 	// Call RegisterDynamicForce for every water fluid Actor
 	for (AActor* It : WaterFluidActors)
 	{
-		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius, WaterFluidForceStrength);
+		RegisterDynamicForce(It, MeshComponent, MeshComponent->Bounds.SphereRadius / 2, WaterFluidForceStrength);
 	}
 }
 

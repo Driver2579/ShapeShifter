@@ -30,10 +30,10 @@ protected:
 
 	// All ChildActorComponents with Laser ChildActorClass should be attached to here
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	USceneComponent* AttachPointComponent;
+	TObjectPtr<USceneComponent> AttachPointComponent;
 
 private:
-	TArray<class ALaser*> ChildLasers;
+	TArray<TWeakObjectPtr<class ALaser>> ChildLasers;
 
 	// Default Active state of all attached Lasers
 	UPROPERTY(EditAnywhere, Category = "Activation")

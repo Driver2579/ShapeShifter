@@ -24,7 +24,7 @@ private:
 
 	// Stores all meshes that were created along the spline
 	UPROPERTY(Transient)
-	TInlineComponentArray<TObjectPtr<class USplineMeshComponent>> MeshesAlongSpline;
+	TArray<TObjectPtr<class USplineMeshComponent>> MeshesAlongSpline;
 
 	// Creates the meshes along the spline
 	void ConstructMeshesAlongSpline();

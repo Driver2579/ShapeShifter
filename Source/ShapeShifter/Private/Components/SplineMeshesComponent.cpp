@@ -5,11 +5,25 @@
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 
+USplineMeshesComponent::USplineMeshesComponent()
+{
+	SplineMeshComponentClass = USplineMeshComponent::StaticClass();
+
+	Mobility = EComponentMobility::Static;
+}
+
 void USplineMeshesComponent::OnRegister()
 {
 	Super::OnRegister();
 
-	ReconstructMeshesAlongSpline();
+	ConstructMeshesAlongSpline();
+}
+
+void USplineMeshesComponent::OnUnregister()
+{
+	Super::OnUnregister();
+
+	DestroyMeshesAlongSpline();
 }
 
 void USplineMeshesComponent::UpdateSpline()
@@ -21,44 +35,62 @@ void USplineMeshesComponent::UpdateSpline()
 
 void USplineMeshesComponent::ConstructMeshesAlongSpline()
 {
+	// Don't do anything if SplineMeshComponentClass isn't set
+	if (!IsValid(SplineMeshComponentClass))
+	{
+		return;
+	}
+
+#if DO_ENSURE
+	// Make sure StaticMesh is set
+	if (!ensure(SplineMeshComponentClass->GetDefaultObject<USplineMeshComponent>()->GetStaticMesh()))
+	{
+		return;
+	}
+#endif
+
 	// The number of segments on the spline excluding the last one because of "i + 1" in the next loop
 	const int32 NumSegments = GetNumberOfSplinePoints() - 1;
 
 	// Build new meshes by creating a mesh for each segment on the spline
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
-		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this);
+		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this,
+			SplineMeshComponentClass);
 
 		SplineMeshComponent->RegisterComponent();
 
-		SplineMeshComponent->SetMobility(Mobility);
-		SplineMeshComponent->SetStaticMesh(StaticMesh);
-
 		// Stretch the mesh to the entire segment
 		SplineMeshComponent->SetStartAndEnd(
-			GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
-			GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Type::Local),
-			GetLocationAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local),
-			GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Type::Local)
+			GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local),
+			GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local),
+			GetLocationAtSplinePoint(i + 1, ESplineCoordinateSpace::Local),
+			GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Local)
 		);
 
-		SplineMeshComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		SplineMeshComponent->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
 		MeshesAlongSpline.Add(SplineMeshComponent);
 	}
 }
 
-void USplineMeshesComponent::ReconstructMeshesAlongSpline()
+void USplineMeshesComponent::DestroyMeshesAlongSpline()
 {
 	// Destroy old meshes
 	for (USplineMeshComponent* Rail : MeshesAlongSpline)
 	{
-		Rail->DestroyComponent();
+		if (Rail)
+		{
+			Rail->DestroyComponent();
+		}
 	}
-
+	
 	// Clear an array of old meshes
 	MeshesAlongSpline.Reset();
+}
 
-	// Build new meshes
+void USplineMeshesComponent::ReconstructMeshesAlongSpline()
+{
+	DestroyMeshesAlongSpline();
 	ConstructMeshesAlongSpline();
 }

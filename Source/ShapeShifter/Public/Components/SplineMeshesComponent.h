@@ -6,6 +6,8 @@
 #include "Components/SplineComponent.h"
 #include "SplineMeshesComponent.generated.h"
 
+class USplineMeshComponent;
+
 // Generates a series of SplineMeshComponents along the spline
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SHAPESHIFTER_API USplineMeshesComponent : public USplineComponent
@@ -13,22 +15,31 @@ class SHAPESHIFTER_API USplineMeshesComponent : public USplineComponent
 	GENERATED_BODY()
 
 public:
+	USplineMeshesComponent();
+
 	virtual void OnRegister() override;
+	virtual void OnUnregister() override;
 
 	virtual void UpdateSpline() override;
 
 private:
-	// The mesh that will be spawned along the spline
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UStaticMesh> StaticMesh;
+	// The class with default parameters for the SplineMeshComponents
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<USplineMeshComponent> SplineMeshComponentClass;
 
 	// Stores all meshes that were created along the spline
 	UPROPERTY(Transient)
-	TArray<TObjectPtr<class USplineMeshComponent>> MeshesAlongSpline;
+	TArray<TObjectPtr<USplineMeshComponent>> MeshesAlongSpline;
 
 	// Creates the meshes along the spline
 	void ConstructMeshesAlongSpline();
 
-	// Destroys all created meshes and creates new ones using ConstructMeshesAlongSpline function
+	// Destroys all created meshes
+	void DestroyMeshesAlongSpline();
+
+	/**
+	 * Destroys all created meshes using DestroyMeshesAlongSpline function and creates new ones using
+	 * ConstructMeshesAlongSpline function.
+	 */
 	void ReconstructMeshesAlongSpline();
 };

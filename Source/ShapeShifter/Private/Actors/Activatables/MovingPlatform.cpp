@@ -1,7 +1,9 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #include "Actors/Activatables/MovingPlatform.h"
 
 #include "Common/Structs/SaveData/MovingPlatformSaveData.h"
-#include "Components/SplineComponent.h"
+#include "Components/SplineMeshesWithEdgesComponent.h"
 #include "Objects/ShapeShifterSaveGame.h"
 #include "Pawns/BallPawn.h"
 #include "Components/AudioComponent.h"
@@ -11,8 +13,10 @@ AMovingPlatform::AMovingPlatform()
 	PrimaryActorTick.bCanEverTick = true;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	
-	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Movement Direction Spline"));
+
+	MovementDirectionSplineComponent = CreateDefaultSubobject<USplineMeshesWithEdgesComponent>(
+		TEXT("Movement Direction Spline"));
+
 	MovementDirectionSplineComponent->SetupAttachment(RootComponent);
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
@@ -44,9 +48,9 @@ void AMovingPlatform::BeginPlay()
 		return;
 	}
 
-#if WITH_EDITOR
+#if !NO_LOGGING
 	// Check elements for validation
-	for (auto& Elem : DelaysMap)
+	for (const auto& Elem : DelaysMap)
 	{
 		if (Elem.Key < 0 || Elem.Key > MoveTime)
 		{
@@ -55,11 +59,14 @@ void AMovingPlatform::BeginPlay()
 
 		if (Elem.Value < 0)
 		{
-			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap value %f is invalid!"), Elem.Key);
+			UE_LOG(LogTemp, Error, TEXT("AMovingPlatform::BeginPlay: DelaysMap value %f is invalid!"),
+				Elem.Key);
 		}
 	}
 #endif
-	
+
+	MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
+
 	FOnTimelineEvent MovementTimelineEvent;
 	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
 
@@ -69,7 +76,7 @@ void AMovingPlatform::BeginPlay()
 		MovementTimeline.AddEvent(Elem.Key, MovementTimelineEvent);
 	}
 	
-	// Duplicate curve for editing and using
+	// Duplicate the curve for editing and using
 	MovementCurve = DuplicateObject(MovementCurve, nullptr);
 
 	// Change animation time by MoveTime
@@ -78,7 +85,7 @@ void AMovingPlatform::BeginPlay()
 		Key.Time *= MoveTime;
 	}
 
-	// Move platform to starting point
+	// Move the platform to starting point
 	ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 
 	const FVector SplineLocation = MovementDirectionSplineComponent->GetLocationAtSplinePoint(0,
@@ -263,8 +270,8 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
-	// Set new location for platform
-	MeshComponent->SetWorldLocation(CurrentSplineLocation);
+	// Set new location for the platform
+	MeshComponent->SetWorldLocation(CurrentSplineLocation + MeshComponentInitialRelativeLocation);
 
 	// The platform has shifted in the indicated direction
 	if (!bRotate)
@@ -278,7 +285,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 
 	CurrentSplineRotation.Pitch = 0.f;
 
-	// Set new rotation for platform
+	// Set new rotation for the platform
 	MeshComponent->SetWorldRotation(CurrentSplineRotation);
 }
 
@@ -310,7 +317,7 @@ void AMovingPlatform::Deactivate()
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 
-	// If the platform is not looped it should not move to the starting location
+	// If the platform is not looped, it should not move to the starting location
 	if (bLoop)
 	{
 		MovementTimeline.Stop();

@@ -19,9 +19,10 @@ class SHAPESHIFTER_API IActivatable
 	GENERATED_BODY()
 
 public:
+	virtual bool IsActive() const = 0;
+
 	virtual void Activate() = 0;
 	virtual void Deactivate() = 0;
 
-	virtual bool IsActive() const = 0;
 	void SetActive(const bool bNewActive);
 };

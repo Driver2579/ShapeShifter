@@ -24,23 +24,30 @@ void ALaserWall::PostInitializeComponents()
 	 */
 
 	// Iterate through all attached components
-	for (auto It : AttachPointComponent->GetAttachChildren())
+	for (auto ChildActorComponent : AttachPointComponent->GetAttachChildren())
 	{
-		const UChildActorComponent* ChildActorComponent = Cast<UChildActorComponent>(It);
-
+#if DO_ENSURE
 		// Check if attached component is a ChildActorComponent
-		if (!IsValid(ChildActorComponent))
+		if (!ensure(IsValid(ChildActorComponent)) || !ensure(ChildActorComponent.IsA<UChildActorComponent>()))
 		{
-			continue;
+			return;
 		}
+#endif
+
+		const UChildActorComponent* CastedChildActorComponent = CastChecked<UChildActorComponent>(ChildActorComponent);
+
+#if DO_ENSURE
+		const bool bChildActorValid = ensure(IsValid(CastedChildActorComponent->GetChildActor()));
+		const bool bChildActorIsLaser = ensure(CastedChildActorComponent->GetChildActor()->IsA<ALaser>());
+
+		if (!bChildActorValid || !bChildActorIsLaser)
+		{
+			return;
+		}
+#endif
 
 		// Get ChildLaser from ChildActorComponent
-		ALaser* ChildLaser = Cast<ALaser>(ChildActorComponent->GetChildActor());
-
-		if (!IsValid(ChildLaser))
-		{
-			continue;
-		}
+		ALaser* ChildLaser = CastChecked<ALaser>(CastedChildActorComponent->GetChildActor());
 
 		// Add ChildLaser to ChildLasers array
 		ChildLasers.Add(ChildLaser);
@@ -60,7 +67,7 @@ void ALaserWall::Activate()
 	bActive = true;
 
 	// Activate all ChildLasers
-	for (ALaser* ChildLaser : ChildLasers)
+	for (const TWeakObjectPtr<ALaser> ChildLaser : ChildLasers)
 	{
 		ChildLaser->Activate();
 	}
@@ -71,7 +78,7 @@ void ALaserWall::Deactivate()
 	bActive = false;
 
 	// Deactivate all ChildLasers
-	for (ALaser* ChildLaser : ChildLasers)
+	for (const TWeakObjectPtr<ALaser> ChildLaser : ChildLasers)
 	{
 		ChildLaser->Deactivate();
 	}

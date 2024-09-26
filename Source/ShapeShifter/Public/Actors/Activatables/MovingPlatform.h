@@ -28,7 +28,7 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class USplineComponent* MovementDirectionSplineComponent;
+	class USplineMeshesWithEdgesComponent* MovementDirectionSplineComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent;
@@ -78,6 +78,9 @@ private:
 	bool bActive = false;
 
 	bool bHasEverSwitchedActivation = false;
+
+	// Stores the initial relative mesh's position 
+	FVector MeshComponentInitialRelativeLocation;
 
 	// Time it takes the platform to complete the route
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))

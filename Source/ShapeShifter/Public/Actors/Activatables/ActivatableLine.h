@@ -39,10 +39,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Materials")
 	FName MaterialParameterColorName;
 
-	UPROPERTY(EditDefaultsOnly, Category="Materials")
+	UPROPERTY(EditAnywhere, Category="Materials")
 	FLinearColor MaterialsActiveColor;
 
-	UPROPERTY(EditDefaultsOnly, Category="Materials")
+	UPROPERTY(EditAnywhere, Category="Materials")
 	FLinearColor MaterialsInactiveColor;
 
 	void SetMaterialsColor(const FLinearColor& Color) const;

@@ -37,13 +37,33 @@ AMovingPlatform::AMovingPlatform()
 	bRotate = false;
 }
 
+#if WITH_EDITOR
+void AMovingPlatform::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	// Set the platform to the starting point for the preview in the level editor
+	if (MovementCurve && !MovementCurve->FloatCurve.Keys.IsEmpty())
+	{
+		MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
+
+		ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
+	}
+}
+#endif
+
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
 
+#if WITH_EDITOR
+	// Reset initial location for the platform to undo changes in OnConstruction
+	MeshComponent->SetRelativeLocation(MeshComponentInitialRelativeLocation);
+#endif
+
 	SetupCollisionComponents();
 
-	if (!IsValid(MovementCurve))
+	if (!MovementCurve)
 	{
 		UE_LOG(LogTemp, Error, TEXT("AMovingPlatform:BeginPlay: MovementCurve is invalid!"));
 		

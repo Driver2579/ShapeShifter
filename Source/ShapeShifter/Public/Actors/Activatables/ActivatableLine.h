@@ -11,7 +11,7 @@ UCLASS()
 class SHAPESHIFTER_API AActivatableLine : public AActor, public IActivatable
 {
 	GENERATED_BODY()
-	
+
 public:	
 	// Sets default values for this actor's properties
 	AActivatableLine();

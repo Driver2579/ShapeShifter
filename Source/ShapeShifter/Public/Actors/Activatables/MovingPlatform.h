@@ -65,7 +65,7 @@ protected:
 	 * @param Value Position of the platform on the spline (from 0 to 1).
 	 */
 	UFUNCTION()
-	void ProcessMovementTimeline(const float Value) const;
+	void ProcessMovementTimeline(const float Value);
 
 private:
 	// Add OnComponentBeginOverlap delegate subscription to all attached components of CollisionAttachPointComponent

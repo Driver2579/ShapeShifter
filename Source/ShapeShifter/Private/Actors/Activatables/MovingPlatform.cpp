@@ -33,6 +33,8 @@ AMovingPlatform::AMovingPlatform()
 
 	AmbientAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Ambient Audio"));
 	AmbientAudioComponent->SetupAttachment(MeshComponent);
+
+	bRotate = false;
 }
 
 void AMovingPlatform::BeginPlay()
@@ -77,7 +79,7 @@ void AMovingPlatform::BeginPlay()
 	}
 	
 	// Duplicate the curve for editing and using
-	MovementCurve = DuplicateObject(MovementCurve, nullptr);
+	MovementCurve = DuplicateObject(MovementCurve, this);
 
 	// Change animation time by MoveTime
 	for (FRichCurveKey& Key : MovementCurve->FloatCurve.Keys)
@@ -88,14 +90,9 @@ void AMovingPlatform::BeginPlay()
 	// Move the platform to starting point
 	ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 
-	const FVector SplineLocation = MovementDirectionSplineComponent->GetLocationAtSplinePoint(0,
-		ESplineCoordinateSpace::World);
-	
-	MeshComponent->SetWorldLocation(SplineLocation);
-
 	// Add an event to handle value changes on the timeline
 	FOnTimelineFloat ProgressFunction;
-	ProgressFunction.BindUFunction(this, TEXT("ProcessMovementTimeline"));
+	ProgressFunction.BindDynamic(this, &AMovingPlatform::ProcessMovementTimeline);
 	
 	// Add motion curve interpolation to the timeline using the given delegate
 	MovementTimeline.AddInterpFloat(MovementCurve, ProgressFunction);
@@ -261,7 +258,8 @@ void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 	}
 }
 
-void AMovingPlatform::ProcessMovementTimeline(const float Value) const
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AMovingPlatform::ProcessMovementTimeline(const float Value)
 {
 	// Location on the spline
 	const float Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
@@ -284,6 +282,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value) const
 		ESplineCoordinateSpace::World);
 
 	CurrentSplineRotation.Pitch = 0.f;
+	CurrentSplineRotation.Roll = 0.f;
 
 	// Set new rotation for the platform
 	MeshComponent->SetWorldRotation(CurrentSplineRotation);

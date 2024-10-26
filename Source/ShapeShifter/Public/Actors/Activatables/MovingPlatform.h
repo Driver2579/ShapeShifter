@@ -19,6 +19,10 @@ class SHAPESHIFTER_API AMovingPlatform : public AActor, public IActivatable, pub
 public:
 	AMovingPlatform();
 
+#if WITH_EDITOR
+	virtual void OnConstruction(const FTransform& Transform) override;
+#endif
+
 	virtual void Tick(float DeltaTime) override;
 
 	virtual bool IsActive() const override final;
@@ -65,7 +69,7 @@ protected:
 	 * @param Value Position of the platform on the spline (from 0 to 1).
 	 */
 	UFUNCTION()
-	void ProcessMovementTimeline(const float Value) const;
+	void ProcessMovementTimeline(const float Value);
 
 private:
 	// Add OnComponentBeginOverlap delegate subscription to all attached components of CollisionAttachPointComponent
@@ -104,7 +108,7 @@ private:
 
 	// Should display the time dependence of the location on the route
 	UPROPERTY(EditInstanceOnly)
-	UCurveFloat* MovementCurve;
+	TObjectPtr<UCurveFloat> MovementCurve;
 
 	FTimeline MovementTimeline;
 

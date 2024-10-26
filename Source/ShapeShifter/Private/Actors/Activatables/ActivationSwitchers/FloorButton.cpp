@@ -31,14 +31,13 @@ void AFloorButton::SetupComponents()
 	DeactivateAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Deactivate Audio"));
 	DeactivateAudioComponent->SetupAttachment(RootComponent);
 
-	// Set ButtonTriggerComponent collision profile to OverlapOnlyPawn
-	ButtonTriggerComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
+	// Set ButtonTriggerComponent collision profile to TriggerOnlyPawn
+	ButtonTriggerComponent->SetCollisionProfileName(TEXT("TriggerOnlyPawn"));
 
 	// Enable ButtonTriggerComponent MultiBodyOverlap
 	ButtonTriggerComponent->bMultiBodyOverlap = true;
 
-	// Make ButtonTriggerComponent invisible in editor and game
-	ButtonTriggerComponent->SetVisibility(false);
+	// Make ButtonTriggerComponent invisible in game
 	ButtonTriggerComponent->SetHiddenInGame(true);
 }
 

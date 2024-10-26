@@ -26,20 +26,20 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UStaticMeshComponent* BaseMeshComponent;
+	TObjectPtr<UStaticMeshComponent> BaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UStaticMeshComponent* ButtonMeshComponent;
+	TObjectPtr<UStaticMeshComponent> ButtonMeshComponent;
 
-	// This is used to generate overlap events with any collision shape. This component should not be visible.
+	// This is used for generating overlap events with any collision shape. This component should not be visible.
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UStaticMeshComponent* ButtonTriggerComponent;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UAudioComponent* ActivateAudioComponent;
+	TObjectPtr<UStaticMeshComponent> ButtonTriggerComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UAudioComponent* DeactivateAudioComponent;
+	TObjectPtr<UAudioComponent> ActivateAudioComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UAudioComponent> DeactivateAudioComponent;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

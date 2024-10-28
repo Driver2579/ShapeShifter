@@ -32,22 +32,24 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UStaticMeshComponent* BaseMeshComponent;
+	TObjectPtr<UStaticMeshComponent> BaseMeshComponent;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UStaticMeshComponent* LeverMeshComponent;
+	TObjectPtr<UStaticMeshComponent> LeverMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* ActivateZoneComponent;
+	TObjectPtr<UBoxComponent> ActivateZoneComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UBoxComponent* DeactivateZoneComponent;
+	TObjectPtr<UBoxComponent> DeactivateZoneComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UAudioComponent* ActivateAudioComponent;
+	TObjectPtr<UAudioComponent> ActivateAudioComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UAudioComponent* DeactivateAudioComponent;
+	TObjectPtr<UAudioComponent> DeactivateAudioComponent;
+
+	virtual void PostInitializeComponents() override;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -69,7 +71,7 @@ private:
 	// Called on Activate and Deactivate functions success
 	void OnActiveSwitch();
 
-	// Velocity needed for physics component to activate or deactivate the lever
+	// Velocity needed for a physics component to activate or deactivate the lever
 	UPROPERTY(EditDefaultsOnly, Category = "Activation", meta = (ClampMin = 0))
 	float VelocityToSwitchActivation = 10;
 

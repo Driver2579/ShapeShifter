@@ -42,6 +42,17 @@ void ALever::OnConstruction(const FTransform& Transform)
 	SetLeverMeshRotationByActive();
 }
 
+void ALever::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	// Switch actors' activation for the first time if bActive is true by default
+	if (bActive)
+	{
+		SwitchActorsActivation();
+	}
+}
+
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
@@ -68,7 +79,7 @@ void ALever::Tick(float DeltaTime)
 	LeverMeshComponent->SetRelativeRotation(NewRotation);
 
 	// We need this because the default Tolerance in Equals function is too small and it could fail sometimes
-	const float Tolerance = 0.001;
+	constexpr float Tolerance = 0.001;
 
 	if (LeverMeshComponent->GetRelativeRotation().Equals(LeverMeshTargetRotation, Tolerance))
 	{
@@ -86,10 +97,12 @@ void ALever::OnSaveGame(UShapeShifterSaveGame* SaveGameObject)
 	{
 		SaveGameObject->LeverSaveData.Add(GetName(), bActive);
 	}
+#if !NO_LOGGING
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ALever::OnSaveGame: SaveGameObject is invalid!"));
 	}
+#endif
 }
 
 void ALever::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
@@ -161,7 +174,7 @@ bool ALever::IsActive() const
 
 void ALever::Activate()
 {
-	// We don't need to do anything if Lever is already active
+	// We don't need to do anything if the Lever is already active
 	if (bActive)
 	{
 		return;
@@ -169,14 +182,14 @@ void ALever::Activate()
 
 	ActivateAudioComponent->Play();
 	DeactivateAudioComponent->Stop();
-	
+
 	bActive = true;
 	OnActiveSwitch();
 }
 
 void ALever::Deactivate()
 {
-	// We don't need to do anything if Lever is already inactive
+	// We don't need to do anything if the Lever is already inactive
 	if (!bActive)
 	{
 		return;

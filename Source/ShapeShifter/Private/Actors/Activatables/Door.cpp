@@ -37,6 +37,9 @@ void ADoor::BeginPlay()
 	// Set open and closed right door states
 	StartRightDoorLocation = RightDoorMeshComponent->GetRelativeLocation();
 	EndRightDoorLocation = StartRightDoorLocation - FVector(-MoveOffset, 0, 0);
+
+	// Set default Active state
+	SetActive(bActive);
 }
 
 void ADoor::Tick(float DeltaTime)

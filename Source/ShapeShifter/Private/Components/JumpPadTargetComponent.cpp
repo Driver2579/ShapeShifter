@@ -3,10 +3,54 @@
 #include "Components/JumpPadTargetComponent.h"
 
 #include "Actors/Jumppad.h"
+#include "Components/BillboardComponent.h"
 
 UJumpPadTargetComponent::UJumpPadTargetComponent()
 {
 	bWantsOnUpdateTransform = true;
+
+	// Create a BillboardComponent for in-scene visualization
+	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("Billboard"));
+	// Set the default icon texture
+	static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultIcon(TEXT("/Engine/EditorResources/S_TargetPoint.S_TargetPoint"));
+	if (DefaultIcon.Succeeded())
+	{
+		BillboardIconTexture = DefaultIcon.Object;
+	}
+	else
+	{
+		BillboardIconTexture = nullptr;
+	}
+}
+
+void UJumpPadTargetComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	if (!BillboardComponent)
+	{
+		return;
+	}
+	
+	// BillboardComponent for in-scene visualization
+	BillboardComponent->SetupAttachment(this);
+	BillboardComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f)); 
+	BillboardComponent->bIsEditorOnly = true;
+	BillboardComponent->SetVisibility(true);
+	BillboardComponent->SetHiddenInGame(true);
+
+	// Dynamically load and set the default sprite
+	if (BillboardIconTexture)
+	{
+		BillboardComponent->SetSprite(BillboardIconTexture);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to load texture: %s"), *BillboardIconTexture->GetName());
+	}
+	
+	BillboardComponent->SetRelativeScale3D(FVector(0.5f));
+	BillboardComponent->SetOpacityMaskRefVal(0.5f);
 }
 
 #if WITH_EDITOR
@@ -38,4 +82,15 @@ void UJumpPadTargetComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTran
 	// Set JumpPad Mesh rotation using Angle
 	OwningJumpPad->GetMesh()->SetWorldRotation(FRotator(0.0f, Angle, 0.0f));
 }
+
+void UJumpPadTargetComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+    Super::PostEditChangeProperty(PropertyChangedEvent);
+
+    if (BillboardComponent)
+    {
+        BillboardComponent->MarkRenderStateDirty();
+    }
+}
+
 #endif

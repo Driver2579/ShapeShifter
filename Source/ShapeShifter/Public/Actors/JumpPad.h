@@ -25,23 +25,29 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* BaseMeshComponent;
+	TObjectPtr<UStaticMeshComponent> BaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* PadMeshComponent;
+	TObjectPtr<UStaticMeshComponent> PadMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* RotationAxisComponent;
+	TObjectPtr<USceneComponent> RotationAxisComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UBoxComponent* JumpTriggerComponent;
+	TObjectPtr<class UBoxComponent> JumpTriggerComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UAudioComponent* ThrowSoundComponent;
-	
+	TObjectPtr<UAudioComponent> ThrowSoundComponent;
+
 	// Indicates where the player should land in the level
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UJumpPadTargetComponent* TargetLocationComponent;
+	TObjectPtr<class UJumpPadTargetComponent> TargetLocationComponent;
+
+#if WITH_EDITORONLY_DATA
+	// Billboard visualization component for the TargetLocationComponent
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UBillboardComponent> TargetLocationBillboardComponent;
+#endif
 
 private:
 	// Initialize functions

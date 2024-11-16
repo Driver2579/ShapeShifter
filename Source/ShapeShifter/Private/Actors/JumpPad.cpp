@@ -5,6 +5,7 @@
 #include "Components/JumpPadTargetComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/AudioComponent.h"
+#include "Components/BillboardComponent.h"
 
 AJumpPad::AJumpPad()
 {
@@ -27,6 +28,26 @@ AJumpPad::AJumpPad()
 	TargetLocationComponent = CreateDefaultSubobject<UJumpPadTargetComponent>(TEXT("Target Location"));
 	TargetLocationComponent->SetupAttachment(RootComponent);
 
+	// Create a TargetLocationBillboardComponent only in the editor
+#if WITH_EDITORONLY_DATA
+	TargetLocationBillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("Target Location Billboard"));
+	TargetLocationBillboardComponent->SetupAttachment(TargetLocationComponent);
+
+	TargetLocationBillboardComponent->SetRelativeScale3D(FVector(0.5));
+
+	TargetLocationBillboardComponent->bIsEditorOnly = true;
+
+	const ConstructorHelpers::FObjectFinder<UTexture2D> DefaultSprite =
+		TEXT("/Engine/EditorResources/S_TargetPoint.S_TargetPoint");
+
+#if DO_CHECK
+	// Make sure the sprite exists
+	check(DefaultSprite.Succeeded());
+#endif
+
+	TargetLocationBillboardComponent->SetSprite(DefaultSprite.Object);
+#endif
+
 	ThrowSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Throw Sound"));
 	ThrowSoundComponent->SetupAttachment(RootComponent);
 }
@@ -38,7 +59,8 @@ void AJumpPad::BeginPlay()
 	// The player cannot jump onto a platform if the JumpHeight is below the platform
 	if (TargetLocationComponent->GetRelativeLocation().Z > JumpHeight)
 	{
-		UE_LOG(LogTemp, Error, TEXT("AJumpPad:BeginPlay: JumpHeight is lower than TargetLocationComponent height"));
+		UE_LOG(LogTemp, Error,
+			TEXT("AJumpPad:BeginPlay: JumpHeight is lower than TargetLocationComponent height"));
 
 		return;
 	}
@@ -108,13 +130,14 @@ void AJumpPad::InitializeThrowVelocity()
 	const FVector& TargetLocation = TargetLocationComponent->GetRelativeLocation();
 
 	// Acceleration of gravity
-	const float Gravity = 981.0f;
+	constexpr float Gravity = 981.0f;
 
 	// Velocity to achieve jumping heights
 	const float VerticalVelocity = FMath::Sqrt(2 * Gravity * JumpHeight);
 
 	// The time the object will spend in the air
-	const float FlightTime = VerticalVelocity / Gravity + FMath::Sqrt(2 * (JumpHeight - TargetLocation.Z) / Gravity);
+	const float FlightTime =
+		VerticalVelocity / Gravity + FMath::Sqrt(2 * (JumpHeight - TargetLocation.Z) / Gravity);
 
 	// Path to TargetLocationComponent in XY plane
 	FVector HorizontalPath = TargetLocation;

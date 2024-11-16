@@ -24,31 +24,31 @@ public:
 	virtual void Deactivate() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* MeshComponent;
+	TObjectPtr<UStaticMeshComponent> MeshComponent;
 
 	// Triggers teleportation to connected teleporter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* TeleportTriggerComponent;
+	TObjectPtr<UStaticMeshComponent> TeleportTriggerComponent;
 
 	// Attach all other NiagaraParticlesComponent to this if you need more
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UNiagaraComponent* NiagaraParticlesComponent;
+	TObjectPtr<class UNiagaraComponent> NiagaraParticlesComponent;
 
 	// A point where Pawn will be teleported to
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USceneComponent* TeleportPointComponent;
+	TObjectPtr<USceneComponent> TeleportPointComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UAudioComponent* ActivateAudioComponent;
+	TObjectPtr<UAudioComponent> ActivateAudioComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UAudioComponent* DeactivateAudioComponent;
+	TObjectPtr<UAudioComponent> DeactivateAudioComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UAudioComponent* AmbientAudioComponent;
+	TObjectPtr<UAudioComponent> AmbientAudioComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds")
-	USoundCue* TeleportSound;
+	TObjectPtr<USoundCue> TeleportSound;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -66,11 +66,11 @@ private:
 	bool bActive = true;
 
 	UPROPERTY(EditInstanceOnly)
-	ATeleporter* OtherTeleporter;
+	TObjectPtr<ATeleporter> OtherTeleporter;
 
 	void TeleportBallPawn(ABallPawn* BallPawnToTeleport) const;
 
-	TArray<ABallPawn*> JustTeleportedBallPawns;
+	TArray<TWeakObjectPtr<ABallPawn>> JustTeleportedBallPawns;
 
 	// Check if we can use OtherTeleporter for teleportation
 	bool IsOtherTeleporterValid() const;

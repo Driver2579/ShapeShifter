@@ -42,10 +42,30 @@ void AMovingPlatform::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
+	/**
+	 * Remember the rotation of the platform before the bRotate was enabled. It's a raw pointer because we need to check
+	 * if it was ever set.
+	 */
+	if (bRotate)
+	{
+		MeshComponentRelativeRotationBeforeRotateEnabled = new FRotator(MeshComponent->GetRelativeRotation());
+	}
+	/**
+	 * Otherwise, if bRotate was disabled and the rotation was set before, restore it and clear the pointer because UE's
+	 * garbage collector works only with UObjects created with NewObject function.
+	 */
+	else if (MeshComponentRelativeRotationBeforeRotateEnabled)
+	{
+		MeshComponent->SetRelativeRotation(*MeshComponentRelativeRotationBeforeRotateEnabled);
+
+		delete MeshComponentRelativeRotationBeforeRotateEnabled;
+	}
+
 	// Set the platform to the starting point for the preview in the level editor
 	if (MovementCurve && !MovementCurve->FloatCurve.Keys.IsEmpty())
 	{
 		MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
+		MeshComponentInitialRelativeRotation = MeshComponent->GetRelativeRotation();
 
 		ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 	}
@@ -55,11 +75,6 @@ void AMovingPlatform::OnConstruction(const FTransform& Transform)
 void AMovingPlatform::BeginPlay()
 {
 	Super::BeginPlay();
-
-#if WITH_EDITOR
-	// Reset initial location for the platform to undo changes in OnConstruction
-	MeshComponent->SetRelativeLocation(MeshComponentInitialRelativeLocation);
-#endif
 
 	SetupCollisionComponents();
 
@@ -88,6 +103,7 @@ void AMovingPlatform::BeginPlay()
 #endif
 
 	MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
+	MeshComponentInitialRelativeRotation = MeshComponent->GetRelativeRotation();
 
 	FOnTimelineEvent MovementTimelineEvent;
 	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
@@ -288,7 +304,7 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
-	// Set new location for the platform
+	// Set a new location for the platform
 	MeshComponent->SetWorldLocation(CurrentSplineLocation + MeshComponentInitialRelativeLocation);
 
 	// The platform has shifted in the indicated direction
@@ -297,15 +313,16 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 		return;
 	}
 
-	// Calculation of rotation in space
+	// Get the rotation of the platform on the current spline's location
 	FRotator CurrentSplineRotation = MovementDirectionSplineComponent->GetRotationAtDistanceAlongSpline(Distance,
-		ESplineCoordinateSpace::World);
+		ESplineCoordinateSpace::Local);
 
-	CurrentSplineRotation.Pitch = 0.f;
-	CurrentSplineRotation.Roll = 0.f;
+	// Set the initial rotation of the platform for Pitch and Roll, we need to rotate only Yaw
+	CurrentSplineRotation.Pitch = MeshComponentInitialRelativeRotation.Pitch;
+	CurrentSplineRotation.Roll = MeshComponentInitialRelativeRotation.Roll;
 
 	// Set new rotation for the platform
-	MeshComponent->SetWorldRotation(CurrentSplineRotation);
+	MeshComponent->SetRelativeRotation(CurrentSplineRotation);
 }
 
 bool AMovingPlatform::IsActive() const

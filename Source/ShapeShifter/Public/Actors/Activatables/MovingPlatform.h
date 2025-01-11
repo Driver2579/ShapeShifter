@@ -86,6 +86,14 @@ private:
 	// Stores the initial relative mesh's position 
 	FVector MeshComponentInitialRelativeLocation;
 
+	// Stores the initial relative mesh's rotation
+	FRotator MeshComponentInitialRelativeRotation;
+
+#if WITH_EDITOR
+	// Rotation that was set before bRotate was enabled
+	FRotator* MeshComponentRelativeRotationBeforeRotateEnabled;
+#endif
+
 	// Time it takes the platform to complete the route
 	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.01))
 	float MoveTime = 1;

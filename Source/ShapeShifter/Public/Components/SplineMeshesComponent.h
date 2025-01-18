@@ -27,7 +27,7 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<USplineMeshComponent> SplineMeshComponentClass;
 
-	// Stores all meshes that were created along the spline
+	// Stores all meshes created along the spline
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<USplineMeshComponent>> MeshesAlongSpline;
 
@@ -38,7 +38,7 @@ private:
 	void DestroyMeshesAlongSpline();
 
 	/**
-	 * Destroys all created meshes using DestroyMeshesAlongSpline function and creates new ones using
+	 * Destroys all created meshes using the DestroyMeshesAlongSpline function and creates new ones using the
 	 * ConstructMeshesAlongSpline function.
 	 */
 	void ReconstructMeshesAlongSpline();

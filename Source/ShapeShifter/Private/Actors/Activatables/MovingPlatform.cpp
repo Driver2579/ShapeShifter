@@ -123,7 +123,7 @@ void AMovingPlatform::BeginPlay()
 		Key.Time *= MoveTime;
 	}
 
-	// Move the platform to starting point
+	// Move the platform to the starting point
 	ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
 
 	// Add an event to handle value changes on the timeline

@@ -39,7 +39,7 @@ protected:
 
 	/**
 	 * Attach collision components to this one. They have to repeat collision of MeshComponent but a little smaller than
-	 * the original one. This is needed to check if BallPawn is colliding with MovingPlatform, and if yes than an
+	 * the original one. This is needed to check if BallPawn is colliding with MovingPlatform, and if yes, then an
 	 * overlapping BallPawn will be killed. You can attach to this component as many collisions as you want.
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

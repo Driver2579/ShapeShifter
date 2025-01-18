@@ -9,6 +9,16 @@ USplineMeshesComponent::USplineMeshesComponent()
 {
 	SplineMeshComponentClass = USplineMeshComponent::StaticClass();
 
+	// Set all points to a curve type by default
+	for (auto& SplinePoint : SplineCurves.Position.Points)
+	{
+		SplinePoint.InterpMode = ConvertSplinePointTypeToInterpCurveMode(ESplinePointType::Curve);
+	}
+
+	// Update the spline to reflect the changes but call a Super function to avoid constructing meshes at the stage
+	Super::UpdateSpline();
+
+	// Set the mobility to static by default because the meshes are static
 	Mobility = EComponentMobility::Static;
 }
 
@@ -36,7 +46,7 @@ void USplineMeshesComponent::UpdateSpline()
 void USplineMeshesComponent::ConstructMeshesAlongSpline()
 {
 	// Don't do anything if SplineMeshComponentClass isn't set
-	if (!IsValid(SplineMeshComponentClass))
+	if (!IsValid(SplineMeshComponentClass) || !SplineMeshComponentClass->IsAsset())
 	{
 		return;
 	}

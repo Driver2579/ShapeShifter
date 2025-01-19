@@ -36,6 +36,7 @@ bool USplineMeshesWithEdgesComponent::ConstructMeshesAlongSpline()
 
 	const float EdgeSplineMeshComponentLength = GetEdgeSplineMeshComponentLength(EdgeStaticMesh);
 
+	// Create the start and end EdgeSplineMeshComponents and add them to the MeshesAlongSpline array as required
 	MeshesAlongSpline.Add(ConstructEdgeSplineMeshComponent(true, EdgeSplineMeshComponentLength));
 	MeshesAlongSpline.Add(ConstructEdgeSplineMeshComponent(false, EdgeSplineMeshComponentLength));
 
@@ -44,6 +45,7 @@ bool USplineMeshesWithEdgesComponent::ConstructMeshesAlongSpline()
 
 float USplineMeshesWithEdgesComponent::GetEdgeSplineMeshComponentLength(const UStaticMesh* EdgeStaticMesh) const
 {
+	// Return the size of the EdgeStaticMesh's bounding box along the specified axis
 	switch (EdgeSplineMeshComponentLengthAxis)
 	{
 	case EAxis::X:

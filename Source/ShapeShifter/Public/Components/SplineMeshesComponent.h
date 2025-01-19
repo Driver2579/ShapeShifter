@@ -8,7 +8,7 @@
 
 class USplineMeshComponent;
 
-// Generates a series of SplineMeshComponents along the spline
+// Generates a series of SplineMeshComponents along the spline. Closed loop is not supported.
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SHAPESHIFTER_API USplineMeshesComponent : public USplineComponent
 {
@@ -22,17 +22,25 @@ public:
 
 	virtual void UpdateSpline() override;
 
-private:
-	// The class with default parameters for the SplineMeshComponents
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<USplineMeshComponent> SplineMeshComponentClass;
+	const TSubclassOf<USplineMeshComponent>& GetSplineMeshComponentClass() const { return SplineMeshComponentClass; }
+
+protected:
+	/**
+	 * Creates the meshes along the spline.
+	 * @return Whether the meshes were allowed to be created.
+	 * @remark If you override this function with more created meshes there, then you must add them to the
+	 * MeshesAlongSpline array.
+	 */
+	virtual bool ConstructMeshesAlongSpline();
 
 	// Stores all meshes created along the spline
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<USplineMeshComponent>> MeshesAlongSpline;
 
-	// Creates the meshes along the spline
-	void ConstructMeshesAlongSpline();
+private:
+	// The class with default parameters for the SplineMeshComponents along the spline
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<USplineMeshComponent> SplineMeshComponentClass;
 
 	// Destroys all created meshes
 	void DestroyMeshesAlongSpline();

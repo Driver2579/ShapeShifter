@@ -75,6 +75,12 @@ private:
 	// Add OnComponentBeginOverlap delegate subscription to all attached components of CollisionAttachPointComponent
 	void SetupCollisionComponents() const;
 
+	/**
+	 * Destroys the MeshComponentInitialRelativeLocation and MeshComponentInitialRelativeRotation variables and resets
+	 * location and rotation to the ones from the default object.
+	 */
+	void ResetPositionToDefault();
+
 	UFUNCTION()
 	void OnMovementTimelineEvent();
 	
@@ -84,14 +90,14 @@ private:
 	bool bHasEverSwitchedActivation = false;
 
 	// Stores the initial relative mesh's position 
-	FVector MeshComponentInitialRelativeLocation;
+	TUniquePtr<FVector> MeshComponentInitialRelativeLocation;
 
 	// Stores the initial relative mesh's rotation
-	FRotator MeshComponentInitialRelativeRotation;
+	TUniquePtr<FRotator> MeshComponentInitialRelativeRotation;
 
 #if WITH_EDITOR
 	// Rotation that was set before bRotate was enabled
-	FRotator* MeshComponentRelativeRotationBeforeRotateEnabled;
+	TUniquePtr<FRotator> MeshComponentRelativeRotationBeforeRotateEnabled;
 #endif
 
 	// Time it takes the platform to complete the route
@@ -121,4 +127,8 @@ private:
 	FTimeline MovementTimeline;
 
 	FTimerHandle MoveTimer;
+
+	// The distance between the platform and the spline's edges. This value is ignored if the spline is a closed loop.
+	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0))
+	float DistanceBetweenSplineEdges = 0;
 };

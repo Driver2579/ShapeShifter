@@ -48,26 +48,38 @@ void AMovingPlatform::OnConstruction(const FTransform& Transform)
 	 */
 	if (bRotate)
 	{
-		MeshComponentRelativeRotationBeforeRotateEnabled = new FRotator(MeshComponent->GetRelativeRotation());
+		MeshComponentRelativeRotationBeforeRotateEnabled = MakeUnique<FRotator>(
+			FRotator(MeshComponent->GetRelativeRotation()));
 	}
-	/**
-	 * Otherwise, if bRotate was disabled and the rotation was set before, restore it and clear the pointer because UE's
-	 * garbage collector works only with UObjects created with NewObject function.
-	 */
+	// Otherwise, if bRotate was disabled and the rotation was set before and restore it
 	else if (MeshComponentRelativeRotationBeforeRotateEnabled)
 	{
 		MeshComponent->SetRelativeRotation(*MeshComponentRelativeRotationBeforeRotateEnabled);
 
-		delete MeshComponentRelativeRotationBeforeRotateEnabled;
+		MeshComponentRelativeRotationBeforeRotateEnabled = nullptr;
 	}
 
 	// Set the platform to the starting point for the preview in the level editor
 	if (MovementCurve && !MovementCurve->FloatCurve.Keys.IsEmpty())
 	{
-		MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
-		MeshComponentInitialRelativeRotation = MeshComponent->GetRelativeRotation();
+		if (MeshComponentInitialRelativeLocation)
+		{
+			MeshComponent->SetRelativeLocation(*MeshComponentInitialRelativeLocation);
+		}
+
+		if (MeshComponentInitialRelativeRotation)
+		{
+			MeshComponent->SetRelativeRotation(*MeshComponentInitialRelativeRotation);
+		}
+
+		MeshComponentInitialRelativeLocation = MakeUnique<FVector>(MeshComponent->GetRelativeLocation());
+		MeshComponentInitialRelativeRotation = MakeUnique<FRotator>(MeshComponent->GetRelativeRotation());
 
 		ProcessMovementTimeline(MovementCurve->FloatCurve.Keys[0].Value);
+	}
+	else
+	{
+		ResetPositionToDefault();
 	}
 }
 #endif
@@ -102,8 +114,12 @@ void AMovingPlatform::BeginPlay()
 	}
 #endif
 
-	MeshComponentInitialRelativeLocation = MeshComponent->GetRelativeLocation();
-	MeshComponentInitialRelativeRotation = MeshComponent->GetRelativeRotation();
+#if WITH_EDITOR
+	ResetPositionToDefault();
+#endif
+
+	MeshComponentInitialRelativeLocation = MakeUnique<FVector>(MeshComponent->GetRelativeLocation());
+	MeshComponentInitialRelativeRotation = MakeUnique<FRotator>(MeshComponent->GetRelativeRotation());
 
 	FOnTimelineEvent MovementTimelineEvent;
 	MovementTimelineEvent.BindDynamic(this, &AMovingPlatform::OnMovementTimelineEvent);
@@ -146,6 +162,9 @@ void AMovingPlatform::BeginPlay()
 void AMovingPlatform::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+
+	MeshComponentInitialRelativeLocation = nullptr;
+	MeshComponentInitialRelativeRotation = nullptr;
 
 	GetWorldTimerManager().ClearTimer(MoveTimer);
 }
@@ -225,6 +244,17 @@ void AMovingPlatform::SetupCollisionComponents() const
 	}
 }
 
+void AMovingPlatform::ResetPositionToDefault()
+{
+	MeshComponentInitialRelativeLocation = nullptr;
+	MeshComponentInitialRelativeRotation = nullptr;
+
+	const AMovingPlatform* DefaultObject = GetClass()->GetDefaultObject<AMovingPlatform>();
+
+	MeshComponent->SetRelativeLocation(DefaultObject->MeshComponent->GetRelativeLocation());
+	MeshComponent->SetRelativeRotation(DefaultObject->MeshComponent->GetRelativeRotation());
+}
+
 void AMovingPlatform::OnCollisionComponentsBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -298,14 +328,25 @@ void AMovingPlatform::OnLoadGame(UShapeShifterSaveGame* SaveGameObject)
 void AMovingPlatform::ProcessMovementTimeline(const float Value)
 {
 	// Location on the spline
-	const float Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
+	float Distance;
+
+	if (MovementDirectionSplineComponent->IsClosedLoop())
+	{
+		Distance = Value * MovementDirectionSplineComponent->GetSplineLength();
+	}
+	// Exclude the edges of the spline if the spline isn't the closed loop
+	else
+	{
+		Distance = DistanceBetweenSplineEdges + Value *
+			(MovementDirectionSplineComponent->GetSplineLength() - DistanceBetweenSplineEdges * 2);
+	}
 
 	// Calculation of location in space
 	const FVector CurrentSplineLocation = MovementDirectionSplineComponent->GetLocationAtDistanceAlongSpline(Distance,
 		ESplineCoordinateSpace::World);
 
 	// Set a new location for the platform
-	MeshComponent->SetWorldLocation(CurrentSplineLocation + MeshComponentInitialRelativeLocation);
+	MeshComponent->SetWorldLocation(CurrentSplineLocation + *MeshComponentInitialRelativeLocation);
 
 	// The platform has shifted in the indicated direction
 	if (!bRotate)
@@ -318,8 +359,8 @@ void AMovingPlatform::ProcessMovementTimeline(const float Value)
 		ESplineCoordinateSpace::Local);
 
 	// Set the initial rotation of the platform for Pitch and Roll, we need to rotate only Yaw
-	CurrentSplineRotation.Pitch = MeshComponentInitialRelativeRotation.Pitch;
-	CurrentSplineRotation.Roll = MeshComponentInitialRelativeRotation.Roll;
+	CurrentSplineRotation.Pitch = MeshComponentInitialRelativeRotation->Pitch;
+	CurrentSplineRotation.Roll = MeshComponentInitialRelativeRotation->Roll;
 
 	// Set new rotation for the platform
 	MeshComponent->SetRelativeRotation(CurrentSplineRotation);

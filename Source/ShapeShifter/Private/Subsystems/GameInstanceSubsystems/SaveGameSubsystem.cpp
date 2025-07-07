@@ -183,7 +183,7 @@ bool USaveGameSubsystem::WillEnableAllowAutoSaveOnOpenLevel() const
 	return bEnableAllowAutoSaveOnOpenLevel;
 }
 
-void USaveGameSubsystem::SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel)
+void USaveGameSubsystem::SetEnableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel)
 {
 	bEnableAllowAutoSaveOnOpenLevel = bNewEnableAllowAutoSaveOnOpenLevel;
 }

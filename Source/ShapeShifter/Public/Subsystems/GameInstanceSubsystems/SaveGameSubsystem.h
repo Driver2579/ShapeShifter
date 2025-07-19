@@ -42,7 +42,7 @@ public:
 	void SetAllowAutoSave(const bool bNewAllowAutoSave);
 
 	bool WillEnableAllowAutoSaveOnOpenLevel() const;
-	void SetDisableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel);
+	void SetEnableAllowAutoSaveOnOpenLevel(const bool bNewEnableAllowAutoSaveOnOpenLevel);
 
 protected:
 	virtual void OnGameStartOrLevelChanged();
@@ -70,8 +70,8 @@ private:
 	bool bAllowAutoSave = true;
 
 	/**
-	 * If true than bAllowAutoSave will be set to true on any level open. Use it if you need to disable bAllowAutoSave
-	 * for 1 level loading only.
+	 * If true, then bAllowAutoSave will be set to true on any level open. Use it if you need to disable bAllowAutoSave
+	 * for one level loading only.
 	 */
 	bool bEnableAllowAutoSaveOnOpenLevel = false;
 };

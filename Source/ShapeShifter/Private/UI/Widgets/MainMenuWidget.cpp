@@ -90,7 +90,7 @@ void UMainMenuWidget::OnContinueGameButtonClicked()
 	SaveGameSubsystem->SetAllowAutoSave(false);
 
 	// Enable auto save back after loading the level and saved game
-	SaveGameSubsystem->SetDisableAllowAutoSaveOnOpenLevel(true);
+	SaveGameSubsystem->SetEnableAllowAutoSaveOnOpenLevel(true);
 
 	// Open saved level
 	UGameplayStatics::OpenLevel(this, *SaveGameObject->LevelName);
